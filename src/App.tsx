@@ -61,9 +61,9 @@ export function App() {
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
                 <Routes>
-                  <Route path="/" element={<HomeOrDashboard />} />
-                  <Route path="/marketplace" element={<Marketplace />} />
-                  <Route path="/product/:id" element={<ProductDetails />} />
+                  <Route path="/" element={<ProtectedRoute> <HomeOrDashboard /> </ProtectedRoute>} />
+                  <Route path="/marketplace" element={<ProtectedRoute> <Marketplace /> </ProtectedRoute> } />
+                  <Route path="/product/:id" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/chat" element={<ProtectedRoute>
