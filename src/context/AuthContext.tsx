@@ -1,5 +1,6 @@
-import React, { useEffect, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import { useUserStore } from '../store/userStore';
+import api from '../utils/apiService';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import app from '../firebase/firebaseConfig';
 
@@ -9,6 +10,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  campus: string;
   avatar: string;
   isAdmin?: boolean;
   role: 'buyer' | 'seller' | 'both' | 'admin';
@@ -17,8 +19,10 @@ interface User {
 interface SignupData {
   name: string;
   email: string;
-  avatar?: string;
+  campus: string;
   role: 'buyer' | 'seller' | 'both';
+  avatar?: string;
+  userId: string;
 }
 
 interface AuthContextType {
@@ -54,24 +58,29 @@ export const AuthProvider: React.FC<{
     isLoading, 
     setLoading, 
     isAuthenticated, 
+    setIsAuthenticated,
     isAdmin, 
     isBuyer, 
     isSeller 
   } = useUserStore();
 
+
   // Mock function to get user data from backend
-  const getUserDataFromBackend = async (userId: string, email: string): Promise<User> => {
-    // This would be replaced with actual backend call
-    // For now, returning mock data
-    return {
-      id: userId,
-      name: 'John Doe', // This would come from backend
-      email: email,
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-      isAdmin: email.includes('admin'),
-      role: 'both'
-    };
+  const getUserDataFromBackend = async (userId: string): Promise<User> => {
+    try {
+      const response = await api.get(`/api/me/${userId}`);
+      if (response.data && response.data.success) {
+        setIsAuthenticated(true);
+        return response.data.user;
+        
+      }
+      throw new Error('Failed to fetch user data');
+    } catch (error) {
+      console.error('Error fetching user data from backend:', error);
+      throw error;
+    }
   };
+  
 
   // Firebase auth state listener
   useEffect(() => {
@@ -81,22 +90,14 @@ export const AuthProvider: React.FC<{
       if (firebaseUser) {
         try {
           // Get user data from backend using Firebase UID
-          const userData = await getUserDataFromBackend(firebaseUser.uid, firebaseUser.email!);
+          const userData = await getUserDataFromBackend(firebaseUser.uid);
           setUser(userData);
         } catch (error) {
           console.error('Error fetching user data:', error);
-          // If backend fails, create minimal user object
-          const fallbackUser: User = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'User',
-            email: firebaseUser.email!,
-            avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
-            role: 'buyer'
-          };
-          setUser(fallbackUser);
         }
       } else {
         clearUser();
+        setIsAuthenticated(false);
       }
       setLoading(false);
     });
@@ -104,43 +105,36 @@ export const AuthProvider: React.FC<{
     return () => unsubscribe();
   }, [setUser, clearUser, setLoading]);
 
-  const login = async (email: string, userId: string): Promise<boolean> => {
+  const login = async ( userId: string): Promise<boolean> => {
     try {
-      setLoading(true);
       // Get user data from backend
-      const userData = await getUserDataFromBackend(userId, email);
-      setUser(userData);
+      const response = await api.post('/api/check', { userId });
+      if (response && response.data.success) {
+        const userData = response.data.user;
+        setUser(userData);
+        setIsAuthenticated(true);
+      }
+      
       return true;
     } catch (error) {
       console.error('Login error:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
   const signup = async (data: SignupData): Promise<boolean> => {
     try {
-      setLoading(true);
-      // This would typically create user in backend and Firebase
-      // For now, just mock the response
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: data.name,
-        email: data.email,
-        avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 100)}.jpg`,
-        role: data.role
-      };
-      
-      setUser(newUser);
-      return true;
+      const response = await api.post('/api/signup', data)
+
+      if (response && response.data.success){
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Signup error:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -148,10 +142,12 @@ export const AuthProvider: React.FC<{
     try {
       await signOut(auth);
       clearUser();
+      setIsAuthenticated(false);
     } catch (error) {
       console.error('Logout error:', error);
       // Clear user even if Firebase logout fails
       clearUser();
+      setIsAuthenticated(false);
     }
   };
 
@@ -164,7 +160,7 @@ export const AuthProvider: React.FC<{
         await currentUser.getIdToken(true);
         
         // Refetch user data from backend
-        const userData = await getUserDataFromBackend(currentUser.uid, currentUser.email!);
+        const userData = await getUserDataFromBackend(currentUser.uid);
         setUser(userData);
       } catch (error) {
         console.error('Refresh error:', error);

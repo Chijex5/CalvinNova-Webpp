@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   avatar: string;
+  campus: string;
   isAdmin?: boolean;
   role: 'buyer' | 'seller' | 'both' | 'admin';
 }
@@ -17,6 +18,7 @@ interface UserStore {
   // Actions
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
+  setIsAuthenticated: (authenticated: boolean) => void;
   clearUser: () => void;
   updateUser: (updates: Partial<User>) => void;
   
@@ -35,6 +37,7 @@ export const useUserStore = create<UserStore>()(
       
       // Actions
       setUser: (user) => set({ user }),
+      setIsAuthenticated: (authenticated) => set({isAuthenticated: authenticated}),
       setLoading: (loading) => set({ isLoading: loading }),
       clearUser: () => set({ user: null }),
       updateUser: (updates) => {
