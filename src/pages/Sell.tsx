@@ -82,7 +82,7 @@ const Sell = () => {
       condition: formData.condition,
       images: images,
       school: formData.school,
-      sellerId: user.id,
+      sellerId: user?.userId,
       createdAt: new Date().toISOString()
     });
     // Navigate to marketplace

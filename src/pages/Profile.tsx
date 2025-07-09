@@ -1,11 +1,20 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useUserStore } from '../store/userStore';
 import Button from '../components/Button';
 const Profile = () => {
   const {
-    user,
     logout
   } = useAuth();
+  const store = useUserStore.getState();
+  const user = store.user;
+  const dateJoined = new Date(user?.createdAt || '');
+  const formattedDate = {
+    month: dateJoined.toLocaleString('default', {
+      month: 'long'
+    }),
+    year: dateJoined.getFullYear()
+  }
   if (!user) {
     return <div className="container mx-auto px-4 py-12 text-center">
         <h2 className="text-2xl font-bold mb-4">Please Login</h2>
@@ -25,12 +34,10 @@ const Profile = () => {
               <p className="text-gray-600">{user.email}</p>
               <div className="mt-4 space-y-2">
                 <p>
-                  <span className="font-medium">Member since:</span> January
-                  2023
+                  <span className="font-medium">Member since:</span> {formattedDate.month} {formattedDate.year}
                 </p>
                 <p>
-                  <span className="font-medium">School:</span> University of
-                  California, Berkeley
+                  <span className="font-medium">School:</span> {user.campus || 'Not specified'}
                 </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">

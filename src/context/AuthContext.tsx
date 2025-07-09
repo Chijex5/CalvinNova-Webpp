@@ -7,7 +7,7 @@ import app from '../firebase/firebaseConfig';
 const auth = getAuth(app);
 
 interface User {
-  id: string;
+  userId: string;
   name: string;
   email: string;
   campus: string;
@@ -23,12 +23,18 @@ interface SignupData {
   role: 'buyer' | 'seller' | 'both';
   avatar?: string;
   userId: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+interface Response {
+  success: boolean;
+  message: string;
+}
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
-  login: (email: string, userId: string) => Promise<boolean>;
+  login: (email: string, userId: string) => Promise<Response>;
   signup: (data: SignupData) => Promise<boolean>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -68,7 +74,7 @@ export const AuthProvider: React.FC<{
   // Mock function to get user data from backend
   const getUserDataFromBackend = async (userId: string): Promise<User> => {
     try {
-      const response = await api.get(`/api/me/${userId}`);
+      const response = await api.get(`/api/me/`);
       if (response.data && response.data.success) {
         setIsAuthenticated(true);
         return response.data.user;
@@ -105,7 +111,7 @@ export const AuthProvider: React.FC<{
     return () => unsubscribe();
   }, [setUser, clearUser, setLoading]);
 
-  const login = async ( userId: string): Promise<boolean> => {
+  const login = async ( userId: string): Promise<Response> => {
     try {
       // Get user data from backend
       const response = await api.post('/api/check', { userId });
@@ -115,10 +121,10 @@ export const AuthProvider: React.FC<{
         setIsAuthenticated(true);
       }
       
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      return {success: true, message: 'Login successful'};
+    } catch (error: any) {
+      console.log(error.response?.data.error);
+      return {success: false, message: error.response?.data.error || 'Login failed'};
     }
   };
 

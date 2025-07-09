@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FadeIn } from '../utils/animations';
@@ -90,24 +90,47 @@ const Login = () => {
   const [loginMethod, setLoginMethod] = useState<'email' | 'passwordless'>('email');
   const [passwordlessMessage, setPasswordlessMessage] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [redirectedFrom, setRedirectedFrom] = useState<string | null>(null);
   
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleError = (error: any, context: string) => {
+  const getUrlParameter = (name: string) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  };
+
+  useEffect(() => {
+    const redirectedFromParam = getUrlParameter('redirectedfrom');
+    if (redirectedFromParam) {
+      setRedirectedFrom(decodeURIComponent(redirectedFromParam));
+    }
+  }, []);
+
+  // Combined error handler for Firebase and backend errors
+  const handleError = (error: any, context: string, backendResponse?: any) => {
     console.error(`${context} error:`, error);
     
+    let errorMessage = '';
+    
+    // Handle backend response errors first (higher priority)
+    if (backendResponse && !backendResponse.success) {
+      errorMessage = backendResponse.message || `${context} failed. Please try again.`;
+    }
     // Handle Firebase Auth errors
-    if (error?.code) {
-      const userFriendlyMessage = getFirebaseErrorMessage(error.code);
-      setError(userFriendlyMessage);
-    } else if (error?.message) {
-      setError(error.message);
-    } else {
-      setError(`${context} failed. Please try again.`);
+    else if (error?.code) {
+      errorMessage = getFirebaseErrorMessage(error.code);
+    }
+    // Handle generic errors
+    else if (error?.message) {
+      errorMessage = error.message;
+    }
+    // Fallback error message
+    else {
+      errorMessage = `${context} failed. Please try again.`;
     }
     
-    // Track retry attempts
+    setError(errorMessage);
     setRetryCount(prev => prev + 1);
   };
 
@@ -135,13 +158,17 @@ const Login = () => {
         }
         
         if (!email) {
-          throw new Error('Email is required to complete sign-in');
+          setError('Email is required to complete sign-in');
+          setIsLoading(false);
+          return;
         }
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-          throw new Error('Please enter a valid email address');
+          setError('Please enter a valid email address');
+          setIsLoading(false);
+          return;
         }
         
         const userCredential = await signInWithEmailLink(auth, email, window.location.href);
@@ -150,14 +177,18 @@ const Login = () => {
         // Clean up stored email
         localStorage.removeItem('emailForSignIn');
         
-        // Attempt to log in through your auth context
-        const success = await login(email, userId);
-        if (success) {
-          navigate('/');
+        // Call your login context function
+        const response = await login(email, userId);
+        
+        // Handle response from context
+        if (response.success) {
+          navigate(redirectedFrom || '/');
         } else {
-          throw new Error('Login failed after email verification');
+          // Let context handle the error, just display the message
+          handleError(null, 'Email link sign-in', response);
         }
       } catch (error) {
+        // Handle Firebase errors
         handleError(error, 'Email link sign-in');
       } finally {
         setIsLoading(false);
@@ -165,7 +196,7 @@ const Login = () => {
     };
 
     handleEmailLinkSignIn();
-  }, [login, navigate]);
+  }, [login, navigate, redirectedFrom]);
 
   const handleEmailPasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +224,7 @@ const Login = () => {
     }
     
     try {
+      // Firebase authentication
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const userId = userCredential.user.uid;
       
@@ -203,16 +235,19 @@ const Login = () => {
         // For now, we'll continue but you might want to handle this
       }
       
-      // Call your existing login function with user ID
-      const success = await login(email.trim(), userId);
-      if (!success) {
-        throw new Error('Login failed after authentication');
-      }
+      // Call your login context function
+      const response = await login(email.trim(), userId);
       
-      // Reset retry count on success
-      setRetryCount(0);
-      navigate('/');
+      // Handle response from context
+      if (response.success) {
+        setRetryCount(0);
+        navigate(redirectedFrom || '/');
+      } else {
+        // Let context handle the error, just display the message
+        handleError(null, 'Login', response);
+      }
     } catch (error) {
+      // Handle Firebase errors
       handleError(error, 'Email/password login');
     } finally {
       setIsLoading(false);
@@ -240,19 +275,24 @@ const Login = () => {
       const userEmail = userCredential.user.email;
       
       if (!userEmail) {
-        throw new Error('No email received from Google account');
+        setError('No email received from Google account');
+        setIsLoading(false);
+        return;
       }
       
-      // Call your existing login function with user ID
-      const success = await login(userEmail, userId);
-      if (!success) {
-        throw new Error('Login failed after Google authentication');
-      }
+      // Call your login context function
+      const response = await login(userEmail, userId);
       
-      // Reset retry count on success
-      setRetryCount(0);
-      navigate('/');
+      // Handle response from context
+      if (response.success) {
+        setRetryCount(0);
+        navigate(redirectedFrom || '/');
+      } else {
+        // Let context handle the error, just display the message
+        handleError(null, 'Google login', response);
+      }
     } catch (error) {
+      // Handle Firebase errors
       handleError(error, 'Google login');
     } finally {
       setIsLoading(false);
@@ -280,7 +320,7 @@ const Login = () => {
     
     try {
       const actionCodeSettings = {
-        url: window.location.origin + '/login', // Changed to /login instead of /complete-login
+        url: window.location.origin + '/login',
         handleCodeInApp: true,
       };
       
@@ -290,10 +330,9 @@ const Login = () => {
       localStorage.setItem('emailForSignIn', email.trim());
       
       setPasswordlessMessage('Check your email! We sent you a magic link to sign in.');
-      
-      // Reset retry count on success
       setRetryCount(0);
     } catch (error) {
+      // Handle Firebase errors
       handleError(error, 'Magic link send');
     } finally {
       setIsLoading(false);

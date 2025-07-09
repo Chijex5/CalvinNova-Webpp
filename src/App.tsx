@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -14,35 +14,49 @@ import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
 import { ChatProvider } from './context/ChatContext';
-// Protected route component
-const ProtectedRoute = ({
-  children
-}: {
+
+interface ProtectedRouteProps {
   children: React.ReactNode;
-}) => {
-  const {
-    isAuthenticated
-  } = useAuth();
+  link?: string; // optional now
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, link }) => {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  const redirectTo = link || location.pathname + location.search;
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to={`/login?redirectedfrom=${encodeURIComponent(redirectTo)}`}
+        replace
+      />
+    );
   }
+
   return <>{children}</>;
 };
+
+export default ProtectedRoute;
+
 // Seller-only route component
 const SellerRoute = ({
-  children
+  children,
+  link
 }: {
   children: React.ReactNode;
+  link: string;
 }) => {
   const {
     isAuthenticated,
     isSeller
   } = useAuth();
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login`} replace />;
   }
   if (!isSeller) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={`/login?redirectedfrom=${encodeURIComponent(link)}`} replace />;
   }
   return <>{children}</>;
 };
@@ -75,7 +89,7 @@ export function App() {
                   <Route path="/profile" element={<ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>} />
-                  <Route path="/sell" element={<SellerRoute>
+                  <Route path="/sell" element={<SellerRoute link='/sell'>
                         <Sell />
                       </SellerRoute>} />
                   <Route path="/admin" element={<ProtectedRoute>
