@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { useProductStore } from '../store/productStore';
+import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Grid, List, Star, MapPin, Calendar, ChevronDown, X, Heart, MessageCircle, ShoppingCart, Edit, Trash2, ChevronLeft, ChevronRight, ZoomIn, Expand, Loader } from 'lucide-react';
 import { productService } from '../services/productService';
 import api from '../utils/apiService';
+import { useChatStore } from '../store/chatStore';
 
 // FadeIn Animation Component
 const FadeIn = ({ children, delay = 0 }) => {
@@ -174,21 +176,26 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
 const ProductCard = ({ product, seller, currentUserId = null }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
+  const [isContactingSeller, setIsContactingSeller] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const user = useUserStore(state => state.user);
+  const { startMessaging, isLoadingChats, chats } = useChatStore();
   const [imageError, setImageError] = useState<{ [key: number]: boolean }>({});
 
   const isOwner = currentUserId === product.sellerId;
   const productImages = product.images && product.images.length > 0 ? product.images : ['/api/placeholder/400/400'];
 
-  const formatPrice = (price) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'NGN',
       minimumFractionDigits: 0
     }).format(price);
   };
 
-  const getConditionColor = (condition) => {
+  const getConditionColor = (condition: string) => {
     switch (condition) {
       case 'Like New': return 'bg-green-100 text-green-800';
       case 'Good': return 'bg-blue-100 text-blue-800';
@@ -221,6 +228,62 @@ const ProductCard = ({ product, seller, currentUserId = null }) => {
   const openGallery = (e) => {
     e.stopPropagation();
     setIsGalleryOpen(true);
+  };
+
+  const isOwnProduct = user?.userId === product.sellerId;
+
+  const handleContactSeller = async (sellerId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (isOwnProduct) {
+      // Shouldn't happen, but just in case
+      return;
+    }
+
+    console.log('=== DEBUG INFO ===');
+    console.log('user.userId:', user?.userId);
+    console.log('seller object:', sellerId);
+    console.log('product.sellerId:', product.sellerId);
+    console.log('==================');
+
+    setIsContactingSeller(true);
+    setError(null); // Clear any previous errors
+
+    try {
+      // Check if conversation already exists
+      const existingChat = chats.find(chat => {
+        const members = Object.keys(chat.state.members || {});
+        return members.includes(user.userId) && members.includes(sellerId);
+      });
+
+      if (existingChat) {
+        console.log('Found existing conversation:', existingChat.id);
+        // Navigate to chat with existing conversation
+        navigate(`/chat/${existingChat.id}`);
+      } else {
+        console.log('Creating new chat between:', user.userId, 'and seller:', sellerId);
+        
+        // Create new conversation using Zustand store
+        await startMessaging([sellerId]);
+        
+        // Navigate to the chat page (assuming the chat store will set currentChat)
+        navigate('/chat');
+      }
+
+    } catch (error) {
+      console.error('Error creating/getting chat:', error);
+      setError('Failed to start conversation. Please try again.');
+      
+      // Show error message to user
+      setTimeout(() => {
+        setError(null);
+      }, 5000);
+    } finally {
+      setIsContactingSeller(false);
+    }
   };
 
   return (
@@ -371,8 +434,15 @@ const ProductCard = ({ product, seller, currentUserId = null }) => {
                   <ShoppingCart className="w-4 h-4" />
                   <span>Buy Now</span>
                 </button>
-                <button className="px-4 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors duration-200">
+                <button 
+                onClick={() => handleContactSeller(product.sellerId)}
+                disabled={isContactingSeller}
+                className="px-4 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors duration-200">
+                  {isContactingSeller ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (    
                   <MessageCircle className="w-4 h-4" />
+                )}
                 </button>
               </>
             )}

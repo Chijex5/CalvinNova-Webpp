@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useChatStore, useTypingUsers, useUserOnlineStatus } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
+import { useParams } from 'react-router-dom';
 import { Channel } from 'stream-chat';
 
 // Enhanced Types
@@ -33,7 +34,7 @@ interface Message {
 }
 
 interface Chat extends Channel {
-  id: string;
+  id?: string;
   data: ChatData;
   state: {
     members?: { [key: string]: ChatMember };
@@ -835,6 +836,19 @@ const ChatInterface: React.FC = () => {
   const [showChatView, setShowChatView] = useState<boolean>(false);
   const { isAdminView } = useChatStore();
   const { width } = useWindowSize();
+  const { chatId } = useParams<{ chatId: string }>();
+  const chats = useChatStore(state => state.chats);
+
+  useEffect(() => {
+    if (chatId && chats.length > 0) {
+      const chat = chats.find(c => c.id === chatId);
+      if (chat) {
+        setSelectedChat(chat);
+        setShowChatView(true);
+      }
+    }
+  }, [chatId, chats]);
+
   
   const isMobile = width < 768;
 

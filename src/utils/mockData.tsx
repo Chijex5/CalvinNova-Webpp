@@ -24,7 +24,7 @@ export const categories = [{
   name: 'Other'
 }];
 // Mock schools
-export const schools = ['University of California, Berkeley', 'Stanford University', 'UCLA', 'MIT', 'Harvard University', 'University of Michigan'];
+export const schools = ['UNN', 'UNEC'];
 // Mock users
 export const users: User[] = [{
   id: '1',

@@ -99,7 +99,7 @@ export function App() {
                   <Route path="/chat" element={<ProtectedRoute>
                         <Chat />
                       </ProtectedRoute>} />
-                  <Route path="/chat/:userId" element={<ProtectedRoute>
+                  <Route path="/chat/:chatId" element={<ProtectedRoute>
                         <Chat />
                       </ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute>
