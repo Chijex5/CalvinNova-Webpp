@@ -407,6 +407,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
 
   const members = chat.state.members || {};
   const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
+  const isOtherUserOnline = useUserOnlineStatus(otherUser?.id || '');
 
   const handleFlagChat = async (): Promise<void> => {
     if (chat?.id) {
@@ -444,10 +445,10 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
             {otherUser?.name || 'Unknown User'}
+            <p className="text-sm text-gray-500 truncate">
+              {isOtherUserOnline ? 'Online' : 'CalvinNova Student'}
+            </p>
           </h3>
-          <p className="text-sm text-gray-500 truncate">
-            {useUserOnlineStatus(otherUser?.id || '') ? 'Online' : 'CalvinNova Student'}
-          </p>
         </div>
       </div>
 
@@ -798,7 +799,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
     
     setIsLoading(true);
     try {
-      await sendMessage(chat.id, text);
+      await sendMessage(text);
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {
@@ -818,7 +819,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
         messages={messages}
         currentUserId={currentUserId}
         isAdminView={isAdminView}
-        chatId={chat.id}
+        chatId={chat?.id || ''}
       />
       
       <MessageInput
@@ -849,11 +850,16 @@ const ChatInterface: React.FC = () => {
     }
   }, [chatId, chats]);
 
+  console.log(selectedChat)
+
   
   const isMobile = width < 768;
 
   const handleChatSelect = (chat: Chat): void => {
     setSelectedChat(chat);
+
+    useChatStore.getState().getChatDetails(chat.id || '');
+    
     if (isMobile) {
       setShowChatView(true);
     }
