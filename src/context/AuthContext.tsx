@@ -1,6 +1,8 @@
 import React, { useEffect, useState, createContext, useContext, useRef } from 'react';
 import { useUserStore } from '../store/userStore';
+import { useChatStore } from '../store/chatStore';
 import { client } from '../lib/stream-chat';
+import { useProductService } from '../services/productService';
 import api from '../utils/apiService';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import app from '../firebase/firebaseConfig';
@@ -77,6 +79,10 @@ export const AuthProvider: React.FC<{
     isSeller 
   } = useUserStore();
 
+  const productService = useProductService();
+
+  const { setAdminView } = useChatStore();
+
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [isMiddleOfAuthFlow, setIsMiddleOfAuthFlow] = useState<boolean>(false);
   
@@ -112,6 +118,8 @@ export const AuthProvider: React.FC<{
         console.log('User data fetched from backend:', response.data);
         setIsAuthenticated(true);
         authFlowComplete.current = true;
+        response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
+        
         await client.connectUser(
           {
             id: response.data.user.userId,
@@ -120,6 +128,12 @@ export const AuthProvider: React.FC<{
           },
           response.data.user.userToken
         );
+
+        // Sync products in the background (refresh existing products)
+        productService.refreshProducts().catch(error => {
+          console.error('Background product refresh failed:', error);
+        });
+        
         return response.data.user;
       }
 
@@ -221,6 +235,7 @@ export const AuthProvider: React.FC<{
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
         const userData = response.data.user;
+        response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
         await client.connectUser(
           {
             id: response.data.user.userId,
@@ -232,6 +247,11 @@ export const AuthProvider: React.FC<{
         setUser(userData);
         setIsAuthenticated(true);
         authFlowComplete.current = true;
+        
+        // Sync products in the background (fetch fresh products for login)
+        productService.fetchProducts().catch(error => {
+          console.error('Background product fetch failed:', error);
+        });
         
         return {success: true, message: 'Login successful'};
       }
@@ -255,6 +275,7 @@ export const AuthProvider: React.FC<{
 
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
+        response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
         await client.connectUser(
           {
             id: response.data.user.userId,
@@ -266,6 +287,11 @@ export const AuthProvider: React.FC<{
         setUser(response.data.user);
         setIsAuthenticated(true);
         authFlowComplete.current = true;
+        
+        // Sync products in the background (fetch fresh products for signup)
+        productService.fetchProducts().catch(error => {
+          console.error('Background product fetch failed:', error);
+        });
         
         return true;
       }

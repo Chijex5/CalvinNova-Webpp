@@ -16,7 +16,7 @@ const AdminDashboard = () => {
   } = useProducts();
   const [activeTab, setActiveTab] = useState('products');
   const [searchQuery, setSearchQuery] = useState('');
-  if (!user || !isAdmin) {
+  if (!user || !user.role || user.role !== 'admin') {
     return <div className="container mx-auto px-4 py-12 text-center">
         <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
         <p className="mb-6">

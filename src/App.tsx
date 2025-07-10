@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
-import Marketplace from './pages/Marketplace';
+import MarketplaceUI from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
@@ -55,15 +55,24 @@ const SellerRoute = ({
   children: React.ReactNode;
   link: string;
 }) => {
-  const {
-    isAuthenticated,
-    isSeller
-  } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to={`/login`} replace />;
+  const { isAuthenticated, isLoading, isCheckingAuth, user } = useAuth();
+  const location = useLocation();
+
+  const redirectTo = link || location.pathname + location.search;
+  if (isLoading || isCheckingAuth) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
-  if (!isSeller) {
-    return <Navigate to={`/login?redirectedfrom=${encodeURIComponent(link)}`} replace />;
+  if (!isAuthenticated) {
+    console.warn('Unauthorized access to seller route');
+    return <Navigate to={`/login?redirectedfrom=${encodeURIComponent(redirectTo)}`} replace />;
+  }
+  if (user && user.role !== 'seller' && user.role !== 'both') {
+    console.warn('Access denied: Seller route requires seller permissions');
+    return <Navigate to='/' replace />;
   }
   return <>{children}</>;
 };
@@ -83,7 +92,7 @@ export function App() {
               <Layout>
                 <Routes>
                   <Route path="/" element={<ProtectedRoute> <HomeOrDashboard /> </ProtectedRoute>} />
-                  <Route path="/marketplace" element={<ProtectedRoute> <Marketplace /> </ProtectedRoute> } />
+                  <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
                   <Route path="/product/:id" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
