@@ -36,13 +36,13 @@ export const users: User[] = [{
   joinedDate: 'January 2022',
   isAdmin: true
 }, {
-  id: 'mIFD35KzMva72TtaUW9UC5uZBSP2',
-  name: 'Sarah Johnson',
-  email: 'sarah@example.com',
-  avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-  school: 'Stanford University',
+  id: 'NOak9U3r5ZNDG3tgRLdu8RW7Yqh1',
+  name: 'Chijioke Uzodinma',
+  email: 'embroconnec9@gmail.com',
+  avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=H944WKxX',
+  school: 'Unn',
   rating: 4.9,
-  joinedDate: 'March 2022'
+  joinedDate: 'July 2025'
 }, {
   id: '3',
   name: 'Michael Brown',
@@ -70,7 +70,7 @@ export const initialProducts: Product[] = [{
   condition: 'Like New',
   images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1626&q=80', 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80'],
   school: 'University of California, Berkeley',
-  sellerId: 'mIFD35KzMva72TtaUW9UC5uZBSP2',
+  sellerId: 'NOak9U3r5ZNDG3tgRLdu8RW7Yqh1',
   createdAt: '2023-05-15T10:30:00Z'
 }, {
   id: '2',
