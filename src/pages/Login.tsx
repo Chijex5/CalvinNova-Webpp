@@ -26,6 +26,7 @@ import {
   AuthError
 } from 'firebase/auth';
 import app from '../firebase/firebaseConfig'
+import { set } from 'date-fns';
 
 const auth = getAuth(app);
 
@@ -92,7 +93,7 @@ const Login = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [redirectedFrom, setRedirectedFrom] = useState<string | null>(null);
   
-  const { login } = useAuth();
+  const { login, setIsMiddleOfAuthFlow } = useAuth();
   const navigate = useNavigate();
 
   const getUrlParameter = (name: string) => {
@@ -147,6 +148,7 @@ const Login = () => {
       }
 
       setIsLoading(true);
+      setIsMiddleOfAuthFlow(true);
       clearMessages();
 
       try {
@@ -199,6 +201,7 @@ const Login = () => {
   }, [login, navigate, redirectedFrom]);
 
   const handleEmailPasswordLogin = async (e: React.FormEvent) => {
+    setIsMiddleOfAuthFlow(true);
     e.preventDefault();
     setIsLoading(true);
     clearMessages();
@@ -255,6 +258,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = async () => {
+    setIsMiddleOfAuthFlow(true);
     setIsLoading(true);
     clearMessages();
     
@@ -302,6 +306,7 @@ const Login = () => {
   const handlePasswordlessLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setIsMiddleOfAuthFlow(true);
     clearMessages();
     
     // Client-side validation

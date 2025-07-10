@@ -4,8 +4,7 @@ import Button from '../components/Button';
 import { MessageSquareIcon, HeartIcon, ShareIcon, FlagIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { useMockProducts } from '../utils/mockData';
 import { useAuth } from '../context/AuthContext';
-import { useChatStore } from '../store/chatStore'; // Import the chat store
-// Alternative: import { useChat } from '../context/ChatContext'; // If using React Context
+import { useChatStore } from '../store/chatStore';
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,11 +14,8 @@ const ProductDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
   
-  // Using Zustand store
-  const { createOrGetChat, conversations } = useChatStore();
-  
-  // Alternative: Using React Context
-  // const { conversations } = useChat();
+  // Using the Zustand chat store
+  const { startMessaging, chats, error, setError } = useChatStore();
 
   const product = products.find(p => p.id === id);
 
@@ -38,7 +34,6 @@ const ProductDetails = () => {
   }
 
   const seller = getSellerById(product.sellerId);
-  console.log('Seller:', seller);
   const isOwnProduct = user?.userId === product.sellerId;
 
   const nextImage = () => {
@@ -65,43 +60,45 @@ const ProductDetails = () => {
       return;
     }
 
+    console.log('=== DEBUG INFO ===');
+    console.log('user.userId:', user?.userId);
+    console.log('seller object:', seller);
+    console.log('seller.id:', seller.id);
+    console.log('product.sellerId:', product.sellerId);
+    console.log('==================');
+
     setIsContactingSeller(true);
+    setError(null); // Clear any previous errors
 
     try {
-      // Using Zustand store approach
-      const existingConversation = conversations.find(conv => 
-        conv.participants.includes(user?.userId) && conv.participants.includes(seller.id)
-      );
+      // Check if conversation already exists
+      const existingChat = chats.find(chat => {
+        const members = Object.keys(chat.state.members || {});
+        return members.includes(user.userId) && members.includes(seller.id);
+      });
 
-      let chatId: string;
-
-      if (existingConversation) {
-        chatId = existingConversation.id;
+      if (existingChat) {
+        console.log('Found existing conversation:', existingChat.id);
+        // Navigate to chat with existing conversation
+        navigate(`/chat/${existingChat.id}`);
       } else {
-        console.log('Creating new chat for:', user?.userId, seller.id);
-        chatId = await createOrGetChat([user?.userId, seller.id]);
+        console.log('Creating new chat between:', user.userId, 'and seller:', seller.id);
+        
+        // Create new conversation using Zustand store
+        await startMessaging([seller.id]);
+        
+        // Navigate to the chat page (assuming the chat store will set currentChat)
+        navigate('/chat');
       }
 
-      navigate(`/chat/${chatId}`);
-
-      /* Alternative: Using React Context approach
-      const existingConversation = conversations.find(conv => 
-        conv.userId === seller.id
-      );
-
-      if (existingConversation) {
-        // Navigate to existing conversation
-        navigate(`/chat/${seller.id}`);
-      } else {
-        // Create new conversation by navigating to chat
-        // The ChatContext would handle creating the conversation
-        navigate(`/chat/${seller.id}`);
-      }
-      */
     } catch (error) {
       console.error('Error creating/getting chat:', error);
-      // You might want to show an error message to the user
-      alert('Failed to start conversation. Please try again.');
+      setError('Failed to start conversation. Please try again.');
+      
+      // Show error message to user
+      setTimeout(() => {
+        setError(null);
+      }, 5000);
     } finally {
       setIsContactingSeller(false);
     }
@@ -249,6 +246,13 @@ const ProductDetails = () => {
               </Button>
             )}
           </div>
+
+          {/* Error message display */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </div>

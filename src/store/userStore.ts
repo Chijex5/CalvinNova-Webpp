@@ -5,7 +5,8 @@ interface User {
   userId: string;
   name: string;
   email: string;
-  avatar: string;
+  userToken: string;
+  avatarUrl: string;
   campus: string;
   isAdmin?: boolean;
   createdAt?: string;
@@ -54,7 +55,7 @@ export const useUserStore = create<UserStore>()(
         return !!get().user;
       },
       get isAdmin() {
-        return !!get().user?.isAdmin;
+        return get().user?.role === 'admin' || false;
       },
       get isBuyer() {
         const user = get().user;

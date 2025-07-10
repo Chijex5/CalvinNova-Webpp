@@ -1,4 +1,5 @@
 import React from 'react';
+import { useInitStreamChat } from './hooks/useInitStreamChat';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -21,10 +22,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, link }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading, isCheckingAuth } = useAuth();
   const location = useLocation();
 
   const redirectTo = link || location.pathname + location.search;
+  if (isLoading || isCheckingAuth) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -68,6 +76,7 @@ const HomeOrDashboard = () => {
   return isAuthenticated ? <Dashboard /> : <Home />;
 };
 export function App() {
+  useInitStreamChat();
   return <Router>
       <AuthProvider>
         <ProductProvider>

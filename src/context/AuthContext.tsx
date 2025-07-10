@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext, useRef } from 'react';
 import { useUserStore } from '../store/userStore';
 import api from '../utils/apiService';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
@@ -10,8 +10,9 @@ interface User {
   userId: string;
   name: string;
   email: string;
+  userToken: string;
   campus: string;
-  avatar: string;
+  avatarUrl: string;
   isAdmin?: boolean;
   role: 'buyer' | 'seller' | 'both' | 'admin';
 }
@@ -21,7 +22,7 @@ interface SignupData {
   email: string;
   campus: string;
   role: 'buyer' | 'seller' | 'both';
-  avatar?: string;
+  avatarUrl?: string;
   userId: string;
   createdAt?: string;
   updatedAt?: string;
@@ -31,9 +32,14 @@ interface Response {
   success: boolean;
   message: string;
 }
+
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  isCheckingAuth: boolean;
+  isMiddleOfAuthFlow: boolean;
+  setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void
+  setIsCheckingAuth: (checking: boolean) => void;
   login: (email: string, userId: string) => Promise<Response>;
   signup: (data: SignupData) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -70,82 +76,19 @@ export const AuthProvider: React.FC<{
     isSeller 
   } = useUserStore();
 
-
-  // Mock function to get user data from backend
-  const getUserDataFromBackend = async (userId: string): Promise<User> => {
-    try {
-      const response = await api.get(`/api/me/`);
-      if (response.data && response.data.success) {
-        setIsAuthenticated(true);
-        return response.data.user;
-        
-      }
-      throw new Error('Failed to fetch user data');
-    } catch (error) {
-      console.error('Error fetching user data from backend:', error);
-      throw error;
-    }
-  };
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+  const [isMiddleOfAuthFlow, setIsMiddleOfAuthFlow] = useState<boolean>(false);
   
-
-  // Firebase auth state listener
-  useEffect(() => {
-    setLoading(true);
-    
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Get user data from backend using Firebase UID
-          const userData = await getUserDataFromBackend(firebaseUser.uid);
-          setUser(userData);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      } else {
-        clearUser();
-        setIsAuthenticated(false);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [setUser, clearUser, setLoading]);
-
-  const login = async ( userId: string): Promise<Response> => {
-    try {
-      // Get user data from backend
-      const response = await api.post('/api/check', { userId });
-      if (response && response.data.success) {
-        const userData = response.data.user;
-        setUser(userData);
-        setIsAuthenticated(true);
-      }
-      
-      return {success: true, message: 'Login successful'};
-    } catch (error: any) {
-      console.log(error.response?.data.error);
-      return {success: false, message: error.response?.data.error || 'Login failed'};
-    }
-  };
-
-  const signup = async (data: SignupData): Promise<boolean> => {
-    try {
-      const response = await api.post('/api/signup', data)
-
-      if (response && response.data.success){
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Signup error:', error);
-      return false;
-    }
-  };
-
+  // More granular control flags
+  const skipNextAuthCheck = useRef<boolean>(false);
+  const authFlowComplete = useRef<boolean>(false);
+  const lastProcessedUid = useRef<string | null>(null);
+  
   const logout = async (): Promise<void> => {
     try {
+      skipNextAuthCheck.current = true; // Skip auth check when logging out
+      authFlowComplete.current = false;
+      lastProcessedUid.current = null;
       await signOut(auth);
       clearUser();
       setIsAuthenticated(false);
@@ -154,11 +97,169 @@ export const AuthProvider: React.FC<{
       // Clear user even if Firebase logout fails
       clearUser();
       setIsAuthenticated(false);
+    } finally {
+      skipNextAuthCheck.current = false;
+    }
+  };
+
+  const getUserDataFromBackend = async (retryCount = 0): Promise<User> => {
+    try {
+      setLoading(true);
+      setIsCheckingAuth(true);
+      const response = await api.get(`/api/me`);
+      if (response.data && response.data.success) {
+        console.log('User data fetched from backend:', response.data);
+        setIsAuthenticated(true);
+        authFlowComplete.current = true;
+        return response.data.user;
+      }
+      throw new Error('Failed to fetch user data');
+    } catch (error: any) {
+      console.error('Error fetching user data from backend:', error);
+      
+      // If it's a 401 error and we haven't retried, wait a bit and retry
+      // This handles the case where the user was just created but isn't immediately available
+      if (error.response?.status === 401 && retryCount < 2) {
+        console.log(`Retrying user data fetch... (attempt ${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        return getUserDataFromBackend(retryCount + 1);
+      }
+      
+      // Only logout if we're not in the middle of auth flow
+      if (!isMiddleOfAuthFlow) {
+        await logout();
+      }
+      throw error;
+    } finally {
+      setLoading(false);
+      setIsCheckingAuth(false);
+    }
+  };
+  
+  // Firebase auth state listener
+  useEffect(() => {
+    let mounted = true;
+    
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!mounted) return;
+      
+      // Skip if we're in the middle of auth flow
+      if (isMiddleOfAuthFlow) {
+        console.log('Skipping auth check - in middle of auth flow');
+        return;
+      }
+      
+      // Skip if we explicitly set this flag (e.g., during logout)
+      if (skipNextAuthCheck.current) {
+        console.log('Skipping auth check - flag set');
+        skipNextAuthCheck.current = false;
+        setLoading(false);
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      if (firebaseUser) {
+        // Check if we've already processed this user to prevent infinite loops
+        if (lastProcessedUid.current === firebaseUser.uid && authFlowComplete.current) {
+          console.log('Already processed this user, skipping');
+          setLoading(false);
+          setIsCheckingAuth(false);
+          return;
+        }
+        
+        console.log('Firebase user authenticated:', firebaseUser.uid);
+        lastProcessedUid.current = firebaseUser.uid;
+        
+        try {
+          const userData = await getUserDataFromBackend();
+          if (mounted) {
+            setUser(userData);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          if (mounted) {
+            setLoading(false);
+            setIsCheckingAuth(false);
+          }
+        }
+      } else {
+        // No Firebase user
+        if (mounted) {
+          clearUser();
+          setIsAuthenticated(false);
+          setLoading(false);
+          setIsCheckingAuth(false);
+          authFlowComplete.current = false;
+          lastProcessedUid.current = null;
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, [setUser, clearUser, setLoading, isMiddleOfAuthFlow]); // Removed 'user' from dependencies
+
+  const login = async (email: string, userId: string): Promise<Response> => {
+    try {
+      setIsMiddleOfAuthFlow(true);
+      setLoading(true);
+      
+      // Get user data from backend
+      const response = await api.post('/api/check', { userId });
+      if (response && response.data.success) {
+        localStorage.setItem('token', response.data.access_token);
+        const userData = response.data.user;
+        setUser(userData);
+        setIsAuthenticated(true);
+        authFlowComplete.current = true;
+        
+        return {success: true, message: 'Login successful'};
+      }
+      
+      return {success: false, message: 'Login failed'};
+    } catch (error: any) {
+      console.error('Login error:', error);
+      return {success: false, message: error.response?.data.error || 'Login failed'};
+    } finally {
+      setIsMiddleOfAuthFlow(false);
+      setLoading(false);
+    }
+  };
+
+  const signup = async (data: SignupData): Promise<boolean> => {
+    try {
+      setIsMiddleOfAuthFlow(true);
+      setLoading(true);
+      
+      const response = await api.post('/api/signup', data);
+
+      if (response && response.data.success) {
+        localStorage.setItem('token', response.data.access_token);
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        authFlowComplete.current = true;
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Signup error:', error);
+      return false;
+    } finally {
+      setIsMiddleOfAuthFlow(false);
+      setLoading(false);
     }
   };
 
   const refresh = async (): Promise<void> => {
     const currentUser = auth.currentUser;
+    if (isMiddleOfAuthFlow) {
+      console.warn('Cannot refresh while in the middle of an auth flow');
+      return;
+    }
     if (currentUser) {
       try {
         setLoading(true);
@@ -166,7 +267,7 @@ export const AuthProvider: React.FC<{
         await currentUser.getIdToken(true);
         
         // Refetch user data from backend
-        const userData = await getUserDataFromBackend(currentUser.uid);
+        const userData = await getUserDataFromBackend();
         setUser(userData);
       } catch (error) {
         console.error('Refresh error:', error);
@@ -182,6 +283,10 @@ export const AuthProvider: React.FC<{
     user,
     isAdmin,
     login,
+    setIsCheckingAuth,
+    isMiddleOfAuthFlow,
+    setIsMiddleOfAuthFlow,
+    isCheckingAuth,
     signup,
     logout,
     refresh,
@@ -192,7 +297,7 @@ export const AuthProvider: React.FC<{
   };
 
   // Show loading screen while checking authentication
-  if (isLoading) {
+  if (isCheckingAuth && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center space-y-4">

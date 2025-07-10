@@ -24,7 +24,11 @@ const Navigation = () => {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-  const navItems = [{
+  const navItems: Array<{
+    name: string;
+    path: string;
+    icon: React.ReactElement | null;
+  }> = [{
     name: 'Home',
     path: '/',
     icon: <HomeIcon size={20} />
@@ -36,10 +40,6 @@ const Navigation = () => {
     name: 'Chat',
     path: '/chat',
     icon: <MessageSquareIcon size={20} />
-  }, {
-    name: 'Profile',
-    path: '/profile',
-    icon: <UserIcon size={20} />
   }, {
     name: 'Sell',
     path: '/sell',
@@ -66,6 +66,9 @@ const Navigation = () => {
               <BellIcon size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
+            {user && <Link to="/profile" className="mr-4 w-8 h-8 rounded-full overflow-hidden border-2 border-indigo-100 hover:border-indigo-300 transition-all duration-200">
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              </Link>}
             <button onClick={toggleMenu} className="flex items-center" aria-label="Toggle menu">
               {isMenuOpen ? <XIcon size={24} className="text-gray-700" /> : <MenuIcon size={24} className="text-gray-700" />}
             </button>
@@ -83,7 +86,7 @@ const Navigation = () => {
             </button>
             {/* User avatar */}
             {user && <Link to="/profile" className="ml-2 w-8 h-8 rounded-full overflow-hidden border-2 border-indigo-100 hover:border-indigo-300 transition-all duration-200">
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
               </Link>}
           </nav>
         </div>

@@ -1,436 +1,431 @@
-// store/chatStore.ts
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  serverTimestamp, 
-  Timestamp,
-  getDocs,
-  limit,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData
-} from 'firebase/firestore';
-import { db } from '../firebase/firebaseConfig';
+import { devtools } from 'zustand/middleware';
+import { Channel, StreamChat, Message as StreamMessage, Event } from 'stream-chat';
+import { client } from '../lib/stream-chat';
 
-export interface Message {
-  id: string;
-  chatId: string;
-  senderId: string;
-  receiverId: string;
-  text: string;
-  timestamp: Timestamp;
-  read: boolean;
-  edited?: boolean;
-  editedAt?: Timestamp;
-  type: 'text' | 'image' | 'file';
-  metadata?: {
-    fileName?: string;
-    fileSize?: number;
-    imageUrl?: string;
+// Types
+interface TypingUsers {
+  [channelId: string]: {
+    [userId: string]: boolean;
   };
-}
-
-export interface ChatConversation {
-  id: string;
-  participants: string[];
-  lastMessage?: {
-    text: string;
-    timestamp: Timestamp;
-    senderId: string;
-  };
-  unreadCount: { [userId: string]: number };
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  isSpam?: boolean;
-  isBlocked?: boolean;
-  blockedBy?: string;
-  blockedAt?: Timestamp;
-}
-
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-  isOnline: boolean;
-  lastSeen?: Timestamp;
-  campus: string;
-  role: 'buyer' | 'seller' | 'both' | 'admin';
-  isBlocked?: boolean;
-  warnings?: Array<{
-    message: string;
-    adminId: string;
-    timestamp: Timestamp;
-  }>;
 }
 
 interface ChatState {
-  conversations: ChatConversation[];
-  messages: { [chatId: string]: Message[] };
-  userProfiles: { [userId: string]: UserProfile };
-  selectedConversation: string | null;
-  loading: boolean;
-  error: string | null;
-  messageLoading: boolean;
-  hasMoreMessages: { [chatId: string]: boolean };
-  lastMessageDoc: { [chatId: string]: QueryDocumentSnapshot<DocumentData> | null };
+  // Core state
+  chats: Channel[];
+  currentChat: Channel | null;
+  messages: StreamMessage[];
   
-  // Actions
-  setSelectedConversation: (chatId: string | null) => void;
-  sendMessage: (chatId: string, text: string, type?: 'text' | 'image' | 'file', metadata?: any) => Promise<void>;
-  markAsRead: (chatId: string, userId: string) => Promise<void>;
-  loadMoreMessages: (chatId: string) => Promise<void>;
-  createOrGetChat: (participantIds: string[]) => Promise<string>;
-  subscribeToUserChats: (userId: string) => () => void;
-  subscribeToMessages: (chatId: string) => () => void;
-  subscribeToUserProfiles: (userIds: string[]) => () => void;
-  reportSpam: (chatId: string, reportedBy: string, reason: string) => Promise<void>;
-  blockUser: (userId: string, blockedBy: string) => Promise<void>;
-  warnUser: (userId: string, message: string, adminId: string) => Promise<void>;
-  updateUserProfile: (userId: string, updates: Partial<UserProfile>) => Promise<void>;
-  clearError: () => void;
+  // Loading states
+  isLoadingChats: boolean;
+  isCreatingChat: boolean;
+  isSendingMessage: boolean;
+  
+  // Admin/User mode
+  isAdminView: boolean;
+  
+  // Bonus features
+  typingUsers: TypingUsers;
+  
+  // Error handling
+  error: string | null;
+  
+  // User functions
+  startMessaging: (participantIds: string[]) => Promise<void>;
+  getChatsForUser: () => Promise<void>;
+  getChatDetails: (channelId: string) => Promise<void>;
+  sendMessage: (text: string) => Promise<void>;
+  clearChat: () => void;
+  
+  // Admin functions
+  getAllChats: () => Promise<void>;
+  flagChat: (channelId: string) => Promise<void>;
+  sendSystemMessage: (channelId: string, text: string) => Promise<void>;
+  banUser: (userId: string, reason?: string) => Promise<void>;
+  
+  // Utility functions
+  setAdminView: (isAdmin: boolean) => void;
+  setError: (error: string | null) => void;
+  isUserOnline: (userId: string) => boolean;
+  
+  // Typing functions
+  startTyping: (channelId: string) => Promise<void>;
+  stopTyping: (channelId: string) => Promise<void>;
+  handleTypingEvent: (event: Event) => void;
 }
 
 export const useChatStore = create<ChatState>()(
-  subscribeWithSelector((set, get) => ({
-    conversations: [],
-    messages: {},
-    userProfiles: {},
-    selectedConversation: null,
-    loading: false,
-    error: null,
-    messageLoading: false,
-    hasMoreMessages: {},
-    lastMessageDoc: {},
+  devtools(
+    (set, get) => ({
+      // Initial state
+      chats: [],
+      currentChat: null,
+      messages: [],
+      isLoadingChats: false,
+      isCreatingChat: false,
+      isSendingMessage: false,
+      isAdminView: false,
+      typingUsers: {},
+      error: null,
 
-    setSelectedConversation: (chatId) => {
-      set({ selectedConversation: chatId });
-    },
+      // User functions
+      startMessaging: async (participantIds: string[]) => {
+        try {
+          set({ isCreatingChat: true, error: null });
+          
+          const currentUser = client.userID;
+          if (!currentUser) {
+            throw new Error('User not authenticated');
+          }
+          
+          // Include current user in participants
+          const allParticipants = [...new Set([currentUser, ...participantIds])];
+          
+          // Create channel ID based on sorted participant IDs for consistency
+          const channelId = allParticipants.sort().join('-');
+          
+          // Check if channel already exists
+          let channel: Channel;
+          try {
+            channel = client.channel('messaging', channelId, {
+              members: allParticipants,
+              created_by_id: currentUser,
+            });
+            
+            await channel.watch();
+          } catch (error) {
+            console.error('Error creating/accessing channel:', error);
+            throw error;
+          }
+          
+          // Set as current chat and load messages
+          set({ currentChat: channel });
+          await get().getChatDetails(channelId);
+          
+          // Add to chats list if not already there
+          const { chats } = get();
+          if (!chats.find(chat => chat.id === channelId)) {
+            set({ chats: [...chats, channel] });
+          }
+          
+        } catch (error) {
+          console.error('Error starting messaging:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to start messaging' });
+        } finally {
+          set({ isCreatingChat: false });
+        }
+      },
 
-    sendMessage: async (chatId, text, type = 'text', metadata) => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) throw new Error('User not authenticated');
+      getChatsForUser: async () => {
+        try {
+          set({ isLoadingChats: true, error: null });
+          
+          const currentUser = client.userID;
+          if (!currentUser) {
+            throw new Error('User not authenticated');
+          }
+          
+          const filters = {
+            type: 'messaging',
+            members: { $in: [currentUser] },
+          };
+          
+          const sort = [{ last_message_at: -1 }];
+          const options = { limit: 50, presence: true };
+          
+          const channels = await client.queryChannels(filters, sort, options);
+          
+          set({ chats: channels });
+          
+        } catch (error) {
+          console.error('Error fetching user chats:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to fetch chats' });
+        } finally {
+          set({ isLoadingChats: false });
+        }
+      },
 
-        const conversation = get().conversations.find(c => c.id === chatId);
-        if (!conversation) throw new Error('Conversation not found');
+      getChatDetails: async (channelId: string) => {
+        try {
+          set({ isLoadingChats: true, error: null });
+          
+          const channel = client.channel('messaging', channelId);
+          await channel.watch();
+          
+          const messagesResponse = await channel.query({
+            messages: { limit: 50 },
+            presence: true,
+          });
+          
+          set({ 
+            currentChat: channel,
+            messages: messagesResponse.messages || [],
+          });
+          
+          // Set up real-time event listeners
+          channel.on('message.new', (event) => {
+            if (event.message) {
+              set(state => ({
+                messages: [...state.messages, event.message!]
+              }));
+            }
+          });
+          
+          channel.on('message.updated', (event) => {
+            if (event.message) {
+              set(state => ({
+                messages: state.messages.map(msg => 
+                  msg.id === event.message!.id ? event.message! : msg
+                )
+              }));
+            }
+          });
+          
+          channel.on('message.deleted', (event) => {
+            if (event.message) {
+              set(state => ({
+                messages: state.messages.filter(msg => msg.id !== event.message!.id)
+              }));
+            }
+          });
+          
+          // Set up typing event listeners
+          channel.on('typing.start', get().handleTypingEvent);
+          channel.on('typing.stop', get().handleTypingEvent);
+          
+        } catch (error) {
+          console.error('Error fetching chat details:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to fetch chat details' });
+        } finally {
+          set({ isLoadingChats: false });
+        }
+      },
 
-        const receiverId = conversation.participants.find(p => p !== userId);
-        if (!receiverId) throw new Error('Receiver not found');
+      sendMessage: async (text: string) => {
+        try {
+          const { currentChat } = get();
+          if (!currentChat) {
+            throw new Error('No active chat selected');
+          }
+          
+          set({ isSendingMessage: true, error: null });
+          
+          await currentChat.sendMessage({
+            text: text.trim(),
+          });
+          
+        } catch (error) {
+          console.error('Error sending message:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to send message' });
+        } finally {
+          set({ isSendingMessage: false });
+        }
+      },
 
-        const messageData = {
-          chatId,
-          senderId: userId,
-          receiverId,
-          text,
-          type,
-          read: false,
-          timestamp: serverTimestamp(),
-          ...(metadata && { metadata })
-        };
+      clearChat: () => {
+        const { currentChat } = get();
+        if (currentChat) {
+          // Remove event listeners
+          currentChat.off('message.new');
+          currentChat.off('message.updated');
+          currentChat.off('message.deleted');
+          currentChat.off('typing.start');
+          currentChat.off('typing.stop');
+        }
+        
+        set({ 
+          currentChat: null, 
+          messages: [],
+          error: null,
+        });
+      },
 
-        await addDoc(collection(db, 'messages'), messageData);
+      // Admin functions
+      getAllChats: async () => {
+        try {
+          set({ isLoadingChats: true, error: null });
+          
+          const filters = {
+            type: 'messaging',
+          };
+          
+          const sort = [{ last_message_at: -1 }];
+          const options = { limit: 100, presence: true };
+          
+          const channels = await client.queryChannels(filters, sort, options);
+          
+          set({ chats: channels });
+          
+        } catch (error) {
+          console.error('Error fetching all chats (admin):', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to fetch all chats' });
+        } finally {
+          set({ isLoadingChats: false });
+        }
+      },
 
-        // Update conversation's last message
-        const chatRef = doc(db, 'conversations', chatId);
-        await updateDoc(chatRef, {
-          lastMessage: {
+      flagChat: async (channelId: string) => {
+        try {
+          set({ error: null });
+          
+          const channel = client.channel('messaging', channelId);
+          await channel.updatePartial({
+            set: {
+              is_spam: true,
+              flagged_at: new Date().toISOString(),
+              flagged_by: client.userID,
+            },
+          });
+          
+          // Update local state
+          set(state => ({
+            chats: state.chats.map(chat =>
+              chat.id === channelId 
+                ? { ...chat, data: { ...chat.data, is_spam: true } }
+                : chat
+            ),
+          }));
+          
+        } catch (error) {
+          console.error('Error flagging chat:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to flag chat' });
+        }
+      },
+
+      sendSystemMessage: async (channelId: string, text: string) => {
+        try {
+          set({ isSendingMessage: true, error: null });
+          
+          const channel = client.channel('messaging', channelId);
+          await channel.sendMessage({
             text,
-            timestamp: serverTimestamp(),
-            senderId: userId
-          },
-          updatedAt: serverTimestamp(),
-          [`unreadCount.${receiverId}`]: (conversation.unreadCount[receiverId] || 0) + 1
-        });
-
-      } catch (error) {
-        console.error('Error sending message:', error);
-        set({ error: error instanceof Error ? error.message : 'Failed to send message' });
-      }
-    },
-
-    markAsRead: async (chatId, userId) => {
-      try {
-        const chatRef = doc(db, 'conversations', chatId);
-        await updateDoc(chatRef, {
-          [`unreadCount.${userId}`]: 0
-        });
-
-        // Update local messages as read
-        const messagesQuery = query(
-          collection(db, 'messages'),
-          where('chatId', '==', chatId),
-          where('receiverId', '==', userId),
-          where('read', '==', false)
-        );
-
-        const unreadMessages = await getDocs(messagesQuery);
-        const batch = unreadMessages.docs.map(doc => 
-          updateDoc(doc.ref, { read: true })
-        );
-        await Promise.all(batch);
-
-      } catch (error) {
-        console.error('Error marking as read:', error);
-      }
-    },
-
-    loadMoreMessages: async (chatId) => {
-      try {
-        const state = get();
-        if (!state.hasMoreMessages[chatId]) return;
-
-        set({ messageLoading: true });
-
-        let messagesQuery = query(
-          collection(db, 'messages'),
-          where('chatId', '==', chatId),
-          orderBy('timestamp', 'desc'),
-          limit(20)
-        );
-
-        if (state.lastMessageDoc[chatId]) {
-          messagesQuery = query(
-            collection(db, 'messages'),
-            where('chatId', '==', chatId),
-            orderBy('timestamp', 'desc'),
-            startAfter(state.lastMessageDoc[chatId]),
-            limit(20)
-          );
-        }
-
-        const snapshot = await getDocs(messagesQuery);
-        const messages = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Message[];
-
-        if (messages.length > 0) {
-          set(state => ({
-            messages: {
-              ...state.messages,
-              [chatId]: [...(state.messages[chatId] || []), ...messages.reverse()]
+            type: 'system',
+            user: {
+              id: 'system',
+              name: 'System',
+              role: 'admin',
             },
-            lastMessageDoc: {
-              ...state.lastMessageDoc,
-              [chatId]: snapshot.docs[snapshot.docs.length - 1]
+          });
+          
+        } catch (error) {
+          console.error('Error sending system message:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to send system message' });
+        } finally {
+          set({ isSendingMessage: false });
+        }
+      },
+
+      banUser: async (userId: string, reason = 'Violation of community guidelines') => {
+        try {
+          set({ error: null });
+          
+          await client.banUser(userId, {
+            reason,
+            timeout: 60 * 24 * 7, // 7 days in minutes
+          });
+          
+        } catch (error) {
+          console.error('Error banning user:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to ban user' });
+        }
+      },
+
+      // Utility functions
+      setAdminView: (isAdmin: boolean) => {
+        set({ isAdminView: isAdmin });
+        // Clear current data when switching modes
+        get().clearChat();
+        set({ chats: [] });
+      },
+
+      setError: (error: string | null) => {
+        set({ error });
+      },
+
+      isUserOnline: (userId: string) => {
+        try {
+          const user = client.state.users[userId];
+          return user?.online || false;
+        } catch (error) {
+          console.error('Error checking user online status:', error);
+          return false;
+        }
+      },
+
+      // Typing functions
+      startTyping: async (channelId: string) => {
+        try {
+          const channel = client.channel('messaging', channelId);
+          await channel.keystroke();
+        } catch (error) {
+          console.error('Error starting typing:', error);
+        }
+      },
+
+      stopTyping: async (channelId: string) => {
+        try {
+          const channel = client.channel('messaging', channelId);
+          await channel.stopTyping();
+        } catch (error) {
+          console.error('Error stopping typing:', error);
+        }
+      },
+
+      handleTypingEvent: (event: Event) => {
+        if (!event.channel_id || !event.user?.id) return;
+        
+        const channelId = event.channel_id;
+        const userId = event.user.id;
+        const isTyping = event.type === 'typing.start';
+        
+        set(state => ({
+          typingUsers: {
+            ...state.typingUsers,
+            [channelId]: {
+              ...state.typingUsers[channelId],
+              [userId]: isTyping,
             },
-            hasMoreMessages: {
-              ...state.hasMoreMessages,
-              [chatId]: messages.length === 20
-            }
-          }));
-        } else {
-          set(state => ({
-            hasMoreMessages: {
-              ...state.hasMoreMessages,
-              [chatId]: false
-            }
-          }));
-        }
-
-      } catch (error) {
-        console.error('Error loading more messages:', error);
-      } finally {
-        set({ messageLoading: false });
-      }
-    },
-
-    createOrGetChat: async (participantIds) => {
-      try {
-        // Check if chat already exists
-        const chatsQuery = query(
-          collection(db, 'conversations'),
-          where('participants', 'array-contains-any', participantIds)
-        );
-
-        const existingChats = await getDocs(chatsQuery);
-        const existingChat = existingChats.docs.find(doc => {
-          const data = doc.data();
-          return data.participants.every((p: string) => participantIds.includes(p)) &&
-                 participantIds.every(p => data.participants.includes(p));
-        });
-
-        if (existingChat) {
-          return existingChat.id;
-        }
-
-        // Create new chat
-        const chatData = {
-          participants: participantIds,
-          unreadCount: participantIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {}),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-
-        const chatRef = await addDoc(collection(db, 'conversations'), chatData);
-        return chatRef.id;
-
-      } catch (error) {
-        console.error('Error creating/getting chat:', error);
-        throw error;
-      }
-    },
-
-    subscribeToUserChats: (userId) => {
-      const chatsQuery = query(
-        collection(db, 'conversations'),
-        where('participants', 'array-contains', userId),
-        orderBy('updatedAt', 'desc')
-      );
-
-      return onSnapshot(chatsQuery, (snapshot) => {
-        const conversations = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as ChatConversation[];
-
-        set({ conversations });
-
-        // Subscribe to user profiles for all participants
-        const allParticipants = [...new Set(conversations.flatMap(c => c.participants))];
-        if (allParticipants.length > 0) {
-          get().subscribeToUserProfiles(allParticipants);
-        }
-      });
-    },
-
-    subscribeToMessages: (chatId) => {
-      const messagesQuery = query(
-        collection(db, 'messages'),
-        where('chatId', '==', chatId),
-        orderBy('timestamp', 'desc'),
-        limit(20)
-      );
-
-      return onSnapshot(messagesQuery, (snapshot) => {
-        const messages = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Message[];
-
-        set(state => ({
-          messages: {
-            ...state.messages,
-            [chatId]: messages.reverse()
           },
-          hasMoreMessages: {
-            ...state.hasMoreMessages,
-            [chatId]: messages.length === 20
-          },
-          lastMessageDoc: {
-            ...state.lastMessageDoc,
-            [chatId]: snapshot.docs[snapshot.docs.length - 1] || null
-          }
         }));
-      });
-    },
-
-    subscribeToUserProfiles: (userIds) => {
-      const profilesQuery = query(
-        collection(db, 'userProfiles'),
-        where('id', 'in', userIds.slice(0, 10)) // Firestore limit
-      );
-
-      return onSnapshot(profilesQuery, (snapshot) => {
-        const profiles = snapshot.docs.reduce((acc, doc) => {
-          const profile = doc.data() as UserProfile;
-          acc[profile.id] = profile;
-          return acc;
-        }, {} as { [userId: string]: UserProfile });
-
-        set(state => ({
-          userProfiles: {
-            ...state.userProfiles,
-            ...profiles
-          }
-        }));
-      });
-    },
-
-    reportSpam: async (chatId, reportedBy, reason) => {
-      try {
-        const reportData = {
-          chatId,
-          reportedBy,
-          reason,
-          timestamp: serverTimestamp(),
-          status: 'pending'
-        };
-
-        await addDoc(collection(db, 'spamReports'), reportData);
         
-        // Mark chat as potentially spam
-        const chatRef = doc(db, 'conversations', chatId);
-        await updateDoc(chatRef, {
-          isSpam: true,
-          updatedAt: serverTimestamp()
-        });
-
-      } catch (error) {
-        console.error('Error reporting spam:', error);
-        throw error;
-      }
-    },
-
-    blockUser: async (userId, blockedBy) => {
-      try {
-        const userRef = doc(db, 'userProfiles', userId);
-        await updateDoc(userRef, {
-          isBlocked: true,
-          blockedBy,
-          blockedAt: serverTimestamp()
-        });
-
-      } catch (error) {
-        console.error('Error blocking user:', error);
-        throw error;
-      }
-    },
-
-    warnUser: async (userId, message, adminId) => {
-      try {
-        const userRef = doc(db, 'userProfiles', userId);
-        const userProfile = get().userProfiles[userId];
-        
-        const warning = {
-          message,
-          adminId,
-          timestamp: serverTimestamp()
-        };
-
-        await updateDoc(userRef, {
-          warnings: [...(userProfile?.warnings || []), warning]
-        });
-
-      } catch (error) {
-        console.error('Error warning user:', error);
-        throw error;
-      }
-    },
-
-    updateUserProfile: async (userId, updates) => {
-      try {
-        const userRef = doc(db, 'userProfiles', userId);
-        await updateDoc(userRef, {
-          ...updates,
-          updatedAt: serverTimestamp()
-        });
-
-      } catch (error) {
-        console.error('Error updating user profile:', error);
-        throw error;
-      }
-    },
-
-    clearError: () => set({ error: null })
-  }))
+        // Clean up typing state after timeout
+        if (isTyping) {
+          setTimeout(() => {
+            set(state => ({
+              typingUsers: {
+                ...state.typingUsers,
+                [channelId]: {
+                  ...state.typingUsers[channelId],
+                  [userId]: false,
+                },
+              },
+            }));
+          }, 3000);
+        }
+      },
+    }),
+    {
+      name: 'chat-store',
+    }
+  )
 );
+
+// Fixed utility hook for getting typing users in current channel
+export const useTypingUsers = (channelId: string): string[] => {
+  return useChatStore(state => {
+    const typingUsers = state.typingUsers[channelId];
+    if (!typingUsers) return [];
+    
+    return Object.keys(typingUsers).filter(userId => typingUsers[userId]);
+  }, 
+  // Add shallow comparison to prevent infinite loops
+  (a, b) => {
+    if (a.length !== b.length) return false;
+    return a.every((item, index) => item === b[index]);
+  });
+};
+
+// Fixed utility hook for getting online status
+export const useUserOnlineStatus = (userId: string): boolean => {
+  return useChatStore(state => state.isUserOnline(userId));
+};

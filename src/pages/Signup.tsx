@@ -31,6 +31,7 @@ import {
   AuthError
 } from 'firebase/auth';
 import app from '../firebase/firebaseConfig';
+import { set } from 'date-fns';
 
 const auth = getAuth(app);
 
@@ -89,7 +90,7 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   
-  const { signup } = useAuth();
+  const { signup, setIsMiddleOfAuthFlow } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -142,6 +143,7 @@ const Signup = () => {
     if (isLoading) return;
     
     setIsLoading(true);
+    setIsMiddleOfAuthFlow(true);
     setErrors({});
     
     try {
@@ -188,7 +190,7 @@ const Signup = () => {
 
   const handleEmailSignup = async () => {
     if (isLoading) return;
-    
+    setIsMiddleOfAuthFlow(true);
     setIsLoading(true);
     setErrors({});
     
@@ -244,7 +246,7 @@ const Signup = () => {
 
   const handleGoogleAccountCreation = async () => {
     if (isLoading || !googleUserData) return;
-    
+    setIsMiddleOfAuthFlow(true);
     setIsLoading(true);
     setErrors({});
     

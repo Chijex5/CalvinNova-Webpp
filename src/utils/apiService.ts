@@ -5,7 +5,7 @@ class ApiUtil {
 
   constructor() {
     this.instance = axios.create({
-      baseURL: 'https://calvinnova-backend.onrender.com',
+      baseURL: import.meta.env.VITE_API_BASE_URL,
       headers: {
         'Content-Type': 'application/json',
       },
