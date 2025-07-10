@@ -188,10 +188,9 @@ const ProductCard = ({ product, seller, currentUserId = null }) => {
   const productImages = product.images && product.images.length > 0 ? product.images : ['/api/placeholder/400/400'];
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
+      currency: 'NGN'
     }).format(price);
   };
 
