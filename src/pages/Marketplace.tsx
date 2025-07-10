@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ModernItemEditForm from '../components/EditProduct';
 import { useUserStore } from '../store/userStore';
 import { useProductStore } from '../store/productStore';
 import { useNavigate } from 'react-router-dom';
@@ -173,11 +174,17 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
 };
 
 // Enhanced Product Card Component
-const ProductCard = ({ product, seller, currentUserId = null }) => {
+const ProductCard = ({ product, seller, onEdit, currentUserId = null }: {
+  product: any;
+  seller: any;
+  onEdit: (product: any) => void;
+  currentUserId?: string | null;
+}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useUserStore(state => state.user);
@@ -192,6 +199,23 @@ const ProductCard = ({ product, seller, currentUserId = null }) => {
       style: 'currency',
       currency: 'NGN'
     }).format(price);
+  };
+
+  interface DeleteProductError {
+    message: string;
+  }
+
+  const handleDeleteProduct = async (productId: string): Promise<void> => {
+    setDeleteLoading(true);
+    try {
+      await productService.deleteProduct(productId);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      setError('Failed to delete product. Please try again.');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const getConditionColor = (condition: string) => {
@@ -419,12 +443,21 @@ const ProductCard = ({ product, seller, currentUserId = null }) => {
           <div className="flex space-x-2">
             {isOwner ? (
               <>
-                <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
+                <button 
+                  onClick={() => onEdit(product)} // Pass the product data
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
                   <Edit className="w-4 h-4" />
                   <span>Edit</span>
                 </button>
-                <button className="px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors duration-200">
-                  <Trash2 className="w-4 h-4" />
+                <button 
+                onClick={handleDeleteProduct.bind(null, product.id)}
+                className="px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors duration-200">
+                  
+                  {deleteLoading ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </>
             ) : (
@@ -571,9 +604,11 @@ const MarketplaceUI = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [schools, setSchools] = useState<string[]>([]);
   const [sellersLoading, setSellersLoading] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Get state from stores
-  const { products, loading, error } = useProductStore();
+  const { products, loading, error, updateProduct } = useProductStore();
   const user = useUserStore((state) => state.user);
   const currentUserId = user?.userId;
 
@@ -702,6 +737,16 @@ const MarketplaceUI = () => {
     );
   }
 
+  if (showEditForm && selectedProduct) {
+    return (
+      <ModernItemEditForm 
+        productData={selectedProduct} 
+        onCancel={() => setShowEditForm(false)} 
+        onSuccess={() => setShowEditForm(false)} 
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -820,6 +865,10 @@ const MarketplaceUI = () => {
                 product={product} 
                 seller={sellers[product.sellerId]}
                 currentUserId={currentUserId}
+                onEdit={(product) => {
+                  setSelectedProduct(product);
+                  setShowEditForm(true);
+                }}
               />
             </FadeIn>
           ))}

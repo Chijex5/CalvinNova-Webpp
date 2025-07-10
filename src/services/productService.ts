@@ -70,6 +70,50 @@ class ProductService {
   }
 
   /**
+   * Delete a product by ID
+   * @param id - Product ID to delete
+   */
+
+  async deleteProduct(id: string): Promise<void> {
+    try {
+      const response = await api.delete(`/api/seller/delete-item/${id}`);
+      if (response.data.success) {
+        const store = useProductStore.getState();
+        store.deleteProduct(id);
+      } else {
+        throw new Error('Failed to delete product');
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete product';
+      console.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Update a product by ID
+   * @param id - Product ID to update
+   * @param updates - Partial product data to update
+   * @return Updated product
+   */
+    async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+        try {
+        const response = await api.put<Product>(`/api/seller/item/${id}`, updates);
+        if (response.data) {
+            const store = useProductStore.getState();
+            store.updateProduct(id, response.data);
+            return response.data;
+        } else {
+            throw new Error('Failed to update product');
+        }
+        } catch (error: any) {
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to update product';
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+        }
+    }
+
+  /**
    * Get products with error handling
    */
   async getProducts(): Promise<Product[]> {
