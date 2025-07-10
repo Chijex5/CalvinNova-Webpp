@@ -1,5 +1,4 @@
 import React from 'react';
-import { useInitStreamChat } from './hooks/useInitStreamChat';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -76,7 +75,6 @@ const HomeOrDashboard = () => {
   return isAuthenticated ? <Dashboard /> : <Home />;
 };
 export function App() {
-  useInitStreamChat();
   return <Router>
       <AuthProvider>
         <ProductProvider>

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useInitStreamChat } from '../hooks/useInitStreamChat';
-import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Ban, Flag, Smile, Paperclip, ChevronLeft } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useChatStore, useTypingUsers, useUserOnlineStatus } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { Channel } from 'stream-chat';
 
-// Types
+// Enhanced Types
 interface User {
   id: string;
   name?: string;
@@ -22,36 +21,163 @@ interface ChatData {
   [key: string]: any;
 }
 
+interface Message {
+  id: string;
+  text: string;
+  user: User;
+  created_at: string;
+  type?: 'system' | 'regular';
+  status?: 'sent' | 'delivered' | 'read';
+  read_by?: string[];
+  read_at?: { [userId: string]: string };
+}
+
 interface Chat extends Channel {
-  id?: string;
+  id: string;
   data: ChatData;
   state: {
     members?: { [key: string]: ChatMember };
-    messages?: any[];
+    messages?: Message[];
     unreadCount?: number;
     last_message_at?: string;
+    last_read?: { [userId: string]: string };
   };
 }
 
-// Utility function to format timestamps
+// Custom hook for window size detection
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowSize;
+};
+
+// Enhanced WhatsApp-style date formatting
 const formatTime = (timestamp: string | Date): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const daysDiff = Math.floor(diff / (1000 * 60 * 60 * 24));
   
-  if (days === 0) {
+  if (daysDiff === 0) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } else if (days === 1) {
-    return 'Yesterday';
-  } else if (days < 7) {
-    return date.toLocaleDateString([], { weekday: 'short' });
+  } else if (daysDiff === 1) {
+    return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  } else if (daysDiff < 7) {
+    return `${date.toLocaleDateString([], { weekday: 'long' })} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   } else {
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString([], { 
+      day: 'numeric', 
+      month: 'short', 
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined 
+    });
   }
 };
 
-// Online indicator component
+// Chat list date formatting (less precise)
+const formatChatTime = (timestamp: string | Date): string => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const daysDiff = Math.floor(diff / (1000 * 60 * 60 * 24));
+  
+  if (daysDiff === 0) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (daysDiff === 1) {
+    return 'Yesterday';
+  } else if (daysDiff < 7) {
+    return date.toLocaleDateString([], { weekday: 'long' });
+  } else {
+    return date.toLocaleDateString([], { 
+      day: 'numeric', 
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined 
+    });
+  }
+};
+
+// Date separator formatting
+const formatDateSeparator = (date: string): string => {
+  const msgDate = new Date(date);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  
+  if (msgDate.toDateString() === today.toDateString()) {
+    return 'Today';
+  } else if (msgDate.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    return msgDate.toLocaleDateString([], { 
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: msgDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+    });
+  }
+};
+
+// Enhanced avatar component with fallback
+interface UserAvatarProps {
+  user?: User;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = '' }) => {
+  const [imageError, setImageError] = useState<boolean>(false);
+  
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-12 h-12 text-base'
+  };
+  
+  const fallbackColors = [
+    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
+    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
+  ];
+  
+  const getColorFromId = (id: string): string => {
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return fallbackColors[hash % fallbackColors.length];
+  };
+  
+  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  
+  if (!user?.image || imageError) {
+    return (
+      <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white font-medium ${className}`}>
+        {initials}
+      </div>
+    );
+  }
+  
+  return (
+    <img
+      src={user.image}
+      alt={user.name || 'User'}
+      className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+      onError={() => setImageError(true)}
+    />
+  );
+};
+
+// Enhanced online indicator component
 interface OnlineIndicatorProps {
   userId: string;
   size?: 'sm' | 'md' | 'lg';
@@ -66,11 +192,11 @@ const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size = 'sm' }
   };
   
   return (
-    <div className={`${sizeClasses[size]} rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`} />
+    <div className={`${sizeClasses[size]} rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white shadow-sm`} />
   );
 };
 
-// Typing indicator component
+// Enhanced typing indicator component
 interface TypingIndicatorProps {
   channelId: string;
 }
@@ -81,31 +207,31 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ channelId }) => {
   if (typingUsers.length === 0) return null;
   
   return (
-    <div className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-500">
+    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50">
       <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
-      <span>
+      <span className="text-sm text-green-600 font-medium">
         {typingUsers.length === 1 ? 'Someone is typing...' : `${typingUsers.length} people are typing...`}
       </span>
     </div>
   );
 };
 
-// Chat sidebar component
-interface ChatSidebarProps {
+// Mobile-first chat inbox component
+interface ChatInboxProps {
   onChatSelect: (chat: Chat) => void;
   selectedChatId?: string;
   isMobile: boolean;
-  onCloseSidebar: () => void;
+  isAdminView: boolean;
 }
 
-const ChatSidebar: React.FC<ChatSidebarProps> = ({ onChatSelect, selectedChatId, isMobile, onCloseSidebar }) => {
-  const { chats, isLoadingChats, isAdminView, getChatsForUser, getAllChats } = useChatStore();
+const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isMobile, isAdminView }) => {
+  const { chats, isLoadingChats, getChatsForUser, getAllChats, markChatAsRead } = useChatStore();
   const { user } = useUserStore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     if (isAdminView) {
@@ -115,9 +241,13 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ onChatSelect, selectedChatId,
     }
   }, [isAdminView, getAllChats, getChatsForUser]);
 
-  const filteredChats = chats.filter((chat: Chat) => {
+  const getOtherUser = (chat: Chat): User | undefined => {
     const members = chat.state.members || {};
-    const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
+    return Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
+  };
+
+  const filteredChats = chats.filter((chat: Chat) => {
+    const otherUser = getOtherUser(chat);
     const chatName = otherUser?.name || 'Unknown User';
     return chatName.toLowerCase().includes(searchTerm.toLowerCase());
   });
@@ -125,45 +255,59 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ onChatSelect, selectedChatId,
   const getLastMessage = (chat: Chat): string => {
     const messages = chat.state.messages || [];
     const lastMessage = messages[messages.length - 1];
-    return lastMessage?.text || 'No messages yet';
+    if (!lastMessage) return 'No messages yet';
+    
+    if (lastMessage.type === 'system') {
+      return '🔒 System message';
+    }
+    
+    const isCurrentUser = lastMessage.user?.id === user?.userId;
+    const prefix = isCurrentUser ? 'You: ' : '';
+    return `${prefix}${lastMessage.text || 'Media message'}`;
   };
 
   const getUnreadCount = (chat: Chat): number => {
-    return chat.state.unreadCount || 0;
+    if (!user?.userId) return 0;
+    
+    const messages = chat.state.messages || [];
+    const lastReadTimestamp = chat.state.last_read?.[user.userId];
+    
+    if (!lastReadTimestamp) {
+      return messages.filter(msg => msg.user?.id !== user.userId).length;
+    }
+    
+    const lastReadDate = new Date(lastReadTimestamp);
+    return messages.filter(msg => 
+      msg.user?.id !== user.userId && 
+      new Date(msg.created_at) > lastReadDate
+    ).length;
   };
 
-  const getChatName = (chat: Chat): string => {
-    const members = chat.state.members || {};
-    const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
-    return otherUser?.name || 'Unknown User';
-  };
-
-  const getChatAvatar = (chat: Chat): string => {
-    const members = chat.state.members || {};
-    const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
-    return otherUser?.image || `/api/placeholder/40/40?text=${getChatName(chat).charAt(0)}`;
-  };
-
-  const getOtherUserId = (chat: Chat): string => {
-    const members = chat.state.members || {};
-    const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
-    return otherUser?.id || '';
+  const handleChatSelect = async (chat: Chat) => {
+    onChatSelect(chat);
+    
+    if (chat.id && user?.userId) {
+      await markChatAsRead(chat.id);
+    }
   };
 
   return (
-    <div className={`bg-white border-r border-gray-200 flex flex-col ${isMobile ? 'w-full' : 'w-80'}`}>
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+    <div className="flex flex-col h-full bg-white">
+      {/* Mobile-first header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {isAdminView ? 'All Chats (Admin)' : 'Messages'}
-          </h2>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {isAdminView ? 'All Chats' : 'Messages'}
+          </h1>
           {isAdminView && (
-            <Shield className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center space-x-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">Admin</span>
+            </div>
           )}
         </div>
         
-        {/* Search */}
+        {/* Search bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -171,7 +315,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ onChatSelect, selectedChatId,
             placeholder="Search conversations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-base"
           />
         </div>
       </div>
@@ -183,63 +327,58 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ onChatSelect, selectedChatId,
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredChats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-            <p className="text-sm">No conversations found</p>
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500 px-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Send className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-sm text-center">No conversations found</p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="divide-y divide-gray-100">
             {filteredChats.map((chat: Chat) => {
               const isSelected = selectedChatId === chat.id;
               const unreadCount = getUnreadCount(chat);
-              const chatName = getChatName(chat);
+              const otherUser = getOtherUser(chat);
               const lastMessage = getLastMessage(chat);
               const lastMessageTime = chat.state.last_message_at;
-              const otherUserId = getOtherUserId(chat);
               
               return (
                 <div
                   key={chat.id || `chat-${Math.random()}`}
-                  onClick={() => {
-                    onChatSelect(chat);
-                    if (isMobile) onCloseSidebar();
-                  }}
-                  className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    isSelected ? 'bg-blue-50 border-r-2 border-blue-600' : ''
+                  onClick={() => handleChatSelect(chat)}
+                  className={`flex items-center space-x-3 p-4 sm:p-6 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation ${
+                    isSelected ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <div className="relative">
-                    <img
-                      src={getChatAvatar(chat)}
-                      alt={chatName}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
+                  <div className="relative flex-shrink-0">
+                    <UserAvatar user={otherUser} size="md" />
                     <div className="absolute -bottom-1 -right-1">
-                      <OnlineIndicator userId={otherUserId} size="sm" />
+                      <OnlineIndicator userId={otherUser?.id || ''} size="sm" />
                     </div>
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {chatName}
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className={`text-sm sm:text-base font-semibold truncate ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                        {otherUser?.name || 'Unknown User'}
                       </h3>
-                      {lastMessageTime && (
-                        <span className="text-xs text-gray-500">
-                          {formatTime(lastMessageTime)}
-                        </span>
-                      )}
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        {lastMessageTime && (
+                          <span className={`text-xs sm:text-sm ${unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                            {formatChatTime(lastMessageTime)}
+                          </span>
+                        )}
+                        {unreadCount > 0 && (
+                          <span className="bg-green-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center text-center font-medium">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-500 truncate">
-                        {lastMessage}
-                      </p>
-                      {unreadCount > 0 && (
-                        <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
+                    <p className={`text-sm sm:text-base truncate ${unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-600'}`}>
+                      {lastMessage}
+                    </p>
                   </div>
                 </div>
               );
@@ -251,77 +390,74 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ onChatSelect, selectedChatId,
   );
 };
 
-// Chat header component
+// Mobile-first chat header component
 interface ChatHeaderProps {
-  chat: Chat;
-  isMobile: boolean;
-  onShowSidebar: () => void;
+  chat: Channel;
+  onBack: () => void;
+  showBackButton: boolean;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, isMobile, onShowSidebar }) => {
+const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton }) => {
   const { isAdminView, flagChat, sendSystemMessage } = useChatStore();
   const { user } = useUserStore();
-  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState<boolean>(false);
   
   if (!chat) return null;
 
   const members = chat.state.members || {};
-  const currentUserId = user?.userId;
+  const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
 
-  // Find the other member
-  const otherUser = Object.values(members).find(m => m.user?.id !== currentUserId)?.user;
-
-  // Fallbacks
-  const chatName = otherUser?.name || 'Unknown User';
-  const chatAvatar = otherUser?.image || `/api/placeholder/32/32?text=${chatName.charAt(0)}`;
-
-  const handleFlagChat = async () => {
-    await flagChat(chat?.id || '');
-    setShowAdminMenu(false);
+  const handleFlagChat = async (): Promise<void> => {
+    if (chat?.id) {
+      await flagChat(chat.id);
+      setShowAdminMenu(false);
+    }
   };
 
-  const handleSendWarning = async () => {
-    await sendSystemMessage(chat?.id || " ", '⚠️ This chat is being monitored for policy violations.');
-    setShowAdminMenu(false);
+  const handleSendWarning = async (): Promise<void> => {
+    if (chat?.id) {
+      await sendSystemMessage(chat.id, '⚠️ This chat is being monitored for policy violations.');
+      setShowAdminMenu(false);
+    }
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-      <div className="flex items-center space-x-3">
-        {isMobile && (
+    <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-sm">
+      <div className="flex items-center space-x-3 flex-1 min-w-0">
+        {showBackButton && (
           <button
-            onClick={onShowSidebar}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
         )}
         
-        <div className="relative">
-          <img
-            src={chatAvatar}
-            alt={chatName}
-            className="w-8 h-8 rounded-full object-cover"
-          />
+        <div className="relative flex-shrink-0">
+          <UserAvatar user={otherUser} size="md" />
           <div className="absolute -bottom-1 -right-1">
             <OnlineIndicator userId={otherUser?.id || ''} size="sm" />
           </div>
         </div>
         
-        <div>
-          <h3 className="font-medium text-gray-900">{chatName}</h3>
-          <p className="text-sm text-gray-500">CalvinNova Student</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
+            {otherUser?.name || 'Unknown User'}
+          </h3>
+          <p className="text-sm text-gray-500 truncate">
+            {useUserOnlineStatus(otherUser?.id || '') ? 'Online' : 'CalvinNova Student'}
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation">
           <Phone className="w-5 h-5 text-gray-600" />
         </button>
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation">
           <Video className="w-5 h-5 text-gray-600" />
         </button>
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation">
           <Info className="w-5 h-5 text-gray-600" />
         </button>
         
@@ -329,30 +465,30 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, isMobile, onShowSidebar }
           <div className="relative">
             <button
               onClick={() => setShowAdminMenu(!showAdminMenu)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
             >
               <MoreVertical className="w-5 h-5 text-gray-600" />
             </button>
             
             {showAdminMenu && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-30">
                 <button
                   onClick={handleFlagChat}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 text-yellow-600"
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 text-yellow-600 touch-manipulation"
                 >
                   <Flag className="w-4 h-4" />
                   <span>Flag as Spam</span>
                 </button>
                 <button
                   onClick={handleSendWarning}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 text-orange-600"
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 text-orange-600 touch-manipulation"
                 >
                   <AlertTriangle className="w-4 h-4" />
                   <span>Send Warning</span>
                 </button>
                 <button
                   onClick={() => {/* Handle ban user */}}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 text-red-600"
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 text-red-600 touch-manipulation"
                 >
                   <Ban className="w-4 h-4" />
                   <span>Ban User</span>
@@ -366,22 +502,71 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, isMobile, onShowSidebar }
   );
 };
 
-// Message list component
+// Enhanced message list component
 interface MessageListProps {
-  messages: any[];
+  messages: Message[];
   currentUserId: string;
   isAdminView: boolean;
+  chatId: string;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView, chatId }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { markChatAsRead } = useChatStore();
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const groupMessagesByDate = (messages: any[]) => {
-    const groups: { [key: string]: any[] } = {};
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.getAttribute('data-message-id');
+            if (messageId) {
+              const message = messages.find(msg => msg.id === messageId);
+              if (
+                message &&
+                message.user?.id !== currentUserId &&
+                !message.read_by?.includes(currentUserId)
+              ) {
+                markChatAsRead(chatId);
+              }
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [messages, currentUserId, chatId, markChatAsRead]);
+
+  const getMessageReadStatus = (message: Message): 'sent' | 'delivered' | 'read' => {
+    if (message.user?.id !== currentUserId) {
+      return 'read';
+    }
+    
+    if (message.read_by && message.read_by.length > 1) {
+      return 'read';
+    } else if (message.status === 'delivered') {
+      return 'delivered';
+    }
+    return 'sent';
+  };
+
+  const groupMessagesByDate = (messages: Message[]): { [key: string]: Message[] } => {
+    const groups: { [key: string]: Message[] } = {};
     messages.forEach(message => {
       const date = new Date(message.created_at).toDateString();
       if (!groups[date]) {
@@ -395,303 +580,342 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {Object.entries(groupedMessages).map(([date, dateMessages]) => (
-        <div key={date}>
-          {/* Date separator */}
-          <div className="flex items-center justify-center my-4">
-            <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
-              {new Date(date).toLocaleDateString([], { 
-                weekday: 'long',
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+    <div className="flex-1 overflow-y-auto bg-gray-50" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f0f0f0" fill-opacity="0.3"%3E%3Cpath d="M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}>
+      <div className="p-4 sm:p-6 space-y-4 max-w-4xl mx-auto">
+        {Object.entries(groupedMessages).map(([date, dateMessages]) => (
+          <div key={date}>
+            {/* Date separator */}
+            <div className="flex items-center justify-center my-6">
+              <div className="bg-white text-gray-700 text-sm px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                {formatDateSeparator(date)}
+              </div>
             </div>
-          </div>
 
-          {/* Messages for this date */}
-          {dateMessages.map((message, index) => {
-            const isCurrentUser = message.user?.id === currentUserId;
-            const isSystem = message.type === 'system';
-            const prevMessage = index > 0 ? dateMessages[index - 1] : null;
-            const nextMessage = index < dateMessages.length - 1 ? dateMessages[index + 1] : null;
-            
-            const showAvatar = !isCurrentUser && (!nextMessage || nextMessage.user?.id !== message.user?.id);
-            const showName = !isCurrentUser && (!prevMessage || prevMessage.user?.id !== message.user?.id);
+            {/* Messages for this date */}
+            {dateMessages.map((message, index) => {
+              const isCurrentUser = message.user?.id === currentUserId;
+              const isSystem = message.type === 'system';
+              const prevMessage = index > 0 ? dateMessages[index - 1] : null;
+              const nextMessage = index < dateMessages.length - 1 ? dateMessages[index + 1] : null;
+              
+              const showAvatar = !isCurrentUser && (!nextMessage || nextMessage.user?.id !== message.user?.id);
+              const showName = !isCurrentUser && (!prevMessage || prevMessage.user?.id !== message.user?.id);
+              const isGrouped = prevMessage && prevMessage.user?.id === message.user?.id;
+              const readStatus = getMessageReadStatus(message);
 
-            if (isSystem) {
+              if (isSystem) {
+                return (
+                  <div key={message.id} className="flex justify-center my-3">
+                    <div className="bg-amber-100 text-amber-800 text-sm px-4 py-2 rounded-full shadow-sm border border-amber-200 max-w-xs">
+                      {message.text}
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <div key={message.id} className="flex justify-center my-2">
-                  <div className="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
-                    {message.text}
+                <div
+                  key={message.id}
+                  data-message-id={message.id}
+                  ref={(el) => {
+                    if (el && observerRef.current && !isCurrentUser) {
+                      observerRef.current.observe(el);
+                    }
+                  }}
+                  className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mb-1' : 'mb-3'}`}
+                >
+                  <div className={`flex items-end space-x-2 max-w-xs sm:max-w-md lg:max-w-lg ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                    {!isCurrentUser && (
+                      <div className="w-8 h-8 flex-shrink-0">
+                        {showAvatar && (
+                          <UserAvatar user={message.user} size="sm" />
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                      {showName && !isCurrentUser && (
+                        <span className="text-xs text-gray-600 mb-1 px-2 font-medium">
+                          {message.user?.name || 'Unknown User'}
+                          {isAdminView && (
+                            <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                              ID: {message.user?.id}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      
+                      <div
+                        className={`px-4 py-2 rounded-2xl shadow-sm break-words ${
+                          isCurrentUser
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-900 border border-gray-200'
+                        } ${isGrouped ? 'rounded-t-lg' : ''}`}
+                      >
+                        <p className="text-sm sm:text-base leading-relaxed">{message.text}</p>
+                      </div>
+                      
+                      <div className="flex items-center space-x-1 mt-1 px-2">
+                        <span className="text-xs text-gray-500">
+                          {formatTime(message.created_at)}
+                        </span>
+                        {isCurrentUser && (
+                          <div className="flex items-center space-x-1">
+                            {readStatus === 'sent' && <Check className="w-3 h-3 text-gray-400" />}
+                            {readStatus === 'delivered' && <CheckCheck className="w-3 h-3 text-gray-400" />}
+                            {readStatus === 'read' && <CheckCheck className="w-3 h-3 text-blue-500" />}
+                          </div>
+                        )}
+                        {isAdminView && message.read_by && message.read_by.length > 0 && (
+                          <span className="text-xs text-gray-400">
+                            Read by {message.read_by.length} user{message.read_by.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
-            }
-
-            return (
-              <div
-                key={message.id}
-                className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-2`}
-              >
-                <div className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                  {!isCurrentUser && (
-                    <div className="w-8 h-8 flex-shrink-0">
-                      {showAvatar && (
-                        <img
-                          src={`/api/placeholder/32/32?text=${message.user?.name?.charAt(0) || 'U'}`}
-                          alt={message.user?.name || 'User'}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                    {showName && !isCurrentUser && (
-                      <span className="text-xs text-gray-500 mb-1 px-2">
-                        {message.user?.name || 'Unknown User'}
-                        {isAdminView && (
-                          <span className="ml-2 text-xs bg-gray-200 px-2 py-1 rounded">
-                            {message.user?.id}
-                          </span>
-                        )}
-                      </span>
-                    )}
-                    
-                    <div
-                      className={`px-4 py-2 rounded-2xl ${
-                        isCurrentUser
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p className="text-sm">{message.text}</p>
-                    </div>
-                    
-                    <span className="text-xs text-gray-500 mt-1 px-2">
-                      {formatTime(message.created_at)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-      <div ref={messagesEndRef} />
+            })}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      
+      {/* Typing indicator */}
+      <TypingIndicator channelId={chatId} />
     </div>
   );
 };
 
-// Message input component
+// Enhanced message input component
 interface MessageInputProps {
-  onSendMessage: (message: string) => void;
-  disabled: boolean;
+  onSendMessage: (text: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled }) => {
-  const [message, setMessage] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+const MessageInput: React.FC<MessageInputProps> = ({ 
+  onSendMessage, 
+  disabled = false, 
+  placeholder = "Type a message..." 
+}) => {
+  const [message, setMessage] = useState<string>('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
     if (message.trim() && !disabled) {
       onSendMessage(message.trim());
       setMessage('');
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
   };
 
-  interface HandleKeyPressEvent {
-    key: string;
-    shiftKey: boolean;
-    preventDefault: () => void;
-  }
-
-  const handleKeyPress = (e: HandleKeyPressEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      handleSubmit(e);
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+    setMessage(e.target.value);
+    
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
   };
 
   return (
-    <div className="bg-white border-t border-gray-200 p-4">
-      <div className="flex items-end space-x-2">
-        <button
-          type="button"
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <Paperclip className="w-5 h-5 text-gray-600" />
-        </button>
-        
+    <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 sm:p-6">
+      <form onSubmit={handleSubmit} className="flex items-end space-x-3">
         <div className="flex-1 relative">
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-            disabled={disabled}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
-            rows={1}
-          />
+          <div className="flex items-center space-x-2 bg-gray-50 rounded-full px-4 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <button
+              type="button"
+              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation"
+              disabled={disabled}
+            >
+              <Paperclip className="w-5 h-5 text-gray-500" />
+            </button>
+            
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled}
+              className="flex-1 bg-transparent border-none outline-none resize-none text-base placeholder-gray-500 max-h-[120px] min-h-[24px] leading-6"
+              rows={1}
+            />
+            
+            <button
+              type="button"
+              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation"
+              disabled={disabled}
+            >
+              <Smile className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
         
         <button
-          type="button"
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <Smile className="w-5 h-5 text-gray-600" />
-        </button>
-        
-        <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={!message.trim() || disabled}
-          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex-shrink-0 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation shadow-lg"
         >
           <Send className="w-5 h-5" />
         </button>
-      </div>
+      </form>
     </div>
   );
 };
 
-// Empty state component
-const EmptyState = ({ type }) => {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Send className="w-8 h-8 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          {type === 'no-chat' ? 'No chat selected' : 'No messages yet'}
-        </h3>
-        <p className="text-gray-500">
-          {type === 'no-chat' 
-            ? 'Select a conversation to start messaging' 
-            : 'Send a message to start the conversation'}
-        </p>
-      </div>
-    </div>
-  );
-};
+// Main chat view component
+interface ChatViewProps {
+  chat: Chat;
+  onBack: () => void;
+  showBackButton: boolean;
+}
 
-// Main chat component
-const Chat = () => {
-  const { 
-    currentChat, 
-    messages, 
-    isAdminView, 
-    setAdminView, 
-    getChatDetails, 
-    sendMessage, 
-    clearChat, 
-    error,
-    isSendingMessage 
-  } = useChatStore();
+const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => {
+  const { sendMessage, isAdminView } = useChatStore();
   const { user } = useUserStore();
-  const [isMobile, setIsMobile] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const isAdmin = user?.role === 'admin' || false;
-  console.log('isAdmin:', isAdmin, 'user role:', user?.role);
+  const messages = chat.state.messages || [];
+  const currentUserId = user?.userId || '';
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setShowSidebar(true);
-      }
-    };
+  const handleSendMessage = async (text: string): Promise<void> => {
+    if (!chat.id || isLoading) return;
     
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleChatSelect = async (chat) => {
-    if (currentChat?.id !== chat.id) {
-      clearChat();
-      await getChatDetails(chat.id);
+    setIsLoading(true);
+    try {
+      await sendMessage(chat.id, text);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleSendMessage = async (text) => {
-    if (currentChat) {
-      await sendMessage(text);
-    }
-  };
-
-  const handleAdminToggle = () => {
-    setAdminView(!isAdminView);
   };
 
   return (
-    <div className="h-screen flex bg-gray-50">
-      {/* Admin Toggle (if user is admin) */}
-      {isAdmin && (
-        <div className="absolute top-4 right-4 z-50">
-          <button
-            onClick={handleAdminToggle}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isAdminView
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {isAdminView ? 'Exit Admin Mode' : 'Admin Mode'}
-          </button>
+    <div className="flex flex-col h-full bg-white">
+      <ChatHeader 
+        chat={chat} 
+        onBack={onBack} 
+        showBackButton={showBackButton} 
+      />
+      
+      <MessageList
+        messages={messages}
+        currentUserId={currentUserId}
+        isAdminView={isAdminView}
+        chatId={chat.id}
+      />
+      
+      <MessageInput
+        onSendMessage={handleSendMessage}
+        disabled={isLoading}
+        placeholder={isLoading ? "Sending..." : "Type a message..."}
+      />
+    </div>
+  );
+};
+
+// Main chat interface component
+const ChatInterface: React.FC = () => {
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [showChatView, setShowChatView] = useState<boolean>(false);
+  const { isAdminView } = useChatStore();
+  const { width } = useWindowSize();
+  
+  const isMobile = width < 768;
+
+  const handleChatSelect = (chat: Chat): void => {
+    setSelectedChat(chat);
+    if (isMobile) {
+      setShowChatView(true);
+    }
+  };
+
+  const handleBackToInbox = (): void => {
+    setShowChatView(false);
+    setSelectedChat(null);
+  };
+
+  // Mobile view logic
+  if (isMobile) {
+    if (showChatView && selectedChat) {
+      return (
+        <div className="h-screen flex flex-col">
+          <ChatView 
+            chat={selectedChat} 
+            onBack={handleBackToInbox}
+            showBackButton={true}
+          />
         </div>
-      )}
-
-      {/* Sidebar */}
-      {(!isMobile || showSidebar) && (
-        <ChatSidebar
+      );
+    }
+    
+    return (
+      <div className="h-screen flex flex-col">
+        <ChatInbox
           onChatSelect={handleChatSelect}
-          selectedChatId={currentChat?.id}
-          isMobile={isMobile}
-          onCloseSidebar={() => setShowSidebar(false)}
+          selectedChatId={selectedChat?.id}
+          isMobile={true}
+          isAdminView={isAdminView}
         />
-      )}
+      </div>
+    );
+  }
 
+  // Desktop view
+  return (
+    <div className="h-screen flex bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-1/3 min-w-[320px] max-w-[400px] border-r border-gray-200 bg-white">
+        <ChatInbox
+          onChatSelect={handleChatSelect}
+          selectedChatId={selectedChat?.id}
+          isMobile={false}
+          isAdminView={isAdminView}
+        />
+      </div>
+      
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
-        {currentChat ? (
-          <>
-            <ChatHeader
-              chat={currentChat}
-              isMobile={isMobile}
-              onShowSidebar={() => setShowSidebar(true)}
-            />
-            
-            <MessageList
-              messages={messages}
-              currentUserId={user?.userId || ''} 
-              isAdminView={isAdminView}
-            />
-            
-            <TypingIndicator channelId={currentChat?.id || ''} />
-            
-            <MessageInput
-              onSendMessage={handleSendMessage}
-              disabled={isSendingMessage}
-            />
-          </>
+        {selectedChat ? (
+          <ChatView 
+            chat={selectedChat} 
+            onBack={handleBackToInbox}
+            showBackButton={false}
+          />
         ) : (
-          <EmptyState type="no-chat" />
+          <div className="flex-1 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Send className="w-16 h-16 text-gray-400" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                Welcome to CalvinNova Chat
+              </h2>
+              <p className="text-gray-500 max-w-md">
+                Select a conversation from the sidebar to start messaging. 
+                Connect with students and staff securely.
+              </p>
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Error notification */}
-      {error && (
-        <div className="absolute bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
     </div>
   );
 };
 
-export default Chat;
+export default ChatInterface;

@@ -39,6 +39,7 @@ interface ChatState {
   
   // Admin functions
   getAllChats: () => Promise<void>;
+  markChatAsRead: (channelId: string) => Promise<void>;
   flagChat: (channelId: string) => Promise<void>;
   sendSystemMessage: (channelId: string, text: string) => Promise<void>;
   banUser: (userId: string, reason?: string) => Promise<void>;
@@ -240,6 +241,14 @@ export const useChatStore = create<ChatState>()(
         });
       },
 
+      markChatAsRead: async (channelId: string) => {
+        try {
+          const channel = client.channel('messaging', channelId);
+          await channel.markRead();
+        } catch (error) {
+          console.error(`Failed to mark chat ${channelId} as read`, error);
+        }
+      },
       // Admin functions
       getAllChats: async () => {
         try {

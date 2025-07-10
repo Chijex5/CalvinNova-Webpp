@@ -1,5 +1,6 @@
 import React, { useEffect, useState, createContext, useContext, useRef } from 'react';
 import { useUserStore } from '../store/userStore';
+import { client } from '../lib/stream-chat';
 import api from '../utils/apiService';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import app from '../firebase/firebaseConfig';
@@ -111,8 +112,17 @@ export const AuthProvider: React.FC<{
         console.log('User data fetched from backend:', response.data);
         setIsAuthenticated(true);
         authFlowComplete.current = true;
+        await client.connectUser(
+          {
+            id: response.data.user.userId,
+            name: response.data.user.name,
+            image: response.data.user.avatarUrl,
+          },
+          response.data.user.userToken
+        );
         return response.data.user;
       }
+
       throw new Error('Failed to fetch user data');
     } catch (error: any) {
       console.error('Error fetching user data from backend:', error);
@@ -211,6 +221,14 @@ export const AuthProvider: React.FC<{
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
         const userData = response.data.user;
+        await client.connectUser(
+          {
+            id: response.data.user.userId,
+            name: response.data.user.name,
+            image: response.data.user.avatarUrl,
+          },
+          response.data.user.userToken
+        );
         setUser(userData);
         setIsAuthenticated(true);
         authFlowComplete.current = true;
@@ -237,6 +255,14 @@ export const AuthProvider: React.FC<{
 
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
+        await client.connectUser(
+          {
+            id: response.data.user.userId,
+            name: response.data.user.name,
+            image: response.data.user.avatarUrl,
+          },
+          response.data.user.userToken
+        );
         setUser(response.data.user);
         setIsAuthenticated(true);
         authFlowComplete.current = true;
