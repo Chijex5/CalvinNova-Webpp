@@ -4,7 +4,7 @@ import { useChatStore } from '../store/chatStore';
 import { client } from '../lib/stream-chat';
 import { useProductService } from '../services/productService';
 import api from '../utils/apiService';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signOut } from 'firebase/auth';
 import app from '../firebase/firebaseConfig';
 
 const auth = getAuth(app);
@@ -86,26 +86,20 @@ export const AuthProvider: React.FC<{
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [isMiddleOfAuthFlow, setIsMiddleOfAuthFlow] = useState<boolean>(false);
   
-  // More granular control flags
-  const skipNextAuthCheck = useRef<boolean>(false);
-  const authFlowComplete = useRef<boolean>(false);
-  const lastProcessedUid = useRef<string | null>(null);
+  // Track if initial auth check is complete
+  const initialAuthComplete = useRef<boolean>(false);
   
   const logout = async (): Promise<void> => {
     try {
-      skipNextAuthCheck.current = true; // Skip auth check when logging out
-      authFlowComplete.current = false;
-      lastProcessedUid.current = null;
       await signOut(auth);
       clearUser();
       setIsAuthenticated(false);
+      initialAuthComplete.current = false;
     } catch (error) {
       console.error('Logout error:', error);
       // Clear user even if Firebase logout fails
       clearUser();
       setIsAuthenticated(false);
-    } finally {
-      skipNextAuthCheck.current = false;
     }
   };
 
@@ -117,7 +111,6 @@ export const AuthProvider: React.FC<{
       if (response.data && response.data.success) {
         console.log('User data fetched from backend:', response.data);
         setIsAuthenticated(true);
-        authFlowComplete.current = true;
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
         
         await client.connectUser(
@@ -159,69 +152,52 @@ export const AuthProvider: React.FC<{
       setIsCheckingAuth(false);
     }
   };
-  
-  // Firebase auth state listener
+
+  // Check authentication on mount
   useEffect(() => {
     let mounted = true;
     
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!mounted) return;
+    const checkInitialAuth = async () => {
+      if (initialAuthComplete.current) return;
       
-      // Skip if we're in the middle of auth flow
-      if (isMiddleOfAuthFlow) {
-        console.log('Skipping auth check - in middle of auth flow');
-        return;
-      }
+      // Check if we have a stored token
+      const token = localStorage.getItem('token');
       
-      // Skip if we explicitly set this flag (e.g., during logout)
-      if (skipNextAuthCheck.current) {
-        console.log('Skipping auth check - flag set');
-        skipNextAuthCheck.current = false;
-        setLoading(false);
-        setIsCheckingAuth(false);
-        return;
-      }
-      
-      if (firebaseUser) {
-        // Check if we've already processed this user to prevent infinite loops
-        if (lastProcessedUid.current === firebaseUser.uid && authFlowComplete.current) {
-          console.log('Already processed this user, skipping');
-          setLoading(false);
-          setIsCheckingAuth(false);
-          return;
-        }
-        lastProcessedUid.current = firebaseUser.uid;
-        
+      if (token) {
         try {
           const userData = await getUserDataFromBackend();
           if (mounted) {
             setUser(userData);
+            initialAuthComplete.current = true;
           }
         } catch (error) {
-          console.error('Error fetching user data:', error);
+          console.error('Initial auth check failed:', error);
           if (mounted) {
+            // Clear any invalid token
+            localStorage.removeItem('token');
+            clearUser();
+            setIsAuthenticated(false);
             setLoading(false);
             setIsCheckingAuth(false);
           }
         }
       } else {
-        // No Firebase user
+        // No token found
         if (mounted) {
           clearUser();
           setIsAuthenticated(false);
           setLoading(false);
           setIsCheckingAuth(false);
-          authFlowComplete.current = false;
-          lastProcessedUid.current = null;
         }
       }
-    });
+    };
+
+    checkInitialAuth();
 
     return () => {
       mounted = false;
-      unsubscribe();
     };
-  }, [setUser, clearUser, setLoading, isMiddleOfAuthFlow]); // Removed 'user' from dependencies
+  }, []); // Empty dependency array - only run on mount
 
   const login = async (email: string, userId: string): Promise<Response> => {
     try {
@@ -244,7 +220,7 @@ export const AuthProvider: React.FC<{
         );
         setUser(userData);
         setIsAuthenticated(true);
-        authFlowComplete.current = true;
+        initialAuthComplete.current = true;
         
         // Sync products in the background (fetch fresh products for login)
         productService.fetchProducts().catch(error => {
@@ -284,7 +260,7 @@ export const AuthProvider: React.FC<{
         );
         setUser(response.data.user);
         setIsAuthenticated(true);
-        authFlowComplete.current = true;
+        initialAuthComplete.current = true;
         
         // Sync products in the background (fetch fresh products for signup)
         productService.fetchProducts().catch(error => {
@@ -305,16 +281,15 @@ export const AuthProvider: React.FC<{
   };
 
   const refresh = async (): Promise<void> => {
-    const currentUser = auth.currentUser;
     if (isMiddleOfAuthFlow) {
       console.warn('Cannot refresh while in the middle of an auth flow');
       return;
     }
-    if (currentUser) {
+    
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
         setLoading(true);
-        // Force refresh the Firebase token
-        await currentUser.getIdToken(true);
         
         // Refetch user data from backend
         const userData = await getUserDataFromBackend();
