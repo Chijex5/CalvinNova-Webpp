@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { useUserStore } from './userStore';
 import { Channel, StreamChat, Message as StreamMessage, Event } from 'stream-chat';
 import { client } from '../lib/stream-chat';
 
@@ -425,12 +426,10 @@ export const useTypingUsers = (channelId: string): string[] => {
     const typingUsers = state.typingUsers[channelId];
     if (!typingUsers) return [];
     
-    return Object.keys(typingUsers).filter(userId => typingUsers[userId]);
-  }, 
-  // Add shallow comparison to prevent infinite loops
-  (a, b) => {
-    if (a.length !== b.length) return false;
-    return a.every((item, index) => item === b[index]);
+    const userId = useUserStore.getState().user?.userId;
+
+    return Object.keys(typingUsers)
+      .filter(id => typingUsers[id] && id !== userId);
   });
 };
 

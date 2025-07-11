@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
-import { useChatStore, useTypingUsers, useUserOnlineStatus } from '../store/chatStore';
+import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
+import { useTypingUsers } from '../hooks/useTypingHook';
+import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { useParams } from 'react-router-dom';
 import { Channel } from 'stream-chat';
+import { channel } from 'diagnostics_channel';
 
 // Enhanced Types
 interface User {
@@ -34,7 +37,7 @@ interface Message {
 }
 
 interface Chat extends Channel {
-  id?: string;
+  id: string;
   data: ChatData;
   state: {
     members?: { [key: string]: ChatMember };
@@ -200,23 +203,31 @@ const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size = 'sm' }
 // Enhanced typing indicator component
 interface TypingIndicatorProps {
   channelId: string;
+  chat: Channel;
 }
 
-const TypingIndicator: React.FC<TypingIndicatorProps> = ({ channelId }) => {
+const TypingIndicator: React.FC<TypingIndicatorProps> = ({ channelId, chat }) => {
   const typingUsers = useTypingUsers(channelId);
-  
   if (typingUsers.length === 0) return null;
+
+  const name = (id: string) => { 
+    return getUserDisplayName(id, chat);
+  }
   
   return (
     <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50">
       <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <span className="animate-ping w-2 h-2 rounded-full bg-green-500" />
+        <span className="animate-ping w-2 h-2 rounded-full bg-green-500 delay-150" />
+        <span className="animate-ping w-2 h-2 rounded-full bg-green-500 delay-300" />
       </div>
+
       <span className="text-sm text-green-600 font-medium">
-        {typingUsers.length === 1 ? 'Someone is typing...' : `${typingUsers.length} people are typing...`}
+        {typingUsers.length === 1 
+          ? `${name(typingUsers[0])} is typing...` 
+          : `${typingUsers.map(id => name(id)).join(', ')} are typing...`}
       </span>
+
     </div>
   );
 };
@@ -288,7 +299,7 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
     onChatSelect(chat);
     
     if (chat.id && user?.userId) {
-      await markChatAsRead(chat.id);
+      await chat.markRead();
     }
   };
 
@@ -338,7 +349,7 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
           <div className="divide-y divide-gray-100">
             {filteredChats.map((chat: Chat) => {
               const isSelected = selectedChatId === chat.id;
-              const unreadCount = getUnreadCount(chat);
+              const unreadCount = chat.countUnread();
               const otherUser = getOtherUser(chat);
               const lastMessage = getLastMessage(chat);
               const lastMessageTime = chat.state.last_message_at;
@@ -510,9 +521,10 @@ interface MessageListProps {
   currentUserId: string;
   isAdminView: boolean;
   chatId: string;
+  chat: Channel;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView, chatId }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView, chatId, chat }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { markChatAsRead } = useChatStore();
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -685,7 +697,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
       </div>
       
       {/* Typing indicator */}
-      <TypingIndicator channelId={chatId} />
+      <TypingIndicator channelId={chatId} chat={chat} />
     </div>
   );
 };
@@ -695,15 +707,18 @@ interface MessageInputProps {
   onSendMessage: (text: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  channel: Channel
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({ 
   onSendMessage, 
   disabled = false, 
-  placeholder = "Type a message..." 
+  placeholder = "Type a message..." ,
+  channel
 }) => {
   const [message, setMessage] = useState<string>('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -714,7 +729,21 @@ const MessageInput: React.FC<MessageInputProps> = ({
         textareaRef.current.style.height = 'auto';
       }
     }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    channel.stopTyping().catch(console.error); // Just to be sure
+
   };
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
+
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -723,15 +752,29 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-    setMessage(e.target.value);
-    
-    // Auto-resize textarea
+  const handleTextareaChange = async (e: React.ChangeEvent<HTMLTextAreaElement>): Promise<void> => {
+    const value = e.target.value;
+    setMessage(value);
+
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
+
+    // 👇 Typing indicator logic
+    try {
+      await channel.keystroke();
+    } catch (err) {
+      console.error("Keystroke failed:", err);
+    }
+
+    // Reset the typing timeout
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      channel.stopTyping().catch(console.error);
+    }, 3000); // stop typing after 3 seconds of inactivity
   };
+
 
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 sm:p-6">
@@ -820,12 +863,14 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
         currentUserId={currentUserId}
         isAdminView={isAdminView}
         chatId={chat?.id || ''}
+        chat={chat}
       />
       
       <MessageInput
         onSendMessage={handleSendMessage}
         disabled={isLoading}
         placeholder={isLoading ? "Sending..." : "Type a message..."}
+        channel={chat}
       />
     </div>
   );
@@ -845,18 +890,18 @@ const ChatInterface: React.FC = () => {
       const chat = chats.find(c => c.id === chatId);
       if (chat) {
         setSelectedChat(chat);
+        chat.markRead();
         setShowChatView(true);
       }
     }
   }, [chatId, chats]);
-
-  console.log(selectedChat)
 
   
   const isMobile = width < 768;
 
   const handleChatSelect = (chat: Chat): void => {
     setSelectedChat(chat);
+    chat.markRead();
 
     useChatStore.getState().getChatDetails(chat.id || '');
     
