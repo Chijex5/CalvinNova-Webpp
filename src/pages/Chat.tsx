@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { useParams } from 'react-router-dom';
-import { Channel } from 'stream-chat';
+import { Channel, StreamChat } from 'stream-chat';
+import { client } from '../lib/stream-chat';
 
 // Enhanced Types
 interface User {
@@ -551,8 +552,172 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
     </div>
   );
 };
+interface ContextMenuState {
+  messageId: string;
+  message: Message; // You can replace with your Message type
+  x: number;
+  y: number;
+}
 
-// Enhanced message list component
+interface MessageContextMenuProps {
+  contextMenu: ContextMenuState | null;
+  onClose: () => void;
+  isCurrentUser: boolean;
+  messageId: string;
+  channel: Channel;
+}
+
+const MessageContextMenu: React.FC<MessageContextMenuProps> = ({ 
+  contextMenu, 
+  onClose, 
+  isCurrentUser,
+  messageId,
+  channel
+}) => {
+  const typedChannel = channel as unknown as ReturnType<StreamChat['channel']>;
+  if (!contextMenu) return null;
+  
+
+  const handleAction = async (action: string) => {
+    const message = contextMenu.message;
+    
+    switch (action) {
+      case 'edit':
+        // Handle edit action
+        console.log('Edit message:', message);
+        break;
+        
+      case 'delete':
+        // Handle delete action
+        client.deleteMessage(messageId)
+        break;
+        
+      case 'reply':
+        // Handle reply action
+        console.log('Reply to message:', message);
+        break;
+        
+      case 'copy':
+        // Copy message text to clipboard
+        try {
+          await navigator.clipboard.writeText(message.text || '');
+          console.log('Message copied to clipboard');
+        } catch (err) {
+          console.error('Failed to copy message:', err);
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = message.text || '';
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+        break;
+        
+      case 'report':
+        // Handle report action
+        client.flagMessage(messageId, {
+          reason: 'Inappropriate content',
+        });
+        break;
+        
+      case 'react':
+        // Handle react action
+        channel.sendReaction(messageId, { type: 'love' });
+        break;
+    }
+    
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl p-4 m-4 w-full max-w-xs">
+        <div className="space-y-2">
+          {isCurrentUser ? (
+            // Actions for current user's messages
+            <>
+              <button 
+                onClick={() => handleAction('edit')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+              >
+                <Edit className="w-4 h-4 text-gray-600" />
+                <span>Edit Message</span>
+              </button>
+              
+              <button 
+                onClick={() => handleAction('delete')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 text-red-600 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Message</span>
+              </button>
+              
+              <button 
+                onClick={() => handleAction('reply')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+              >
+                <Reply className="w-4 h-4 text-gray-600" />
+                <span>Reply</span>
+              </button>
+              
+              <button 
+                onClick={() => handleAction('copy')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+              >
+                <Copy className="w-4 h-4 text-gray-600" />
+                <span>Copy Message</span>
+              </button>
+            </>
+          ) : (
+            // Actions for other users' messages
+            <>
+              <button 
+                onClick={() => handleAction('report')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 text-orange-600 transition-colors"
+              >
+                <Flag className="w-4 h-4" />
+                <span>Report Message</span>
+              </button>
+              
+              <button 
+                onClick={() => handleAction('copy')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+              >
+                <Copy className="w-4 h-4 text-gray-600" />
+                <span>Copy Message</span>
+              </button>
+              
+              <button 
+                onClick={() => handleAction('reply')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+              >
+                <Reply className="w-4 h-4 text-gray-600" />
+                <span>Reply</span>
+              </button>
+              
+              <button 
+                onClick={() => handleAction('react')} 
+                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+              >
+                <Heart className="w-4 h-4 text-gray-600" />
+                <span>React</span>
+              </button>
+            </>
+          )}
+        </div>
+        
+        <button 
+          onClick={onClose} 
+          className="w-full mt-4 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+};
+
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
@@ -561,10 +726,17 @@ interface MessageListProps {
   chat: Channel;
   isLoading?: boolean;
 }
-
+interface ContextMenuState {
+  messageId: string;
+  message: Message;
+  x: number;
+  y: number;
+}
 const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView, chatId, chat, isLoading }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { markChatAsRead } = useChatStore();
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
@@ -604,6 +776,25 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
     };
   }, [messages, currentUserId, chatId, markChatAsRead]);
 
+  const handleTouchStart = (message: Message) => {
+    const timer = setTimeout(() => {
+      setContextMenu({
+        messageId: message.id,
+        message: message,
+        x: 0, // You can get touch coordinates if needed
+        y: 0
+      });
+    }, 600);
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
   const groupMessagesByDate = (messages: Message[]): { [key: string]: Message[] } => {
     const groups: { [key: string]: Message[] } = {};
     messages.forEach(message => {
@@ -636,7 +827,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
               const isSystem = message.type === 'system';
               const prevMessage = index > 0 ? dateMessages[index - 1] : null;
               const nextMessage = index < dateMessages.length - 1 ? dateMessages[index + 1] : null;
-              
+              const isMobile = window.innerWidth < 768;
               const showAvatar = !isCurrentUser && (!nextMessage || nextMessage.user?.id !== message.user?.id);
               const showName = !isCurrentUser && (!prevMessage || prevMessage.user?.id !== message.user?.id);
               const isGrouped = prevMessage && prevMessage.user?.id === message.user?.id;
@@ -689,6 +880,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                             ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-900 border border-gray-200'
                         } ${isGrouped ? 'rounded-t-lg' : ''}`}
+                        // Add touch handlers only for current user messages
+                        {...( isMobile && {
+                          onTouchStart: () => handleTouchStart(message),
+                          onTouchEnd: handleTouchEnd,
+                          onTouchMove: handleTouchEnd, // Cancel on move
+                          onTouchCancel: handleTouchEnd // Cancel on interrupt
+                        })}
                       >
                         <p className="text-sm sm:text-base leading-relaxed">{message.text}</p>
                       </div>
@@ -715,6 +913,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
       
       {/* Typing indicator */}
       <TypingIndicator chat={chat} />
+      {contextMenu && (
+        <MessageContextMenu 
+          contextMenu={contextMenu} 
+          onClose={() => setContextMenu(null)}
+          isCurrentUser={contextMenu.message.user?.id === currentUserId}
+        />
+      )}
     </div>
   );
 };
@@ -761,7 +966,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     };
   }, []);
 
-
   const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -805,15 +1009,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 sm:p-6">
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0">
           <div className="flex items-center space-x-2 bg-gray-50 rounded-full px-4 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
             <button
               type="button"
-              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation"
+              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation flex-shrink-0"
               disabled={disabled}
             >
               <Paperclip className="w-5 h-5 text-gray-500" />
@@ -826,13 +1029,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="flex-1 bg-transparent border-none outline-none resize-none text-base placeholder-gray-500 max-h-[120px] min-h-[24px] leading-6"
+              className="flex-1 bg-transparent border-none outline-none resize-none text-base placeholder-gray-500 max-h-[120px] min-h-[24px] leading-6 min-w-0 break-words"
+              style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}
               rows={1}
             />
             
             <button
               type="button"
-              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation"
+              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation flex-shrink-0"
               disabled={disabled}
             >
               <Smile className="w-5 h-5 text-gray-500" />
@@ -863,9 +1072,43 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   const { sendMessage, isAdminView } = useChatStore();
   const { user } = useUserStore();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const [isWindowVisible, setIsWindowVisible] = useState(true);
   const messages = chat.state.messages || [];
   const currentUserId = user?.userId || '';
+  
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsWindowVisible(!document.hidden);
+    };
+    
+    const handleWindowFocus = () => setIsWindowVisible(true);
+    const handleWindowBlur = () => setIsWindowVisible(false);
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('blur', handleWindowBlur);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
+
+  // Add auto-mark as read logic
+  useEffect(() => {
+    if (chat && isWindowVisible && messages.length > 0) {
+      const unreadMessages = messages.filter(msg => 
+        msg.user?.id !== currentUserId && 
+        !msg.read_by?.includes(currentUserId)
+      );
+      
+      if (unreadMessages.length > 0) {
+        chat.markRead();
+      }
+    }
+  }, [chat, isWindowVisible, messages, currentUserId]);
 
   const handleSendMessage = async (text: string): Promise<void> => {
     if (!chat.id || isLoading) return;
