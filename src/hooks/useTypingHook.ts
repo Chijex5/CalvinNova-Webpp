@@ -1,3 +1,4 @@
+// File: src/hooks/useTypingHook.ts
 import { useMemo } from 'react';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';

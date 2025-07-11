@@ -202,12 +202,37 @@ const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size = 'sm' }
 
 // Enhanced typing indicator component
 interface TypingIndicatorProps {
-  channelId: string;
   chat: Channel;
 }
 
-const TypingIndicator: React.FC<TypingIndicatorProps> = ({ channelId, chat }) => {
-  const typingUsers = useTypingUsers(channelId);
+const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const { user } = useUserStore();
+
+  useEffect(() => {
+    const handleTypingStart = (event: any) => {
+      const userId = event.user?.id;
+      if (userId && userId !== user?.userId) {
+        setTypingUsers(prev => [...prev.filter(id => id !== userId), userId]);
+      }
+    };
+
+    const handleTypingStop = (event: any) => {
+      const userId = event.user?.id;
+      if (userId) {
+        setTypingUsers(prev => prev.filter(id => id !== userId));
+      }
+    };
+
+    chat.on('typing.start', handleTypingStart);
+    chat.on('typing.stop', handleTypingStop);
+
+    return () => {
+      chat.off('typing.start', handleTypingStart);
+      chat.off('typing.stop', handleTypingStop);
+    };
+  }, [chat, user?.userId]);
+
   if (typingUsers.length === 0) return null;
 
   const name = (id: string) => { 
@@ -697,7 +722,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
       </div>
       
       {/* Typing indicator */}
-      <TypingIndicator channelId={chatId} chat={chat} />
+      <TypingIndicator chat={chat} />
     </div>
   );
 };
@@ -729,13 +754,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
         textareaRef.current.style.height = 'auto';
       }
     }
+    
+    // Clear timeout and stop typing only after sending
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
-
-    channel.stopTyping().catch(console.error); // Just to be sure
-
+    channel.stopTyping().catch(console.error);
   };
 
   useEffect(() => {
@@ -756,23 +781,36 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const value = e.target.value;
     setMessage(value);
 
+    // Handle textarea resizing
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
 
-    // 👇 Typing indicator logic
-    try {
-      await channel.keystroke();
-    } catch (err) {
-      console.error("Keystroke failed:", err);
-    }
+    // Only send keystroke if there's actual content
+    if (value.trim()) {
+      try {
+        await channel.keystroke();
+      } catch (err) {
+        console.error("Keystroke failed:", err);
+      }
 
-    // Reset the typing timeout
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Set new timeout to stop typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        channel.stopTyping().catch(console.error);
+      }, 3000);
+    } else {
+      // If input is empty, stop typing immediately
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
       channel.stopTyping().catch(console.error);
-    }, 3000); // stop typing after 3 seconds of inactivity
+    }
   };
 
 

@@ -190,8 +190,6 @@ export const AuthProvider: React.FC<{
           setIsCheckingAuth(false);
           return;
         }
-        
-        console.log('Firebase user authenticated:', firebaseUser.uid);
         lastProcessedUid.current = firebaseUser.uid;
         
         try {
