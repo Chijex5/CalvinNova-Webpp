@@ -2,11 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
-import { useTypingUsers } from '../hooks/useTypingHook';
 import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { useParams } from 'react-router-dom';
 import { Channel } from 'stream-chat';
-import { channel } from 'diagnostics_channel';
 
 // Enhanced Types
 interface User {
@@ -208,6 +206,16 @@ interface TypingIndicatorProps {
 const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const { user } = useUserStore();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  
+
+  useEffect(() => {
+    if (typingUsers.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [typingUsers]);
+
 
   useEffect(() => {
     const handleTypingStart = (event: any) => {
@@ -216,6 +224,8 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
         setTypingUsers(prev => [...prev.filter(id => id !== userId), userId]);
       }
     };
+
+    
 
     const handleTypingStop = (event: any) => {
       const userId = event.user?.id;
@@ -235,6 +245,8 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
 
   if (typingUsers.length === 0) return null;
 
+  
+
   const name = (id: string) => { 
     return getUserDisplayName(id, chat);
   }
@@ -252,7 +264,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
           ? `${name(typingUsers[0])} is typing...` 
           : `${typingUsers.map(id => name(id)).join(', ')} are typing...`}
       </span>
-
+      <div ref={messagesEndRef} className="flex-shrink-0" />
     </div>
   );
 };
@@ -547,16 +559,17 @@ interface MessageListProps {
   isAdminView: boolean;
   chatId: string;
   chat: Channel;
+  isLoading?: boolean;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView, chatId, chat }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAdminView, chatId, chat, isLoading }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { markChatAsRead } = useChatStore();
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   useEffect(() => {
     if (observerRef.current) {
@@ -590,19 +603,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
       }
     };
   }, [messages, currentUserId, chatId, markChatAsRead]);
-
-  const getMessageReadStatus = (message: Message): 'sent' | 'delivered' | 'read' => {
-    if (message.user?.id !== currentUserId) {
-      return 'read';
-    }
-    
-    if (message.read_by && message.read_by.length > 1) {
-      return 'read';
-    } else if (message.status === 'delivered') {
-      return 'delivered';
-    }
-    return 'sent';
-  };
 
   const groupMessagesByDate = (messages: Message[]): { [key: string]: Message[] } => {
     const groups: { [key: string]: Message[] } = {};
@@ -640,7 +640,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
               const showAvatar = !isCurrentUser && (!nextMessage || nextMessage.user?.id !== message.user?.id);
               const showName = !isCurrentUser && (!prevMessage || prevMessage.user?.id !== message.user?.id);
               const isGrouped = prevMessage && prevMessage.user?.id === message.user?.id;
-              const readStatus = getMessageReadStatus(message);
 
               if (isSystem) {
                 return (
@@ -698,13 +697,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                         <span className="text-xs text-gray-500">
                           {formatTime(message.created_at)}
                         </span>
-                        {isCurrentUser && (
-                          <div className="flex items-center space-x-1">
-                            {readStatus === 'sent' && <Check className="w-3 h-3 text-gray-400" />}
-                            {readStatus === 'delivered' && <CheckCheck className="w-3 h-3 text-gray-400" />}
-                            {readStatus === 'read' && <CheckCheck className="w-3 h-3 text-blue-500" />}
-                          </div>
-                        )}
                         {isAdminView && message.read_by && message.read_by.length > 0 && (
                           <span className="text-xs text-gray-400">
                             Read by {message.read_by.length} user{message.read_by.length > 1 ? 's' : ''}
@@ -902,6 +894,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
         isAdminView={isAdminView}
         chatId={chat?.id || ''}
         chat={chat}
+        isLoading={isLoading} 
       />
       
       <MessageInput
