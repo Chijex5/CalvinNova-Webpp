@@ -563,6 +563,7 @@ interface MessageContextMenuProps {
   contextMenu: ContextMenuState | null;
   onClose: () => void;
   isCurrentUser: boolean;
+  currentUser: string;
   messageId: string;
   channel: Channel;
 }
@@ -570,11 +571,11 @@ interface MessageContextMenuProps {
 const MessageContextMenu: React.FC<MessageContextMenuProps> = ({ 
   contextMenu, 
   onClose, 
+  currentUser,
   isCurrentUser,
   messageId,
   channel
 }) => {
-  const typedChannel = channel as unknown as ReturnType<StreamChat['channel']>;
   if (!contextMenu) return null;
   
 
@@ -623,7 +624,8 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         
       case 'react':
         // Handle react action
-        channel.sendReaction(messageId, { type: 'love' });
+        console.log(messageId, currentUser);
+        await channel.sendReaction(messageId, { type: 'love' });
         break;
     }
     
@@ -875,12 +877,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                       )}
                       
                       <div
-                        className={`px-4 py-2 rounded-2xl shadow-sm break-words ${
+                        className={`px-4 py-2 rounded-2xl select-none shadow-sm break-words ${
                           isCurrentUser
                             ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-900 border border-gray-200'
                         } ${isGrouped ? 'rounded-t-lg' : ''}`}
-                        // Add touch handlers only for current user messages
                         {...( isMobile && {
                           onTouchStart: () => handleTouchStart(message),
                           onTouchEnd: handleTouchEnd,
@@ -918,6 +919,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
           contextMenu={contextMenu} 
           onClose={() => setContextMenu(null)}
           isCurrentUser={contextMenu.message.user?.id === currentUserId}
+          currentUser={currentUserId}
+          messageId={contextMenu.messageId}
         />
       )}
     </div>
