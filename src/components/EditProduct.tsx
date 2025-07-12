@@ -3,6 +3,7 @@ import { useUserStore } from '../store/userStore';
 import api, { imageApi } from '../utils/apiService';
 import productService from '../services/productService';
 import Spinner from '../components/Spinner';
+import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Upload, X, Check, Camera, MapPin, DollarSign, Tag, FileText, Star, Save } from 'lucide-react';
 
 interface Image {
@@ -160,11 +161,11 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
           images: [...prev.images, { id: response.data.id, url: response.data.url }]
         }));
       } else {
-        alert('Failed to upload image');
+        toast('Failed to upload image');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload image');
+      toast('Failed to upload image');
     } finally {
       setIsUploading(false);
     }
@@ -227,14 +228,14 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
       if (response.data.success) {
         // Clear draft from localStorage
         localStorage.removeItem(`itemEditDraft_${productData.id}`);
-        alert('Item updated successfully!');
+        toast('Item updated successfully!');
         onSuccess?.();
       } else {
-        alert('Failed to update item');
+        toast('Failed to update item');
       }
     } catch (error) {
       console.error('Update error:', error);
-      alert('Failed to update item');
+      toast('Failed to update item');
     } finally {
       setLoading(false);
     }

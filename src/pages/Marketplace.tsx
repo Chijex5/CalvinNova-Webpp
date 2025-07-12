@@ -174,9 +174,8 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
 };
 
 // Enhanced Product Card Component
-const ProductCard = ({ product, seller, onEdit, currentUserId = null }: {
+const ProductCard = ({ product, onEdit, currentUserId = null }: {
   product: any;
-  seller: any;
   onEdit: (product: any) => void;
   currentUserId?: string | null;
 }) => {
@@ -411,19 +410,19 @@ const ProductCard = ({ product, seller, onEdit, currentUserId = null }: {
           {/* Seller Info */}
           <div className="flex items-center space-x-3 mb-4">
             <img 
-              src={seller?.avatarUrl || '/api/placeholder/32/32'} 
-              alt={seller?.name || 'Seller'}
+              src={product?.sellerAvatarUrl || '/api/placeholder/32/32'} 
+              alt={product?.sellerName || 'Seller'}
               className="w-8 h-8 rounded-full object-cover"
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {seller?.name || 'Unknown Seller'}
+                {product?.sellerName || 'Unknown Seller'}
               </p>
               <div className="flex items-center space-x-1">
                 <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                <span className="text-xs text-gray-500">{seller?.rating || 'N/A'}</span>
+                <span className="text-xs text-gray-500">{product?.sellerRating || 'N/A'}</span>
                 <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500 truncate">{seller?.campus || product.school}</span>
+                <span className="text-xs text-gray-500 truncate">{product?.selllerCampus || product.school}</span>
               </div>
             </div>
           </div>
@@ -600,15 +599,13 @@ const MarketplaceUI = () => {
     minPrice: '',
     maxPrice: ''
   });
-  const [sellers, setSellers] = useState<{ [key: string]: any }>({});
   const [categories, setCategories] = useState<string[]>([]);
   const [schools, setSchools] = useState<string[]>([]);
-  const [sellersLoading, setSellersLoading] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Get state from stores
-  const { products, loading, error, updateProduct } = useProductStore();
+  const { products, loading, error } = useProductStore();
   const user = useUserStore((state) => state.user);
   const currentUserId = user?.userId;
 
@@ -638,50 +635,6 @@ const MarketplaceUI = () => {
     }
   }, [products]);
 
-  // Fetch seller details for products
-  useEffect(() => {
-    const fetchSellers = async () => {
-      if (products.length === 0) return;
-
-      setSellersLoading(true);
-      const uniqueSellerIds = [...new Set(products.map(p => p.sellerId))];
-      const newSellers: { [key: string]: any } = {};
-
-      try {
-        const sellerPromises = uniqueSellerIds.map(async (sellerId) => {
-          if (sellers[sellerId]) {
-            newSellers[sellerId] = sellers[sellerId];
-            return;
-          }
-
-          try {
-            const response = await api.get(`/api/seller/detials/${sellerId}`);
-            if (response.data.success) {
-              newSellers[sellerId] = response.data.user;
-            }
-          } catch (error) {
-            console.error(`Failed to fetch seller ${sellerId}:`, error);
-            // Set a default seller object
-            newSellers[sellerId] = {
-              name: 'Unknown Seller',
-              avatarUrl: '/api/placeholder/32/32',
-              rating: 0,
-              campus: 'Unknown Campus'
-            };
-          }
-        });
-
-        await Promise.all(sellerPromises);
-        setSellers(prevSellers => ({ ...prevSellers, ...newSellers }));
-      } catch (error) {
-        console.error('Error fetching sellers:', error);
-      } finally {
-        setSellersLoading(false);
-      }
-    };
-
-    fetchSellers();
-  }, [products]);
 
   // Filter and sort products
   const filteredProducts = products.filter(product => {
@@ -863,7 +816,6 @@ const MarketplaceUI = () => {
             <FadeIn key={product.id} delay={index * 100}>
               <ProductCard 
                 product={product} 
-                seller={sellers[product.sellerId]}
                 currentUserId={currentUserId}
                 onEdit={(product) => {
                   setSelectedProduct(product);

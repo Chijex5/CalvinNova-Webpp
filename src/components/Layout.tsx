@@ -10,7 +10,8 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const location = useLocation();
   const {
-    isAuthenticated
+    isAuthenticated,
+    isLoading,
   } = useAuth();
   const isAdminPage = location.pathname.includes('/admin');
   const isHomePage = location.pathname === '/';

@@ -8,7 +8,9 @@ const Navigation = () => {
   const location = useLocation();
   const {
     user,
-    isAdmin
+    isAdmin,
+    isAuthenticated,
+    isLoading
   } = useAuth();
   useEffect(() => {
     const handleScroll = () => {
@@ -52,6 +54,10 @@ const Navigation = () => {
       icon: null
     });
   }
+  if (!isAuthenticated || isLoading){
+    return null;
+  }
+  
   return <header className={`sticky top-0 z-10 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-md' : 'bg-white border-b border-gray-200'}`}>
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">

@@ -21,14 +21,14 @@ interface User {
 }
 
 interface SignupData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   campus: string;
-  role: 'buyer' | 'seller' | 'both';
+  password: string;
+  confirmPassword: string;
+  userRole: 'buyer' | 'seller' | 'both';
   avatarUrl?: string;
-  userId: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 interface Response {
@@ -44,7 +44,11 @@ interface AuthContextType {
   setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void
   setIsCheckingAuth: (checking: boolean) => void;
   login: (email: string, userId: string) => Promise<Response>;
-  signup: (data: SignupData) => Promise<boolean>;
+  error: string | null;
+  clearError: () => void;
+  setError: (error: string | null) => void;
+  resetPassword: (email: string) => Promise<Response>;
+  signup: (data: SignupData) => Promise<Response>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   isAuthenticated: boolean;
@@ -82,6 +86,7 @@ export const AuthProvider: React.FC<{
   const productService = useProductService();
 
   const { setAdminView } = useChatStore();
+  const [error, setError] = useState<string | null>(null);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [isMiddleOfAuthFlow, setIsMiddleOfAuthFlow] = useState<boolean>(false);
@@ -91,8 +96,8 @@ export const AuthProvider: React.FC<{
   
   const logout = async (): Promise<void> => {
     try {
-      await signOut(auth);
       clearUser();
+      localStorage.removeItem('token');
       setIsAuthenticated(false);
       initialAuthComplete.current = false;
     } catch (error) {
@@ -101,6 +106,10 @@ export const AuthProvider: React.FC<{
       clearUser();
       setIsAuthenticated(false);
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   const getUserDataFromBackend = async (retryCount = 0): Promise<User> => {
@@ -124,7 +133,7 @@ export const AuthProvider: React.FC<{
 
         // Sync products in the background (refresh existing products)
         productService.refreshProducts().catch(error => {
-          console.error('Background product refresh failed:', error);
+          setError('Failed to refresh products');
         });
         
         return response.data.user;
@@ -132,7 +141,7 @@ export const AuthProvider: React.FC<{
 
       throw new Error('Failed to fetch user data');
     } catch (error: any) {
-      console.error('Error fetching user data from backend:', error);
+      setError(error || 'Error fetching user data from backend');
       
       // If it's a 401 error and we haven't retried, wait a bit and retry
       // This handles the case where the user was just created but isn't immediately available
@@ -199,13 +208,28 @@ export const AuthProvider: React.FC<{
     };
   }, []); // Empty dependency array - only run on mount
 
-  const login = async (email: string, userId: string): Promise<Response> => {
+  const resetPassword = async (email: string): Promise<Response> => {
     try {
-      setIsMiddleOfAuthFlow(true);
       setLoading(true);
-      
-      // Get user data from backend
-      const response = await api.post('/api/check', { userId });
+      const response = await api.post('/api/reset-password', { email });
+      if (response && response.data.success) {
+        return { success: true, message: 'Password reset email sent successfully' };
+      }
+      setError('Failed to send password reset email');
+      return { success: false, message: 'Failed to send password reset email' };
+    } catch (error: any) {
+      setError(error.response?.data.message || 'Failed to send password reset email');
+      return { success: false, message: error.response?.data.message || 'Failed to send password reset email' };
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const login = async (email: string, password: string): Promise<Response> => {
+    try {
+      setLoading(true);
+
+      const response = await api.post('/api/login', { email, password });
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
         const userData = response.data.user;
@@ -232,7 +256,7 @@ export const AuthProvider: React.FC<{
       
       return {success: false, message: 'Login failed'};
     } catch (error: any) {
-      console.error('Login error:', error);
+      setError(error.response?.data.error || 'Login failed');
       return {success: false, message: error.response?.data.error || 'Login failed'};
     } finally {
       setIsMiddleOfAuthFlow(false);
@@ -240,9 +264,8 @@ export const AuthProvider: React.FC<{
     }
   };
 
-  const signup = async (data: SignupData): Promise<boolean> => {
+  const signup = async (data: SignupData): Promise<Response> => {
     try {
-      setIsMiddleOfAuthFlow(true);
       setLoading(true);
       
       const response = await api.post('/api/signup', data);
@@ -267,13 +290,13 @@ export const AuthProvider: React.FC<{
           console.error('Background product fetch failed:', error);
         });
         
-        return true;
+        return {success: true, message: 'Signup successful'};
       }
       
-      return false;
-    } catch (error) {
-      console.error('Signup error:', error);
-      return false;
+      return {success: false, message: 'Signup Failed'};
+    } catch (error: any) {
+      setError(error.response?.data.message || 'Signup failed');
+      return {success: false, message: error.response?.data.message || 'Signup failed'};
     } finally {
       setIsMiddleOfAuthFlow(false);
       setLoading(false);
@@ -309,8 +332,12 @@ export const AuthProvider: React.FC<{
     isAdmin,
     login,
     setIsCheckingAuth,
+    setError,
+    error,
+    clearError,
     isMiddleOfAuthFlow,
     setIsMiddleOfAuthFlow,
+    resetPassword,
     isCheckingAuth,
     signup,
     logout,
@@ -320,18 +347,5 @@ export const AuthProvider: React.FC<{
     isSeller,
     isLoading
   };
-
-  // Show loading screen while checking authentication
-  if (isCheckingAuth && isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

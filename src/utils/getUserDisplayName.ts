@@ -1,3 +1,4 @@
+import { Channel } from "stream-chat";
 export const getUserDisplayName = (userId: string, channel: Channel): string => {
   try {
     const member = channel.state.members[userId];

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -20,17 +21,93 @@ interface ProtectedRouteProps {
   link?: string; // optional now
 }
 
+const ModernLoader: React.FC = () => {
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 flex items-center justify-center overflow-hidden">
+      {/* Brand-aligned background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
+      </div>
+      
+      {/* Main loader container */}
+      <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
+        {/* CalvinNova brand logo placeholder */}
+        <div className="relative mb-4">
+          <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 animate-pulse">
+            CalvinNova
+          </div>
+        </div>
+        
+        {/* Campus-themed spinner */}
+        <div className="relative">
+          {/* Outer ring */}
+          <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
+          
+          {/* Animated rings with brand colors */}
+          <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-indigo-400 border-r-purple-400 animate-spin"></div>
+          <div className="absolute inset-2 w-16 h-16 rounded-full border-4 border-transparent border-t-teal-400 border-l-indigo-400 animate-spin" style={{animationDirection: 'reverse', animationDelay: '0.3s'}}></div>
+          <div className="absolute inset-4 w-12 h-12 rounded-full border-4 border-transparent border-t-purple-400 border-b-teal-400 animate-spin" style={{animationDelay: '0.6s'}}></div>
+          
+          {/* Center shield icon for trust */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center">
+              <div className="w-3 h-3 bg-indigo-600 rounded-sm animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Campus marketplace messaging */}
+        <div className="text-center space-y-4">
+          <div className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 bg-clip-text text-transparent animate-pulse">
+            Connecting Campus
+          </div>
+          <div className="text-indigo-100 text-sm">
+            Verifying your student access...
+          </div>
+          
+          {/* Animated dots with brand colors */}
+          <div className="flex justify-center space-x-2">
+            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
+            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-indigo-400 via-purple-400 to-teal-400 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Floating particles representing campus community */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-white/20 rounded-full animate-ping"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, link }) => {
   const { isAuthenticated, isLoading, isCheckingAuth } = useAuth();
   const location = useLocation();
 
   const redirectTo = link || location.pathname + location.search;
+  
   if (isLoading || isCheckingAuth) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <ModernLoader />;
   }
 
   if (!isAuthenticated) {
@@ -85,6 +162,7 @@ const HomeOrDashboard = () => {
 };
 export function App() {
   return <Router>
+      <Toaster position="top-right" richColors />
       <AuthProvider>
         <ProductProvider>
           <ChatProvider>
@@ -105,9 +183,13 @@ export function App() {
                   <Route path="/profile" element={<ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>} />
-                  <Route path="/sell" element={<SellerRoute link='/sell'>
+                  <Route path="/sell" element={
+                    <ProtectedRoute>
+                    <SellerRoute link='/sell'>
                         <Sell />
-                      </SellerRoute>} />
+                      </SellerRoute>
+                      </ProtectedRoute>
+                    } />
                   <Route path="/admin" element={<ProtectedRoute>
                         <AdminDashboard />
                       </ProtectedRoute>} />
