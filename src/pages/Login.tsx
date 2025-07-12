@@ -276,7 +276,6 @@ const Login = () => {
         }
       } else {
         // Fallback demo behavior
-        console.log('Forgot password for:', formData.forgotEmail);
         toast.success('Password reset link sent! (Demo mode)', {
           icon: <CheckCircle className="text-green-500" size={16} />
         });

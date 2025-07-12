@@ -302,13 +302,8 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
       });
 
       if (existingChat) {
-        console.log('Found existing conversation:', existingChat.id);
-        // Navigate to chat with existing conversation
         navigate(`/chat/${existingChat.id}`);
       } else {
-        console.log('Creating new chat between:', user.userId, 'and seller:', sellerId);
-        
-        // Create new conversation using Zustand store
         await startMessaging([sellerId]);
         
         // Navigate to the chat page (assuming the chat store will set currentChat)
@@ -638,10 +633,8 @@ const MarketplaceUI = () => {
         console.error('Failed to load products:', error);
       }
     };
-    
 
     loadProducts();
-    console.log(products);
   }, []);
 
   // Extract unique categories and schools from products

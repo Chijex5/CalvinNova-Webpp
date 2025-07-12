@@ -59,14 +59,6 @@ const ProductDetails = () => {
       // Shouldn't happen, but just in case
       return;
     }
-
-    console.log('=== DEBUG INFO ===');
-    console.log('user.userId:', user?.userId);
-    console.log('seller object:', seller);
-    console.log('seller.id:', seller.id);
-    console.log('product.sellerId:', product.sellerId);
-    console.log('==================');
-
     setIsContactingSeller(true);
     setError(null); // Clear any previous errors
 

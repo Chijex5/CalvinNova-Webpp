@@ -118,7 +118,6 @@ export const AuthProvider: React.FC<{
       setIsCheckingAuth(true);
       const response = await api.get(`/api/me`);
       if (response.data && response.data.success) {
-        console.log('User data fetched from backend:', response.data);
         setIsAuthenticated(true);
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
         
@@ -146,7 +145,6 @@ export const AuthProvider: React.FC<{
       // If it's a 401 error and we haven't retried, wait a bit and retry
       // This handles the case where the user was just created but isn't immediately available
       if (error.response?.status === 401 && retryCount < 2) {
-        console.log(`Retrying user data fetch... (attempt ${retryCount + 1})`);
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
         return getUserDataFromBackend(retryCount + 1);
       }
