@@ -51,111 +51,6 @@ interface Chat extends Channel {
   };
 }
 
-// Add these reaction types and emojis
-const REACTION_EMOJIS = {
-  love: '❤️',
-  like: '👍',
-  laugh: '😂',
-  wow: '😮',
-  sad: '😢',
-  angry: '😡',
-  fire: '🔥',
-  clap: '👏'
-};
-
-interface ReactionPickerProps {
-  onReactionSelect: (reactionType: string) => void;
-  onClose: () => void;
-  position: { x: number; y: number };
-}
-
-const ReactionPicker: React.FC<ReactionPickerProps> = ({ onReactionSelect, onClose, position }) => {
-  const pickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50">
-      <div
-        ref={pickerRef}
-        className="absolute bg-white rounded-full shadow-lg border border-gray-200 px-2 py-2 flex space-x-1"
-        style={{
-          left: Math.max(10, Math.min(position.x - 100, window.innerWidth - 220)),
-          top: Math.max(10, position.y - 60),
-        }}
-      >
-        {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
-          <button
-            key={type}
-            onClick={() => onReactionSelect(type)}
-            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-xl transition-all transform hover:scale-110"
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-interface ReactionDisplayProps {
-  reactions: Reaction[];
-  reactionCounts: { [key: string]: number };
-  currentUserId: string;
-  onReactionClick: (reactionType: string) => void;
-}
-
-const ReactionDisplay: React.FC<ReactionDisplayProps> = ({ 
-  reactions, 
-  reactionCounts, 
-  currentUserId, 
-  onReactionClick 
-}) => {
-  if (!reactions || reactions.length === 0) return null;
-
-  // Group reactions by type
-  const groupedReactions = reactions.reduce((acc, reaction) => {
-    if (!acc[reaction.type]) {
-      acc[reaction.type] = [];
-    }
-    acc[reaction.type].push(reaction);
-    return acc;
-  }, {} as { [key: string]: Reaction[] });
-
-  return (
-    <div className="flex flex-wrap gap-1 mt-1">
-      {Object.entries(groupedReactions).map(([type, typeReactions]) => {
-        const count = reactionCounts[type] || typeReactions.length;
-        const hasCurrentUser = typeReactions.some(r => r.user?.id === currentUserId || r.user_id === currentUserId);
-        
-        return (
-          <button
-            key={type}
-            onClick={() => onReactionClick(type)}
-            className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs border transition-colors ${
-              hasCurrentUser 
-                ? 'bg-blue-100 border-blue-300 text-blue-700' 
-                : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <span className="text-sm">{REACTION_EMOJIS[type] || '👍'}</span>
-            {count > 1 && <span className="font-medium">{count}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
 // Custom hook for window size detection
 const useWindowSize = () => {
   const [windowSize, setWindowSize] = useState({
@@ -685,7 +580,6 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   messageId,
   channel
 }) => {
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
   if (!contextMenu) return null;
   
   const handleAction = async (action: string) => {
@@ -737,36 +631,17 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         break;
         
       case 'react':
-        setShowReactionPicker(true);
+        try {
+          await channel.sendReaction(messageId, { type: 'love' });
+          console.log('Reaction sent successfully');
+        } catch (error) {
+          console.error('Failed to send reaction:', error);
+        }
         break;
     }
     
     onClose();
   };
-
-  const handleReactionSelect = async (reactionType: string) => {
-    try {
-      await channel.sendReaction(messageId, { type: reactionType });
-      console.log('Reaction sent successfully');
-    } catch (error) {
-      console.error('Failed to send reaction:', error);
-    }
-    setShowReactionPicker(false);
-    onClose();
-  };
-
-  if (showReactionPicker) {
-    return (
-      <ReactionPicker
-        onReactionSelect={handleReactionSelect}
-        onClose={() => {
-          setShowReactionPicker(false);
-          onClose();
-        }}
-        position={{ x: contextMenu?.x || 0, y: contextMenu?.y || 0 }}
-      />
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -838,11 +713,8 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
                 onClick={() => handleAction('react')} 
                 className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
               >
-                <div className="flex items-center space-x-1">
-                  <Heart className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm">❤️</span>
-                </div>
-                <span>Add Reaction</span>
+                <Heart className="w-4 h-4 text-gray-600" />
+                <span>React</span>
               </button>
             </>
           )}
@@ -879,7 +751,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const [lastTap, setLastTap] = useState(0);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -918,27 +789,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
     };
   }, [messages, currentUserId, chatId, markChatAsRead]);
 
-  const handleDoubleTap = async (message: Message) => {
-    const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
-    
-    if (now - lastTap < DOUBLE_TAP_DELAY) {
-      // Double tap detected - send love reaction
-      try {
-        await chat.sendReaction(message.id, { type: 'love' });
-      } catch (error) {
-        console.error('Failed to send reaction:', error);
-      }
-    }
-    setLastTap(now);
-  };
-
   const handleTouchStart = (message: Message) => {
     const timer = setTimeout(() => {
       setContextMenu({
         messageId: message.id,
         message: message,
-        x: 0, // You can get touch coordinates if needed
+        x: 0,
         y: 0
       });
     }, 600);
@@ -962,6 +818,24 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
       groups[date].push(message);
     });
     return groups;
+  };
+
+  const renderReactionIcon = (reactionType: string) => {
+    const iconMap = {
+      'love': '❤️',
+      'like': '👍',
+      'laugh': '😂',
+      'wow': '😮',
+      'sad': '😢',
+      'angry': '😡',
+      'fire': '🔥',
+      'thumbs_up': '👍',
+      'thumbs_down': '👎',
+      'heart': '❤️',
+      'smile': '😊',
+      'cry': '😭'
+    };
+    return iconMap[reactionType] || reactionType;
   };
 
   const groupedMessages = groupMessagesByDate(messages);
@@ -988,6 +862,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
               const showAvatar = !isCurrentUser && (!nextMessage || nextMessage.user?.id !== message.user?.id);
               const showName = !isCurrentUser && (!prevMessage || prevMessage.user?.id !== message.user?.id);
               const isGrouped = prevMessage && prevMessage.user?.id === message.user?.id;
+              const hasReactions = message.latest_reactions && message.latest_reactions.length > 0;
 
               if (isSystem) {
                 return (
@@ -1020,7 +895,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                       });
                     }
                   }}
-                  className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mb-1' : 'mb-3'}`}
+                  className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isGrouped && !hasReactions ? 'mb-1' : 'mb-3'} ${hasReactions ? 'mb-6' : ''}`}
                 >
                   <div className={`flex items-end space-x-2 max-w-xs sm:max-w-md lg:max-w-lg ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
                     {!isCurrentUser && (
@@ -1031,7 +906,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                       </div>
                     )}
                     
-                    <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                    <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'} relative`}>
                       {showName && !isCurrentUser && (
                         <span className="text-xs text-gray-600 mb-1 px-2 font-medium">
                           {message.user?.name || 'Unknown User'}
@@ -1044,48 +919,47 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                       )}
                       
                       <div
-                        className={`px-4 py-2 rounded-2xl select-none shadow-sm break-words ${
+                        className={`px-4 py-2 rounded-2xl select-none shadow-sm break-words relative ${
                           isCurrentUser
                             ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-900 border border-gray-200'
                         } ${isGrouped ? 'rounded-t-lg' : ''}`}
                         {...( isMobile && {
                           onTouchStart: () => handleTouchStart(message),
-                          onTouchEnd: () => {
-                            handleTouchEnd();
-                            handleDoubleTap(message);
-                          },
+                          onTouchEnd: handleTouchEnd,
                           onTouchMove: handleTouchEnd, // Cancel on move
                           onTouchCancel: handleTouchEnd // Cancel on interrupt
                         })}
                       >
                         <p className="text-sm sm:text-base leading-relaxed">{message.text}</p>
-                        {message.latest_reactions && message.latest_reactions.length > 0 && (
-                          <ReactionDisplay
-                            reactions={message.latest_reactions}
-                            reactionCounts={message.reaction_counts || {}}
-                            currentUserId={currentUserId}
-                            onReactionClick={async (reactionType: string) => {
-                              try {
-                                // Check if user already reacted with this type
-                                const hasReacted = message.latest_reactions?.some(
-                                  r => (r.user?.id === currentUserId || r.user_id === currentUserId) && r.type === reactionType
-                                );
-                                
-                                if (hasReacted) {
-                                  // Remove reaction
-                                  await chat.deleteReaction(message.id, reactionType);
-                                } else {
-                                  // Add reaction
-                                  await chat.sendReaction(message.id, { type: reactionType });
-                                }
-                              } catch (error) {
-                                console.error('Failed to toggle reaction:', error);
-                              }
-                            }}
-                          />
+                        
+                        {/* Reactions positioned at bottom-right corner of bubble */}
+                        {hasReactions && (
+                          <div className={`absolute -bottom-2 ${isCurrentUser ? '-left-2' : '-right-2'} flex gap-1 z-10`}>
+                            {message.latest_reactions.map((reaction, i) => (
+                              <div
+                                key={i}
+                                className="bg-white border border-gray-200 rounded-full px-1 py-1 shadow-md flex items-center gap-1 min-w-fit"
+                                style={{
+                                  fontSize: '12px',
+                                  lineHeight: '1',
+                                  maxWidth: '60px'
+                                }}
+                              >
+                                <span className="text-sm leading-none">
+                                  {renderReactionIcon(reaction.type)}
+                                </span>
+                                {reaction.count && reaction.count > 1 && (
+                                  <span className="text-xs font-medium text-gray-600 leading-none">
+                                    {reaction.count}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
+                      
                       <div className="flex items-center space-x-1 mt-1 px-2">
                         <span className="text-xs text-gray-500">
                           {formatTime(message.created_at)}
@@ -1093,6 +967,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                         {isAdminView && message.read_by && message.read_by.length > 0 && (
                           <span className="text-xs text-gray-400">
                             Read by {message.read_by.length} user{message.read_by.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {/* Show "You reacted" indicator for current user */}
+                        {hasReactions && message.latest_reactions.some(r => r.user?.id === currentUserId) && (
+                          <span className="text-xs text-blue-500 font-medium">
+                            You reacted
                           </span>
                         )}
                       </div>
