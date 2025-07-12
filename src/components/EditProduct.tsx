@@ -6,30 +6,25 @@ import Spinner from '../components/Spinner';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Upload, X, Check, Camera, MapPin, DollarSign, Tag, FileText, Star, Save } from 'lucide-react';
 
-interface Image {
-  id: string;
-  url: string;
-}
-
 interface ItemFormData {
   title: string;
   description: string;
-  price: string;
+  price: number;
   category: string;
   condition: string;
   school: string;
-  images: Image[];
+  images: string[];
 }
 
 interface ProductData {
   id: string;
   title: string;
   description: string;
-  price: string;
+  price: number;
   category: string;
   condition: string;
   school: string;
-  images: Image[];
+  images: string[];
 }
 
 interface ModernItemEditFormProps {
@@ -49,7 +44,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
   const [formData, setFormData] = useState<ItemFormData>({
     title: '',
     description: '',
-    price: '',
+    price: 0,
     category: '',
     condition: 'new',
     school: user?.campus ?? 'UNN',
@@ -65,7 +60,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
       setFormData({
         title: productData.title || '',
         description: productData.description || '',
-        price: productData.price || '',
+        price: productData.price || 0,
         category: productData.category || '',
         condition: productData.condition || 'new',
         school: productData.school || user?.campus || 'UNN',
@@ -124,10 +119,6 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
     'Beauty', 'Automotive', 'Toys', 'Music', 'Other'
   ];
 
-  interface HandleInputChangeParams {
-    field: keyof ItemFormData;
-    value: string | Image[];
-  }
 
   interface ValidationErrors {
     [key: string]: string | undefined;
@@ -138,7 +129,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
     price?: string;
   }
 
-  const handleInputChange = (field: keyof ItemFormData, value: string | Image[]): void => {
+  const handleInputChange = (field: keyof ItemFormData, value: string | string[]): void => {
     setFormData((prev: ItemFormData) => ({ ...prev, [field]: value }));
     if (errors[field as keyof ValidationErrors]) {
       setErrors((prev: ValidationErrors) => ({ ...prev, [field]: '' }));
@@ -158,7 +149,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
       if (response.data.success) {
         setFormData(prev => ({
           ...prev,
-          images: [...prev.images, { id: response.data.id, url: response.data.url }]
+          images: [...prev.images, response.data.url]
         }));
       } else {
         toast('Failed to upload image');
@@ -225,17 +216,16 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
       
       const response = await productService.updateProduct(productData.id, updateData);
       
-      if (response.data.success) {
-        // Clear draft from localStorage
+      if (response.success) {
         localStorage.removeItem(`itemEditDraft_${productData.id}`);
-        toast('Item updated successfully!');
+        toast.success('Item updated successfully!');
         onSuccess?.();
       } else {
-        toast('Failed to update item');
+        toast.error('Failed to update item');
       }
     } catch (error) {
       console.error('Update error:', error);
-      toast('Failed to update item');
+      toast.error('Failed to update item');
     } finally {
       setLoading(false);
     }
@@ -307,7 +297,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {formData.images.map((image, index) => (
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img src={image.url} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+                  <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
@@ -456,7 +446,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
                 {formData.images.slice(0, 2).map((image, index) => (
                   <img
                     key={index}
-                    src={image.url}
+                    src={image}
                     alt={`Preview ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg"
                   />

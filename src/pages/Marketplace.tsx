@@ -3,13 +3,28 @@ import ModernItemEditForm from '../components/EditProduct';
 import { useUserStore } from '../store/userStore';
 import { useProductStore } from '../store/productStore';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Grid, List, Star, MapPin, Calendar, ChevronDown, X, Heart, MessageCircle, ShoppingCart, Edit, Trash2, ChevronLeft, ChevronRight, ZoomIn, Expand, Loader } from 'lucide-react';
+import { Search, Filter, Grid, List, Star, MapPin, X, Heart, MessageCircle, ShoppingCart, Edit, Trash2, ChevronLeft, ChevronRight, ZoomIn, Expand, Loader } from 'lucide-react';
 import { productService } from '../services/productService';
-import api from '../utils/apiService';
 import { useChatStore } from '../store/chatStore';
 
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  condition: string;
+  images: string[];
+  sellerId: string;
+  sellerName?: string;
+  sellerAvatar?: string;
+  sellerCampus?:string;
+  sellerRating?: number;
+  school: string;
+}
+
 // FadeIn Animation Component
-const FadeIn = ({ children, delay = 0 }) => {
+const FadeIn = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -24,8 +39,16 @@ const FadeIn = ({ children, delay = 0 }) => {
   );
 };
 
+interface ImageGalleryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  images: string[];
+  initialIndex?: number;
+  productTitle: string;
+}
+
 // Image Gallery Modal Component
-const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productTitle }) => {
+const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productTitle }: ImageGalleryModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -44,7 +67,11 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
   }, [isOpen, initialIndex]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    interface KeyboardEvent {
+      key: string;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (!isOpen) return;
       
       switch (e.key) {
@@ -62,6 +89,7 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, currentIndex]);
 
   const goToPrevious = () => {
@@ -115,7 +143,7 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
             }`}
             onClick={() => setIsZoomed(!isZoomed)}
             onError={(e) => {
-              e.target.src = '/api/placeholder/800/600';
+              (e.target as HTMLImageElement).src = '/api/placeholder/800/600';
             }}
           />
         </div>
@@ -143,7 +171,8 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
       {images.length > 1 && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent">
           <div className="flex items-center justify-center p-4 space-x-2 overflow-x-auto">
-            {images.map((image, index) => (
+
+            {images.map((image: string, index: number) => (
               <button
                 key={index}
                 onClick={() => {
@@ -160,8 +189,8 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
                   src={image}
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = '/api/placeholder/64/64';
+                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                    (e.target as HTMLImageElement).src = '/api/placeholder/64/64';
                   }}
                 />
               </button>
@@ -175,8 +204,8 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
 
 // Enhanced Product Card Component
 const ProductCard = ({ product, onEdit, currentUserId = null }: {
-  product: any;
-  onEdit: (product: any) => void;
+  product: Product;
+  onEdit: (product: Product) => void;
   currentUserId?: string | null;
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -187,7 +216,7 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
   const [isContactingSeller, setIsContactingSeller] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useUserStore(state => state.user);
-  const { startMessaging, isLoadingChats, chats } = useChatStore();
+  const { startMessaging, chats } = useChatStore();
   const [imageError, setImageError] = useState<{ [key: number]: boolean }>({});
 
   const isOwner = currentUserId === product.sellerId;
@@ -200,9 +229,6 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
     }).format(price);
   };
 
-  interface DeleteProductError {
-    message: string;
-  }
 
   const handleDeleteProduct = async (productId: string): Promise<void> => {
     setDeleteLoading(true);
@@ -226,28 +252,28 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
     }
   };
 
-  const handleImageError = (imageIndex) => {
+  const handleImageError = (imageIndex: number) => {
     setImageError(prev => ({
       ...prev,
       [imageIndex]: true
     }));
   };
 
-  const goToNextImage = (e) => {
+  const goToNextImage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setCurrentImageIndex(prev => 
       prev < productImages.length - 1 ? prev + 1 : 0
     );
   };
 
-  const goToPreviousImage = (e) => {
+  const goToPreviousImage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setCurrentImageIndex(prev => 
       prev > 0 ? prev - 1 : productImages.length - 1
     );
   };
 
-  const openGallery = (e) => {
+  const openGallery = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setIsGalleryOpen(true);
   };
@@ -264,12 +290,6 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
       // Shouldn't happen, but just in case
       return;
     }
-
-    console.log('=== DEBUG INFO ===');
-    console.log('user.userId:', user?.userId);
-    console.log('seller object:', sellerId);
-    console.log('product.sellerId:', product.sellerId);
-    console.log('==================');
 
     setIsContactingSeller(true);
     setError(null); // Clear any previous errors
@@ -410,7 +430,7 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
           {/* Seller Info */}
           <div className="flex items-center space-x-3 mb-4">
             <img 
-              src={product?.sellerAvatarUrl || '/api/placeholder/32/32'} 
+              src={product?.sellerAvatar || '/api/placeholder/32/32'} 
               alt={product?.sellerName || 'Seller'}
               className="w-8 h-8 rounded-full object-cover"
             />
@@ -422,7 +442,7 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
                 <Star className="w-3 h-3 text-yellow-400 fill-current" />
                 <span className="text-xs text-gray-500">{product?.sellerRating || 'N/A'}</span>
                 <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500 truncate">{product?.selllerCampus || product.school}</span>
+                <span className="text-xs text-gray-500 truncate">{product?.sellerCampus || product.school}</span>
               </div>
             </div>
           </div>
@@ -602,7 +622,7 @@ const MarketplaceUI = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [schools, setSchools] = useState<string[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Get state from stores
   const { products, loading, error } = useProductStore();

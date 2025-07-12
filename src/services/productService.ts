@@ -4,10 +4,14 @@ import { useProductStore, Product } from '../store/productStore'; // Your produc
 interface GetProductsResponse {
   items: Product[];
   success: boolean;
+  item: Product;
 }
 
-interface ApiErrorResponse {
-  message: string;
+interface ApiUpdateResponse {
+  message?: string;
+  success: boolean;
+  product: Product;
+  error?: string;
 }
 
 class ProductService {
@@ -96,13 +100,13 @@ class ProductService {
    * @param updates - Partial product data to update
    * @return Updated product
    */
-    async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+    async updateProduct(id: string, updates: Partial<Product>): Promise<{success: boolean, item: Product, message?: string}> {
         try {
-        const response = await api.put<Product>(`/api/seller/item/${id}`, updates);
+        const response = await api.put<ApiUpdateResponse>(`/api/seller/item/${id}`, updates);
         if (response.data) {
             const store = useProductStore.getState();
-            store.updateProduct(id, response.data);
-            return response.data;
+            store.updateProduct(id, response.data.product);
+            return {success : true, item : response.data.product, message: response.data.message || 'Product updated successfully'};
         } else {
             throw new Error('Failed to update product');
         }

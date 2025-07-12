@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import api, { imageApi } from '../utils/apiService';
+import { toast } from 'sonner';
 import Spinner from '../components/Spinner';
 import { ChevronLeft, ChevronRight, Upload, X, Check, Camera, MapPin, DollarSign, Tag, FileText, Star } from 'lucide-react';
 
@@ -104,11 +105,11 @@ const ModernItemListingForm = () => {
           images: [...prev.images, { id: response.data.id, url: response.data.url }]
         }));
       } else {
-        alert('Failed to upload image');
+        toast.error('Failed to upload image');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload image');
+      toast.error('Failed to upload image');
     } finally {
       setIsUploading(false);
     }
@@ -164,7 +165,7 @@ const ModernItemListingForm = () => {
       const response = await api.post('/api/seller/create-item', formData);
       if (response.data.success) {
         localStorage.removeItem('itemListingDraft');
-        alert('Item listed successfully!');
+        toast.success('Item listed successfully!');
         // Reset form
         setFormData({
           title: '',
@@ -177,11 +178,11 @@ const ModernItemListingForm = () => {
         });
         setCurrentStep(1);
       } else {
-        alert('Failed to list item');
+        toast.error('Failed to list item');
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('Failed to list item');
+      toast.error('Failed to list item');
     } finally {
       setLoading(false);
     }
