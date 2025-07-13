@@ -169,7 +169,7 @@ export function App() {
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
                 <Routes>
-                  <Route path="/" element={<ProtectedRoute> <HomeOrDashboard /> </ProtectedRoute>} />
+                  <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
                   <Route path="/product/:id" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
                   <Route path="/login" element={<Login />} />

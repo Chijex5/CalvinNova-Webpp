@@ -8,7 +8,7 @@ import { Channel, StreamChat } from 'stream-chat';
 import { client } from '../lib/stream-chat';
 
 // Enhanced Types
-interface User {
+export interface User {
   id: string;
   name?: string;
   image?: string;
@@ -39,8 +39,8 @@ interface Message {
   }>;
 }
 
-interface Chat extends Channel {
-  id: string;
+export interface Chat extends Channel {
+  id: string | undefined;
   data: ChatData;
   state: {
     members?: { [key: string]: ChatMember };
@@ -190,7 +190,7 @@ interface OnlineIndicatorProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size = 'sm' }) => {
+export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size = 'sm' }) => {
   const isOnline = useUserOnlineStatus(userId);
   const sizeClasses = {
     sm: 'w-3 h-3',
@@ -936,7 +936,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                         {/* Reactions positioned at bottom-right corner of bubble */}
                         {hasReactions && (
                           <div className={`absolute -bottom-2 ${isCurrentUser ? '-left-2' : '-right-2'} flex gap-1 z-10`}>
-                            {message.latest_reactions.map((reaction, i) => (
+                            {message.latest_reactions?.map((reaction, i) => (
                               <div
                                 key={i}
                                 className="bg-white border border-gray-200 rounded-full px-1 py-1 shadow-md flex items-center gap-1 min-w-fit"

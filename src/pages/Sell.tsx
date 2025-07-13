@@ -3,12 +3,13 @@ import { useUserStore } from '../store/userStore';
 import api, { imageApi } from '../utils/apiService';
 import { toast } from 'sonner';
 import Spinner from '../components/Spinner';
-import { ChevronLeft, ChevronRight, Upload, X, Check, Camera, MapPin, DollarSign, Tag, FileText, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Upload, X, Check, Camera, MapPin, DollarSign, Tag, FileText, Star, Info, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface Image {
   id: string;
   url: string;
 }
+
 interface ItemFormData {
   title: string;
   description: string;
@@ -17,6 +18,15 @@ interface ItemFormData {
   condition: string;
   school: string;
   images: Image[];
+}
+
+interface ImageUploadState {
+  file: File;
+  status: 'uploading' | 'success' | 'error';
+  progress: number;
+  url?: string;
+  id?: string;
+  error?: string;
 }
 
 const ModernItemListingForm = () => {
@@ -32,7 +42,7 @@ const ModernItemListingForm = () => {
     school: user?.campus ?? 'UNN',
     images: []
   });
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<ImageUploadState[]>([]);
   const [errors, setErrors] = useState<ValidationErrors>({});
   
 
@@ -89,29 +99,105 @@ const ModernItemListingForm = () => {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
-    if (!file) return;
+  const handleMultipleImageUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
     
-    setIsUploading(true);
-    try {
+    const maxImages = 4;
+    const currentImageCount = formData.images.length;
+    const availableSlots = maxImages - currentImageCount;
+    
+    if (availableSlots <= 0) {
+      toast.error(`Maximum ${maxImages} images allowed`);
+      return;
+    }
+    
+    const filesToUpload = Array.from(files).slice(0, availableSlots);
+    
+    // Initialize upload states
+    const initialUploadStates: ImageUploadState[] = filesToUpload.map(file => ({
+      file,
+      status: 'uploading',
+      progress: 0
+    }));
+    
+    setUploadingImages(prev => [...prev, ...initialUploadStates]);
+    
+    // Upload images concurrently
+    const uploadPromises = filesToUpload.map(async (file, index) => {
       const uploadData = new FormData();
       uploadData.append('file', file);
       
-      const response = await imageApi.post('/api/seller/upload', uploadData);
-      
-      if (response.data.success) {
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, { id: response.data.id, url: response.data.url }]
-        }));
-      } else {
-        toast.error('Failed to upload image');
+      try {
+        // Simulate progress for better UX
+        const progressInterval = setInterval(() => {
+          setUploadingImages(prev => 
+            prev.map((state, i) => 
+              state.file === file 
+                ? { ...state, progress: Math.min(state.progress + 10, 90) }
+                : state
+            )
+          );
+        }, 200);
+        
+        const response = await imageApi.post('/api/seller/upload', uploadData);
+        
+        clearInterval(progressInterval);
+        
+        if (response.data.success) {
+          // Update upload state to success
+          setUploadingImages(prev => 
+            prev.map(state => 
+              state.file === file 
+                ? { ...state, status: 'success', progress: 100, url: response.data.url, id: response.data.id }
+                : state
+            )
+          );
+          
+          // Add to formData
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, { id: response.data.id, url: response.data.url }]
+          }));
+          
+          return { success: true, id: response.data.id, url: response.data.url };
+        } else {
+          throw new Error('Upload failed');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        
+        // Update upload state to error
+        setUploadingImages(prev => 
+          prev.map(state => 
+            state.file === file 
+              ? { ...state, status: 'error', progress: 0, error: 'Upload failed' }
+              : state
+          )
+        );
+        
+        return { success: false, error: 'Upload failed' };
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload image');
-    } finally {
-      setIsUploading(false);
+    });
+    
+    // Wait for all uploads to complete
+    const results = await Promise.all(uploadPromises);
+    
+    // Remove completed uploads from state after a delay
+    setTimeout(() => {
+      setUploadingImages(prev => 
+        prev.filter(state => !filesToUpload.includes(state.file))
+      );
+    }, 2000);
+    
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.filter(r => !r.success).length;
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} image${successCount > 1 ? 's' : ''} uploaded successfully`);
+    }
+    
+    if (errorCount > 0) {
+      toast.error(`${errorCount} image${errorCount > 1 ? 's' : ''} failed to upload`);
     }
   };
 
@@ -120,6 +206,10 @@ const ModernItemListingForm = () => {
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
+  };
+
+  const removeUploadingImage = (file: File) => {
+    setUploadingImages(prev => prev.filter(state => state.file !== file));
   };
 
   const validateStep = (step: number) => {
@@ -188,6 +278,13 @@ const ModernItemListingForm = () => {
     }
   };
 
+  const calculatePayout = (price: string) => {
+    const numPrice = Number(price);
+    if (isNaN(numPrice) || numPrice <= 0) return 0;
+    const agentFee = numPrice * 0.08;
+    return numPrice - agentFee;
+  };
+
   const ToggleButton = ({ options, selected, onChange, label }: {options: {value: string, label: string}[], selected: string, onChange: (option: string) => void, label: string}) => (
     <div className="space-y-2">
       <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -229,6 +326,34 @@ const ModernItemListingForm = () => {
     </div>
   );
 
+  const InfoBox = ({ title, children, type = 'info' }: { title: string; children: React.ReactNode; type?: 'info' | 'warning' | 'success' }) => {
+    const styles = {
+      info: 'bg-blue-50 border-blue-200 text-blue-800',
+      warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+      success: 'bg-green-50 border-green-200 text-green-800'
+    };
+    
+    const icons = {
+      info: Info,
+      warning: AlertCircle,
+      success: CheckCircle2
+    };
+    
+    const Icon = icons[type];
+    
+    return (
+      <div className={`p-4 rounded-lg border ${styles[type]}`}>
+        <div className="flex items-start space-x-2">
+          <Icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium mb-1">{title}</h4>
+            <div className="text-sm">{children}</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -240,37 +365,91 @@ const ModernItemListingForm = () => {
               <p className="text-sm text-gray-500">Upload high-quality photos of your item</p>
             </div>
             
+            <InfoBox title="📸 Photo Tips" type="info">
+              <ul className="space-y-1">
+                <li>• The more photos, the better (up to 4 images)</li>
+                <li>• Use good lighting and clear angles</li>
+                <li>• Show any flaws or damage honestly</li>
+                <li>• Multiple photos increase buyer confidence</li>
+              </ul>
+            </InfoBox>
+            
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {/* Existing images */}
               {formData.images.map((image, index) => (
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                   <img src={image.url} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-md"
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ))}
               
-              {formData.images.length < 5 && (
+              {/* Uploading images */}
+              {uploadingImages.map((uploadState, index) => (
+                <div key={`uploading-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    {uploadState.status === 'uploading' && (
+                      <>
+                        <Spinner className="h-6 w-6 text-blue-500 mb-2" />
+                        <div className="text-xs text-gray-600 mb-1">Uploading...</div>
+                        <div className="w-3/4 bg-gray-200 rounded-full h-1">
+                          <div 
+                            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadState.progress}%` }}
+                          />
+                        </div>
+                      </>
+                    )}
+                    {uploadState.status === 'success' && (
+                      <>
+                        <CheckCircle2 className="h-6 w-6 text-green-500 mb-2" />
+                        <div className="text-xs text-green-600">Uploaded!</div>
+                      </>
+                    )}
+                    {uploadState.status === 'error' && (
+                      <>
+                        <AlertCircle className="h-6 w-6 text-red-500 mb-2" />
+                        <div className="text-xs text-red-600 mb-1">Upload failed</div>
+                        <button
+                          onClick={() => removeUploadingImage(uploadState.file)}
+                          className="text-xs text-red-500 underline"
+                        >
+                          Remove
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Upload button */}
+              {(formData.images.length + uploadingImages.length) < 4 && (
                 <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
                   <Upload className="h-8 w-8 text-gray-400" />
-                  <span className="text-sm text-gray-500 mt-2">Add Photo</span>
+                  <span className="text-sm text-gray-500 mt-2">Add Photos</span>
+                  <span className="text-xs text-gray-400 mt-1">Select multiple</span>
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])}
+                    multiple
+                    onChange={(e) => e.target.files && handleMultipleImageUpload(e.target.files)}
                     className="hidden"
-                    disabled={isUploading}
+                    disabled={uploadingImages.some(state => state.status === 'uploading')}
                   />
                 </label>
               )}
             </div>
             
+            <div className="text-center text-sm text-gray-500">
+              {formData.images.length + uploadingImages.filter(s => s.status === 'success').length} / 4 photos uploaded
+            </div>
+            
             {errors.images && <p className="text-red-500 text-sm">{errors.images}</p>}
-            {isUploading && <p className="text-blue-500 text-sm">Uploading...</p>}
           </div>
         );
 
@@ -283,6 +462,15 @@ const ModernItemListingForm = () => {
               <p className="text-sm text-gray-500">Tell buyers about your item</p>
             </div>
             
+            <InfoBox title="✍️ Writing Tips" type="info">
+              <ul className="space-y-1">
+                <li>• Be specific and detailed in your description</li>
+                <li>• Mention brand, model, size, and condition</li>
+                <li>• Include any flaws or defects</li>
+                <li>• Use keywords buyers might search for</li>
+              </ul>
+            </InfoBox>
+            
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
@@ -291,7 +479,7 @@ const ModernItemListingForm = () => {
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="What are you selling?"
+                  placeholder="e.g., iPhone 13 Pro Max 128GB - Excellent condition"
                 />
                 {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
               </div>
@@ -303,7 +491,7 @@ const ModernItemListingForm = () => {
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={4}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Describe your item in detail..."
+                  placeholder="Describe your item in detail... Include brand, model, condition, any accessories, etc."
                 />
                 {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
               </div>
@@ -366,14 +554,33 @@ const ModernItemListingForm = () => {
                 {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
               </div>
               
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">💡 Pricing Tips</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
+              {formData.price && Number(formData.price) > 0 && (
+                <InfoBox title="💰 Your Payout Breakdown" type="success">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Item Price:</span>
+                      <span>₦{Number(formData.price).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Agent Fee (8%):</span>
+                      <span>-₦{(Number(formData.price) * 0.08).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-green-700 border-t pt-2">
+                      <span>You'll receive:</span>
+                      <span>₦{calculatePayout(formData.price).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </InfoBox>
+              )}
+              
+              <InfoBox title="💡 Pricing Tips" type="info">
+                <ul className="space-y-1">
                   <li>• Research similar items to price competitively</li>
                   <li>• Consider the condition and age of your item</li>
                   <li>• Leave room for negotiation</li>
+                  <li>• We charge an 8% agent fee on successful sales</li>
                 </ul>
-              </div>
+              </InfoBox>
             </div>
           </div>
         );
@@ -386,6 +593,10 @@ const ModernItemListingForm = () => {
               <h3 className="text-lg font-medium text-gray-900 mt-2">Review & Publish</h3>
               <p className="text-sm text-gray-500">Double-check everything looks good</p>
             </div>
+            
+            <InfoBox title="🚀 Ready to publish?" type="success">
+              Once published, your item will be visible to buyers on your campus. You'll receive notifications when someone shows interest.
+            </InfoBox>
             
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -417,7 +628,12 @@ const ModernItemListingForm = () => {
                   </span>
                 </div>
                 
-                <div className="text-lg font-semibold text-gray-900">₦{formData.price}</div>
+                <div className="flex justify-between items-center">
+                  <div className="text-lg font-semibold text-gray-900">₦{formData.price}</div>
+                  <div className="text-sm text-green-600">
+                    You'll earn: ₦{calculatePayout(formData.price).toLocaleString()}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -426,94 +642,111 @@ const ModernItemListingForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className={`p-2 rounded-full ${
-              currentStep === 1 ? 'text-gray-400' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Desktop wrapper */}
+      <div className="max-w-md mx-auto bg-white min-h-screen lg:max-w-2xl lg:my-8 lg:rounded-lg lg:shadow-xl lg:min-h-0">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10 lg:rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className={`p-2 rounded-full ${
+                currentStep === 1 ? 'text-gray-400' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            
+            <h1 className="text-lg font-semibold">List Item</h1>
+            
+            <div className="w-10" />
+          </div>
           
-          <h1 className="text-lg font-semibold">List Item</h1>
-          
-          <div className="w-10" />
-        </div>
-        
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-2">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.id} className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      currentStep >= step.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
+          {/* Progress Bar */}
+          <div className="mt-4">
+            <div className="flex justify-between items-center mb-2">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <div key={step.id} className="flex flex-col items-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        currentStep >= step.id
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className="text-xs mt-1 text-gray-600">{step.title}</span>
                   </div>
-                  <span className="text-xs mt-1 text-gray-600">{step.title}</span>
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / 4) * 100}%` }}
-            />
+                );
+              })}
+            </div>
+            
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(currentStep / 4) * 100}%` }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="p-4 pb-24">
-        {renderStep()}
-      </div>
+        {/* Content */}
+        <div className="p-4 pb-24 lg:pb-4">
+          {renderStep()}
+        </div>
 
-      {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-        <div className="max-w-md mx-auto">
-          {currentStep < 4 ? (
-            <button
-              onClick={nextStep}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center justify-center"
-            >
-              Continue
-              <ChevronRight className="h-5 w-5 ml-1" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center
-                ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white'}
-              `}
-              aria-busy={loading}
-            >
-              {loading ? (
-                <>
-                  <Spinner className="h-5 w-5 mr-2" />
-                  <span className="text-white">Listing...</span>
-                </>
-              ) : (
-                <>
-                  <Star className="h-5 w-5 mr-2" />
-                  <span>List Item</span>
-                </>
-              )}
-            </button>
-          )}
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 lg:rounded-b-lg">
+          <div className="max-w-md mx-auto lg:max-w-none">
+            {currentStep < 4 ? (
+              <button
+                onClick={nextStep}
+                disabled={uploadingImages.some(state => state.status === 'uploading')}
+                className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
+                  uploadingImages.some(state => state.status === 'uploading')
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                {uploadingImages.some(state => state.status === 'uploading') ? (
+                  <>
+                    <Spinner className="h-5 w-5 mr-2" />
+                    <span>Uploading images...</span>
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ChevronRight className="h-5 w-5 ml-1" />
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center
+                  ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white'}
+                `}
+                aria-busy={loading}
+              >
+                {loading ? (
+                  <>
+                    <Spinner className="h-5 w-5 mr-2" />
+                    <span className="text-white">Publishing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Star className="h-5 w-5 mr-2" />
+                    <span>Publish Item</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
