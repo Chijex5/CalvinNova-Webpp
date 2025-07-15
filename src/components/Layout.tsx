@@ -28,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <h3 className="text-xl font-bold mb-4 text-white">
-                  CalvinNova
+                  NovaPlus
                 </h3>
                 <p className="text-indigo-200 mb-4">
                   The trusted marketplace for college students to buy and sell
@@ -100,7 +100,7 @@ const Layout: React.FC<LayoutProps> = ({
               </div>
             </div>
             <div className="border-t border-indigo-800 mt-8 pt-6 text-center text-indigo-300">
-              <p>© 2023 CalvinNova. All rights reserved.</p>
+              <p>© 2023 NovaPlus. All rights reserved.</p>
             </div>
           </div>
         </footer>}

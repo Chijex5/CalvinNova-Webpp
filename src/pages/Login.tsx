@@ -327,7 +327,7 @@ const Login = () => {
             <h1 className="text-4xl font-bold mb-4">
               Welcome to{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300">
-                CalvinNova
+                NovaPlus
               </span>
             </h1>
             <p className="text-xl text-indigo-100 leading-relaxed">
@@ -376,7 +376,7 @@ const Login = () => {
               <span className="text-sm text-indigo-200">5000+ Active Users</span>
             </div>
             <p className="text-sm text-indigo-200">
-              "CalvinNova made selling my textbooks so easy! Found buyers within hours." - Sarah M.
+              "NovaPlus made selling my textbooks so easy! Found buyers within hours." - Sarah M.
             </p>
           </div>
         </div>
@@ -388,7 +388,7 @@ const Login = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              CalvinNova
+              NovaPlus
             </h1>
             <p className="text-gray-600 mt-2">Campus Marketplace</p>
           </div>

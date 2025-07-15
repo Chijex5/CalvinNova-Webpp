@@ -499,7 +499,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
           <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
             {otherUser?.name || 'Unknown User'}
             <p className="text-sm text-gray-500 truncate">
-              {isOtherUserOnline ? 'Online' : 'CalvinNova Student'}
+              {isOtherUserOnline ? 'Online' : 'NovaPlus Student'}
             </p>
           </h3>
         </div>
@@ -1375,7 +1375,7 @@ const ChatInterface: React.FC = () => {
                 <Send className="w-16 h-16 text-gray-400" />
               </div>
               <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                Welcome to CalvinNova Chat
+                Welcome to NovaPlus Chat
               </h2>
               <p className="text-gray-500 max-w-md">
                 Select a conversation from the sidebar to start messaging. 

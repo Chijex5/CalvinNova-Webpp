@@ -244,17 +244,13 @@ export const AuthProvider: React.FC<{
         setIsAuthenticated(true);
         initialAuthComplete.current = true;
         
-        // Sync products in the background (fetch fresh products for login)
-        productService.fetchProducts().catch(error => {
-          console.error('Background product fetch failed:', error);
-        });
-        
         return {success: true, message: 'Login successful'};
       }
       
       return {success: false, message: 'Login failed'};
     } catch (error: any) {
       setError(error.response?.data.error || 'Login failed');
+      console.error(error)
       return {success: false, message: error.response?.data.error || 'Login failed'};
     } finally {
       setIsMiddleOfAuthFlow(false);

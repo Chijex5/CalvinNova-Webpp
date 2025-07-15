@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
+import SupportChat from './pages/ChatBot';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import MarketplaceUI from './pages/Marketplace';
@@ -36,7 +37,7 @@ const ModernLoader: React.FC = () => {
         {/* CalvinNova brand logo placeholder */}
         <div className="relative mb-4">
           <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 animate-pulse">
-            CalvinNova
+            NovaPlus
           </div>
         </div>
         
@@ -154,12 +155,6 @@ const SellerRoute = ({
   return <>{children}</>;
 };
 // Route wrapper component to handle conditional rendering
-const HomeOrDashboard = () => {
-  const {
-    isAuthenticated
-  } = useAuth();
-  return isAuthenticated ? <Dashboard /> : <Home />;
-};
 export function App() {
   return <Router>
       <Toaster position="top-right" richColors />
@@ -168,6 +163,7 @@ export function App() {
           <ChatProvider>
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
+                <SupportChat />
                 <Routes>
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />

@@ -239,7 +239,7 @@ const Signup = () => {
             <h1 className="text-4xl font-bold mb-4">
               Join{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300">
-                CalvinNova
+                NovaPlus
               </span>
             </h1>
             <p className="text-xl text-indigo-100 leading-relaxed">
@@ -299,7 +299,7 @@ const Signup = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              CalvinNova
+              NovaPlus
             </h1>
             <p className="text-gray-600 mt-2">Join the Campus Marketplace</p>
           </div>
@@ -464,7 +464,7 @@ const Signup = () => {
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Almost there!
                     </h2>
-                    <p className="text-gray-600">Tell us how you plan to use CalvinNova</p>
+                    <p className="text-gray-600">Tell us how you plan to use NovaPlus</p>
                   </div>
 
                   {errors.form && <ErrorDisplay error={errors.form} />}
