@@ -93,16 +93,56 @@ export const AuthProvider: React.FC<{
   
   // Track if initial auth check is complete
   const initialAuthComplete = useRef<boolean>(false);
+  // Track if StreamChat is connected
+  const streamChatConnected = useRef<boolean>(false);
+  
+  // Helper function to safely connect to StreamChat
+  const connectToStreamChat = async (userData: User) => {
+    try {
+      // Disconnect if already connected
+      if (streamChatConnected.current) {
+        await client.disconnect();
+        streamChatConnected.current = false;
+      }
+
+      await client.connectUser(
+        {
+          id: userData.userId,
+          name: userData.name,
+          image: userData.avatarUrl,
+        },
+        userData.userToken
+      );
+      
+      streamChatConnected.current = true;
+    } catch (error) {
+      console.error('StreamChat connection error:', error);
+      // Don't throw here - StreamChat connection failure shouldn't prevent login
+    }
+  };
+
+  // Helper function to safely disconnect from StreamChat
+  const disconnectFromStreamChat = async () => {
+    try {
+      if (streamChatConnected.current) {
+        await client.disconnect();
+        streamChatConnected.current = false;
+      }
+    } catch (error) {
+      console.error('StreamChat disconnect error:', error);
+    }
+  };
   
   const logout = async (): Promise<void> => {
     try {
+      await disconnectFromStreamChat();
       clearUser();
       localStorage.removeItem('token');
       setIsAuthenticated(false);
       initialAuthComplete.current = false;
     } catch (error) {
       console.error('Logout error:', error);
-      // Clear user even if Firebase logout fails
+      // Clear user even if logout fails
       clearUser();
       setIsAuthenticated(false);
     }
@@ -121,14 +161,8 @@ export const AuthProvider: React.FC<{
         setIsAuthenticated(true);
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
         
-        await client.connectUser(
-          {
-            id: response.data.user.userId,
-            name: response.data.user.name,
-            image: response.data.user.avatarUrl,
-          },
-          response.data.user.userToken
-        );
+        // Connect to StreamChat
+        await connectToStreamChat(response.data.user);
 
         // Sync products in the background (refresh existing products)
         productService.refreshProducts().catch(error => {
@@ -206,6 +240,13 @@ export const AuthProvider: React.FC<{
     };
   }, []); // Empty dependency array - only run on mount
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      disconnectFromStreamChat();
+    };
+  }, []);
+
   const resetPassword = async (email: string): Promise<Response> => {
     try {
       setLoading(true);
@@ -232,14 +273,10 @@ export const AuthProvider: React.FC<{
         localStorage.setItem('token', response.data.access_token);
         const userData = response.data.user;
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
-        await client.connectUser(
-          {
-            id: response.data.user.userId,
-            name: response.data.user.name,
-            image: response.data.user.avatarUrl,
-          },
-          response.data.user.userToken
-        );
+        
+        // Connect to StreamChat
+        await connectToStreamChat(userData);
+        
         setUser(userData);
         setIsAuthenticated(true);
         initialAuthComplete.current = true;
@@ -267,14 +304,10 @@ export const AuthProvider: React.FC<{
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
-        await client.connectUser(
-          {
-            id: response.data.user.userId,
-            name: response.data.user.name,
-            image: response.data.user.avatarUrl,
-          },
-          response.data.user.userToken
-        );
+        
+        // Connect to StreamChat
+        await connectToStreamChat(response.data.user);
+        
         setUser(response.data.user);
         setIsAuthenticated(true);
         initialAuthComplete.current = true;

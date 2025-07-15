@@ -65,9 +65,6 @@ const Dashboard = () => {
     isAuthenticated
   } = useAuth();
   const navigate = useNavigate();
-  const {
-    conversations
-  } = useChat();
   const [greeting, setGreeting] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
   const { products, loading, error } = useProductStore();

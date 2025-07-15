@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StreamChat, Channel, Message as StreamMessage, User as StreamUser } from 'stream-chat';
-import { MessageCircle, X, Send, AlertCircle, User, Bot, Clock, CheckCircle, ArrowLeft, MoreVertical, Phone, Video, Paperclip, Smile, Mic, Image, Camera, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, X, Send, AlertCircle, User, Bot, Clock, CheckCircle, ArrowLeft, MoreVertical, Phone, Video, Paperclip, Smile, Mic, Image, Camera, Minimize2, Maximize2, Shield, UserCheck } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
+import { useAuth } from '../context/AuthContext';
 import { client } from '../lib/stream-chat';
 
 // Bot configuration
 const CHATBOT_ID = "novaplus-support-bot";
+const SUPPORT_AGENT_ID = "support-agent-id";
 
 interface SupportChatProps {
   className?: string;
@@ -30,6 +32,8 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
+  const [isReady, setIsReady] = useState(false);
   const [isEscalated, setIsEscalated] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
@@ -39,11 +43,13 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [supportAgentStatus, setSupportAgentStatus] = useState<'online' | 'away' | 'offline'>('online');
   const [isMobile, setIsMobile] = useState(false);
+  const [agentInfo, setAgentInfo] = useState<{name: string, avatar?: string} | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const botTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { currentChat, startMessaging, sendMessage, isSendingMessage } = useChatStore();
   const { user } = useUserStore();
@@ -65,6 +71,12 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   };
 
   useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+        setIsReady(true);
+    }
+  }, [isLoading, isAuthenticated]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages, showTypingAnimation]);
 
@@ -83,8 +95,30 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
+      if (botTypingTimeoutRef.current) {
+        clearTimeout(botTypingTimeoutRef.current);
+      }
     };
   }, [currentChannel]);
+
+  // Bot typing timeout - 30 seconds
+  const startBotTypingTimeout = () => {
+    if (botTypingTimeoutRef.current) {
+      clearTimeout(botTypingTimeoutRef.current);
+    }
+    
+    botTypingTimeoutRef.current = setTimeout(() => {
+      setBotTyping(false);
+      setShowTypingAnimation(false);
+    }, 30000); // 30 seconds
+  };
+
+  // Clear bot typing timeout
+  const clearBotTypingTimeout = () => {
+    if (botTypingTimeoutRef.current) {
+      clearTimeout(botTypingTimeoutRef.current);
+    }
+  };
 
   const initializeChat = async () => {
     try {
@@ -102,21 +136,58 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       setConnectionStatus('connected');
       setIsConnected(true);
 
+      // Check if support agent is already in the channel
+      const channelState = channel.state;
+      const members = channelState.members;
+      const hasAgent = Object.keys(members).some(memberId => 
+        memberId === SUPPORT_AGENT_ID || 
+        members[memberId].user?.role === 'admin' ||
+        members[memberId].user?.name?.toLowerCase().includes('support')
+      );
+
+      if (hasAgent) {
+        setIsEscalated(true);
+        // Get agent info
+        const agentMember = Object.values(members).find(member => 
+          member.user?.id === SUPPORT_AGENT_ID || 
+          member.user?.role === 'admin' ||
+          member.user?.name?.toLowerCase().includes('support')
+        );
+        if (agentMember) {
+          setAgentInfo({
+            name: agentMember.user?.name || 'Support Agent',
+            avatar: agentMember.user?.image
+          });
+        }
+      }
+
       // Load existing messages
       const history = await channel.query({
         messages: { limit: 50 },
       });
 
       if (history.messages) {
-        const formattedMessages: ChatMessage[] = history.messages.map(msg => ({
-          id: msg.id,
-          text: msg.text || '',
-          sender: msg.user?.id === CHATBOT_ID ? 'bot' : 
-                 msg.user?.id === user?.userId ? 'user' : 'agent',
-          timestamp: new Date(msg.created_at || Date.now()),
-          type: msg.type === 'system' ? 'system' : 'message',
-          status: 'read',
-        }));
+        const formattedMessages: ChatMessage[] = Array.from(
+        new Map(
+            history.messages.map(msg => {
+                const sender: 'user' | 'bot' | 'agent' = msg.user?.id === CHATBOT_ID ? 'bot' :
+                            msg.user?.id === user?.userId ? 'user' : 'agent';
+                const type: 'message' | 'system' | 'escalation' = msg.type === 'system' ? 'system' : 'message';
+                return [
+                    msg.id,
+                    {
+                        id: msg.id,
+                        text: msg.text || '',
+                        sender,
+                        timestamp: new Date(msg.created_at || Date.now()),
+                        type,
+                        status: 'read' as const,
+                    }
+                ];
+            })
+        ).values()
+        );
+
         setMessages(formattedMessages);
       }
 
@@ -126,8 +197,8 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       channel.on('typing.stop', handleTypingStop);
       channel.on('member.added', handleEscalation);
 
-      // Send initial greeting if no messages
-      if (!history.messages || history.messages.length === 0) {
+      // Send initial greeting if no messages and not escalated
+      if ((!history.messages || history.messages.length === 0) && !hasAgent) {
         setTimeout(() => {
           showBotTyping();
           setTimeout(() => {
@@ -165,31 +236,47 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
     setMessages(prev => [...prev, newMessage]);
     setBotTyping(false);
     setShowTypingAnimation(false);
+    clearBotTypingTimeout();
   };
 
   const handleTypingStart = (event: any) => {
-    if (event.user?.id === CHATBOT_ID) {
+    if (event.user?.id === CHATBOT_ID && !isEscalated) {
       setBotTyping(true);
       setShowTypingAnimation(true);
+      startBotTypingTimeout();
     }
   };
 
   const handleTypingStop = (event: any) => {
     if (event.user?.id === CHATBOT_ID) {
       setBotTyping(false);
+      clearBotTypingTimeout();
     }
   };
 
   const handleEscalation = (event: any) => {
-    if (event.member?.user?.role === 'admin' || event.member?.user?.name?.includes('support')) {
+    const newMember = event.member;
+    if (newMember?.user?.id === SUPPORT_AGENT_ID || 
+        newMember?.user?.role === 'admin' || 
+        newMember?.user?.name?.toLowerCase().includes('support')) {
       setIsEscalated(true);
+      setAgentInfo({
+        name: newMember.user?.name || 'Support Agent',
+        avatar: newMember.user?.image
+      });
+      setBotTyping(false);
+      setShowTypingAnimation(false);
+      clearBotTypingTimeout();
       addSystemMessage('🤝 Connected to human support agent');
     }
   };
 
   const showBotTyping = () => {
-    setBotTyping(true);
-    setShowTypingAnimation(true);
+    if (!isEscalated) {
+      setBotTyping(true);
+      setShowTypingAnimation(true);
+      startBotTypingTimeout();
+    }
   };
 
   const addBotMessage = (text: string) => {
@@ -204,6 +291,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
     setMessages(prev => [...prev, message]);
     setBotTyping(false);
     setShowTypingAnimation(false);
+    clearBotTypingTimeout();
   };
 
   const addSystemMessage = (text: string) => {
@@ -234,11 +322,12 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
     setInputText('');
     setShowAttachments(false);
 
-    // Show bot typing
-    setTimeout(() => {
-      setBotTyping(true);
-      setShowTypingAnimation(true);
-    }, 500);
+    // Show bot typing only if not escalated
+    if (!isEscalated) {
+      setTimeout(() => {
+        showBotTyping();
+      }, 500);
+    }
 
     try {
       await currentChannel.sendMessage({
@@ -254,6 +343,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       console.error('Failed to send message:', error);
       setBotTyping(false);
       setShowTypingAnimation(false);
+      clearBotTypingTimeout();
       // Update message status to error
       setMessages(prev => prev.map(msg => 
         msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg
@@ -322,6 +412,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   const MessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
     const isUser = message.sender === 'user';
     const isBot = message.sender === 'bot';
+    const isAgent = message.sender === 'agent';
     const isSystem = message.type === 'system';
 
     if (isSystem) {
@@ -340,17 +431,37 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
         <div className={`flex items-start gap-3 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
           {/* Avatar */}
           {!isUser && (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-              <Bot size={18} className="text-white" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${
+              isAgent ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'
+            }`}>
+              {isAgent ? (
+                agentInfo?.avatar ? (
+                  <img src={agentInfo.avatar} alt="Agent" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <UserCheck size={18} className="text-white" />
+                )
+              ) : (
+                <Bot size={18} className="text-white" />
+              )}
             </div>
           )}
 
           {/* Message content */}
           <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+            {/* Agent name */}
+            {isAgent && agentInfo && (
+              <div className="text-xs text-gray-500 mb-1 px-2 flex items-center gap-1">
+                <Shield size={12} />
+                {agentInfo.name}
+              </div>
+            )}
+            
             <div className={`relative px-5 py-3 rounded-2xl max-w-full shadow-sm ${
               isUser 
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md' 
-                : 'bg-white text-gray-800 rounded-bl-md border border-gray-200'
+                : isAgent
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-gray-800 rounded-bl-md border border-green-200'
+                  : 'bg-white text-gray-800 rounded-bl-md border border-gray-200'
             }`}>
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                 {message.text}
@@ -381,8 +492,10 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   const TypingIndicator: React.FC = () => (
     <div className="flex justify-start mb-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-          <Bot size={18} className="text-white" />
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
+          isEscalated ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'
+        }`}>
+          {isEscalated ? <UserCheck size={18} className="text-white" /> : <Bot size={18} className="text-white" />}
         </div>
         <div className="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-bl-md border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2">
@@ -417,52 +530,26 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
     </div>
   );
 
-  const HeaderContent = () => (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Bot size={24} className="text-white" />
-            </div>
-            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-              supportAgentStatus === 'online' ? 'bg-green-500' : 
-              supportAgentStatus === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
-            }`} />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white text-lg">NovaPlus Support</h3>
-            <p className="text-sm text-blue-100">
-              {isEscalated ? 'Human agent • Online' : 'AI Assistant • Always available'}
-            </p>
+  const EscalationBanner: React.FC = () => (
+    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 p-4">
+      <div className="flex items-center justify-center gap-3">
+        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+          <UserCheck size={16} className="text-white" />
+        </div>
+        <div className="text-center">
+          <div className="text-green-800 font-semibold text-sm">Connected to Human Support</div>
+          <div className="text-green-600 text-xs">
+            {agentInfo?.name || 'Support Agent'} is here to help
           </div>
         </div>
-      </div>
-      <div className="flex items-center gap-1">
-        <button className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200">
-          <Phone size={20} />
-        </button>
-        <button className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200">
-          <Video size={20} />
-        </button>
-        <button className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200">
-          <MoreVertical size={20} />
-        </button>
-        <button
-          onClick={() => setIsMinimized(!isMinimized)}
-          className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200"
-        >
-          {isMinimized ? <Maximize2 size={20} /> : <Minimize2 size={20} />}
-        </button>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200"
-        >
-          <X size={20} />
-        </button>
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
       </div>
     </div>
   );
+
+  if (isLoading || !isReady) {
+    return null;
+  }
 
   if (!isOpen) {
     return (
@@ -490,7 +577,11 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       <div className="fixed inset-0 z-50 bg-black bg-opacity-50 backdrop-blur-sm">
         <div className="bg-white h-full flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 shadow-lg">
+          <div className={`text-white p-6 shadow-lg ${
+            isEscalated 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+              : 'bg-gradient-to-r from-blue-500 to-purple-600'
+          }`}>
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setIsOpen(false)}
@@ -501,7 +592,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <Bot size={24} className="text-white" />
+                    {isEscalated ? <UserCheck size={24} className="text-white" /> : <Bot size={24} className="text-white" />}
                   </div>
                   <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
                     supportAgentStatus === 'online' ? 'bg-green-500' : 
@@ -511,7 +602,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                 <div>
                   <h3 className="font-semibold text-white text-lg">NovaPlus Support</h3>
                   <p className="text-sm text-blue-100">
-                    {isEscalated ? 'Human agent • Online' : 'AI Assistant • Always available'}
+                    {isEscalated ? `${agentInfo?.name || 'Human agent'} • Online` : 'AI Assistant • Always available'}
                   </p>
                 </div>
               </div>
@@ -520,6 +611,9 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
               </button>
             </div>
           </div>
+
+          {/* Escalation Banner */}
+          {isEscalated && <EscalationBanner />}
 
           {/* Connection Status */}
           {connectionStatus !== 'connected' && (
@@ -535,7 +629,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white relative">
-            <div className="p-6 space-y-2">
+            <div className="p-6 space-y-2 min-h-full">
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
               ))}
@@ -596,9 +690,6 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                   }}
                   className="w-full px-6 py-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white disabled:opacity-50 transition-all text-base"
                 />
-                <button className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors">
-                  <Smile size={20} />
-                </button>
               </div>
               
               {inputText.trim() ? (
@@ -636,10 +727,6 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       <div className={`bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200 transition-all duration-300 ${
         isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
       }`}>
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 shadow-lg">
-          <HeaderContent />
-        </div>
 
         {!isMinimized && (
           <>
@@ -718,9 +805,6 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                     }}
                     className="w-full px-4 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white disabled:opacity-50 transition-all"
                   />
-                  <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors">
-                    <Smile size={18} />
-                  </button>
                 </div>
                 
                 {inputText.trim() ? (
