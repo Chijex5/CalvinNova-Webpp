@@ -630,10 +630,12 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white relative">
             <div className="p-6 space-y-2 min-h-full">
-              {messages.map((message) => (
+              {Array.from(
+                new Map(messages.map(msg => [msg.id, msg])).values()
+                ).map((message) => (
                 <MessageBubble key={message.id} message={message} />
-              ))}
-              
+            ))}
+             
               {showTypingAnimation && <TypingIndicator />}
               
               <div ref={messagesEndRef} />
@@ -723,32 +725,58 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
   // Desktop layout
   return (
-    <div className={`fixed ${isMinimized ? 'bottom-8 right-8' : 'bottom-8 right-8'} z-50 ${className}`}>
-      <div className={`bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200 transition-all duration-300 ${
-        isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
-      }`}>
-
-        {!isMinimized && (
-          <>
-            {/* Connection Status */}
-            {connectionStatus !== 'connected' && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-200 p-3">
-                <div className="flex items-center justify-center gap-2 text-yellow-700">
-                  <Clock size={16} />
-                  <span className="text-sm font-medium">
-                    {connectionStatus === 'connecting' ? 'Connecting...' : 'Connection Error'}
-                  </span>
-                </div>
+    <div className={`fixed bottom-8 right-8 z-50 ${className}`}>
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200 w-[800px] h-[500px] flex flex-col">
+        
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-semibold">C</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-800">Chat Assistant</h3>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-500' : 
+                  connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+                }`} />
+                <span className="text-xs text-gray-600">
+                  {connectionStatus === 'connected' ? 'Online' : 
+                   connectionStatus === 'connecting' ? 'Connecting...' : 'Offline'}
+                </span>
               </div>
-            )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAttachments(!showAttachments)}
+              className={`rounded-lg p-2 transition-all duration-200 ${
+                showAttachments ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <Paperclip size={16} />
+            </button>
+            <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg p-2 transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white relative h-[420px]">
+        {/* Main Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          
+          {/* Messages Area */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white">
               <div className="p-6 space-y-2">
-                {messages.map((message) => (
-                  <MessageBubble key={message.id} message={message} />
+                {Array.from(
+                    new Map(messages.map(msg => [msg.id, msg])).values()
+                    ).map((message) => (
+                    <MessageBubble key={message.id} message={message} />
                 ))}
-                
+             
                 {showTypingAnimation && <TypingIndicator />}
                 
                 <div ref={messagesEndRef} />
@@ -774,21 +802,9 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
               </div>
             )}
 
-            {/* Attachment Panel */}
-            {showAttachments && <AttachmentPanel />}
-
-            {/* Input */}
-            <div className="p-6 bg-white border-t border-gray-200 relative">
+            {/* Input Area */}
+            <div className="p-4 bg-white border-t border-gray-200">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowAttachments(!showAttachments)}
-                  className={`rounded-full p-2 transition-all duration-200 ${
-                    showAttachments ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'
-                  }`}
-                >
-                  <Paperclip size={18} />
-                </button>
-                
                 <div className="flex-1 relative">
                   <input
                     ref={inputRef}
@@ -831,8 +847,15 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                 )}
               </div>
             </div>
-          </>
-        )}
+          </div>
+
+          {/* Attachment Panel - Side Panel */}
+          {showAttachments && (
+            <div className="w-80 bg-gray-50 border-l border-gray-200 flex flex-col">
+              <AttachmentPanel />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

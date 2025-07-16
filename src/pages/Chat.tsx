@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, CheckCircle, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
+import axios from 'axios';
 import { useUserStore } from '../store/userStore';
 import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { useParams } from 'react-router-dom';
-import { Channel, StreamChat } from 'stream-chat';
+import { Channel } from 'stream-chat';
+import aiApi from '../utils/apiService';
 import { client } from '../lib/stream-chat';
+
+const agent_id = "support-agent-id";
 
 // Enhanced Types
 export interface User {
@@ -181,6 +185,49 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = 
       className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
       onError={() => setImageError(true)}
     />
+  );
+};
+
+interface ResolvedButtonProps {
+  userId: string;
+  isResolved: boolean;
+}
+
+const MarkAsResolvedButton: React.FC<ResolvedButtonProps> = ({ 
+  userId, 
+  chatId,
+  isResolved = false 
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleClick = async () => {
+    setIsLoading(true);
+    try {
+      await axios.post('https://calvinnova-backend-1.onrender.com/admin/resolve-chat', { agent_id, user_id: userId, chat_id:chatId });
+    } catch (error) {
+      console.error('Failed to mark as resolved:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={isLoading || isResolved}
+      className={`fixed bottom-20 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+        isResolved 
+          ? 'bg-green-500 text-white cursor-not-allowed opacity-70' 
+          : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-xl'
+      }`}
+      title={isResolved ? 'Issue already resolved' : 'Mark as resolved'}
+    >
+      {isLoading ? (
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <CheckCircle className="w-6 h-6" />
+      )}
+    </button>
   );
 };
 
@@ -1153,7 +1200,10 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   const [isWindowVisible, setIsWindowVisible] = useState(true);
   const [messages, setMessages] = useState<Message[]>(chat.state.messages || []);
   const currentUserId = user?.userId || '';
-  
+  const CHATBOT_ID = "novaplus-support-bot";
+  const otherUser = chat.state.members ?
+    Object.values(chat.state.members).find(m => m.user?.id !== agent_id && m.user?.id !== CHATBOT_ID) :
+    undefined;
   useEffect(() => {
     setMessages(chat.state.messages || []);
   }, [chat.state.messages]);
@@ -1278,6 +1328,14 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
         placeholder={isLoading ? "Sending..." : "Type a message..."}
         channel={chat}
       />
+
+      {isAdminView && otherUser?.user?.id && (
+        <MarkAsResolvedButton
+          userId={otherUser?.user?.id || ''}
+          isResolved={false}
+          chatId={chat.id || ''}
+        />
+      )}
     </div>
   );
 };
