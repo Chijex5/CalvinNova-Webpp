@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import EmailSentNotification from '../components/ShowEmailSent';
 import { 
   Eye, 
   EyeOff, 
@@ -30,6 +31,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup } = useAuth();
+  const [showEmailSent, setShowEmailSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   
@@ -201,7 +203,7 @@ const Signup = () => {
         // Redirect to dashboard or next step
         toast.success('Account created successfully!');
         setTimeout(() => {
-          navigate('/');
+          setShowEmailSent(true);
         }, 1000);
       } else {
         setErrors(prev => ({ 
@@ -219,6 +221,16 @@ const Signup = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCloseEmailSent = () => {
+    setShowEmailSent(false);
+
+  };
+
+  const handleGoToLogin = () => {
+    setShowEmailSent(false);
+    navigate('/login');
   };
 
   const ErrorDisplay = ({ error }: { error: string }) => (
@@ -654,6 +666,12 @@ const Signup = () => {
             </div>
         </div>
       </div>
+      <EmailSentNotification
+        isOpen={showEmailSent}
+        onClose={handleCloseEmailSent}
+        email={formData.email}
+        onGoToLogin={handleGoToLogin}
+      />
     </div>
   );
 }

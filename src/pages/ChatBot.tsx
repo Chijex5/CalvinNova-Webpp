@@ -71,6 +71,12 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   };
 
   useEffect(() => {
+    if (currentChannel) {
+      currentChannel.markRead();
+    }
+  }, [currentChannel, messages]);
+
+  useEffect(() => {
     if (!isLoading && isAuthenticated) {
         setIsReady(true);
     }
@@ -135,6 +141,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       setCurrentChannel(channel);
       setConnectionStatus('connected');
       setIsConnected(true);
+      channel.markRead();
 
       // Check if support agent is already in the channel
       const channelState = channel.state;
@@ -559,13 +566,13 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
             onClick={() => setIsOpen(true)}
             className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-3xl group"
           >
-            <MessageCircle size={28} className="group-hover:scale-110 transition-transform duration-200" />
+            <MessageCircle size={16} className="group-hover:scale-110 transition-transform duration-200" />
           </button>
-          
-          {/* Notification badge */}
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
-            1
-          </div>
+          {currentChannel && currentChannel.countUnread() > 0 && (
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
+              {currentChannel.countUnread()}
+            </div>
+          )}
         </div>
       </div>
     );

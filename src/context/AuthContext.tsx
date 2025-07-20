@@ -44,6 +44,7 @@ interface AuthContextType {
   setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void
   setIsCheckingAuth: (checking: boolean) => void;
   login: (email: string, userId: string) => Promise<Response>;
+  verifcation: (token: string) => Promise<{status: boolean, user?: User, message?: string}>;
   error: string | null;
   clearError: () => void;
   setError: (error: string | null) => void;
@@ -302,21 +303,6 @@ export const AuthProvider: React.FC<{
       const response = await api.post('/api/signup', data);
 
       if (response && response.data.success) {
-        localStorage.setItem('token', response.data.access_token);
-        response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
-        
-        // Connect to StreamChat
-        await connectToStreamChat(response.data.user);
-        
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-        initialAuthComplete.current = true;
-        
-        // Sync products in the background (fetch fresh products for signup)
-        productService.fetchProducts().catch(error => {
-          console.error('Background product fetch failed:', error);
-        });
-        
         return {success: true, message: 'Signup successful'};
       }
       
@@ -330,6 +316,39 @@ export const AuthProvider: React.FC<{
     }
   };
 
+  const verifcation = async (token: string): Promise<{status: boolean, user?: User, message?: string}> => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/verify-email/${token}`);
+      
+      if (response && response.data.success) {
+        localStorage.setItem('token', response.data.access_token);
+        response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
+        
+        // Connect to StreamChat
+        await connectToStreamChat(response.data.user);
+        
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        initialAuthComplete.current = true;
+        
+        productService.fetchProducts().catch(error => {
+          console.error('Background product fetch failed:', error);
+        });
+
+        return {status: true, user: response.data.user, message: 'Email verified successfully'};
+      }
+      
+      return {status: false, message: 'Email verification failed'};
+    } catch (error: any) {
+      setError(error.response?.data.message || 'Email verification failed');
+      console.error('Verification error:', error);
+      return {status: false, message: error.response?.data.message || 'Email verification failed'};
+    } finally {
+      setIsMiddleOfAuthFlow(false);
+      setLoading(false);
+    }
+  }
   const refresh = async (): Promise<void> => {
     if (isMiddleOfAuthFlow) {
       console.warn('Cannot refresh while in the middle of an auth flow');
@@ -361,6 +380,7 @@ export const AuthProvider: React.FC<{
     setIsCheckingAuth,
     setError,
     error,
+    verifcation,
     clearError,
     isMiddleOfAuthFlow,
     setIsMiddleOfAuthFlow,

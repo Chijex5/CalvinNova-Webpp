@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({
   }, [location.pathname]);
   return <div className="flex flex-col min-h-screen bg-gray-50">
       {!isAdminPage && <Navigation />}
-      <main className="flex-grow">{children}</main>
+      <main className="flex-grow mt-50">{children}</main>
       {/* Only show footer on home page when not authenticated */}
       {!isAdminPage && !isAuthenticated && isHomePage && <footer className="bg-gradient-to-r from-indigo-900 to-purple-900 text-white py-8">
           <div className="container mx-auto px-4">

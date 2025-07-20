@@ -1,9 +1,12 @@
 import React from 'react';
+import { Loader } from 'lucide-react';
 interface ButtonProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
+  loading?: boolean;
+  loadingText?: string;
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
@@ -15,6 +18,8 @@ const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   fullWidth = false,
+  loading = false,
+  loadingText = 'Loading...',
   onClick,
   type = 'button',
   disabled = false,
@@ -38,7 +43,8 @@ const Button: React.FC<ButtonProps> = ({
   const disabledStyles = disabled ? 'opacity-60 cursor-not-allowed transform-none hover:shadow-none' : 'cursor-pointer';
   return <button type={type} onClick={onClick} disabled={disabled} className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyles} ${disabledStyles} ${className}`}>
       {icon && <span className="mr-2">{icon}</span>}
-      {children}
+      {loading ? <Loader className="mr-2" /> : null}
+      {loading ? loadingText : children}
     </button>;
 };
 export default Button;

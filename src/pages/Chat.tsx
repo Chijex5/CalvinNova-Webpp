@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, MoreVertical, Phone, Video, CheckCircle, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
 import axios from 'axios';
+import ContactWarningBanner from '../components/NoContacts';
 import { useUserStore } from '../store/userStore';
 import { getUserDisplayName } from '../utils/getUserDisplayName';
+import { checkMessage } from '../functions/noContact';
 import { useParams } from 'react-router-dom';
 import { Channel } from 'stream-chat';
 import aiApi from '../utils/apiService';
 import { client } from '../lib/stream-chat';
+import { set } from 'date-fns';
 
 const agent_id = "support-agent-id";
 
@@ -1198,6 +1201,8 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   const { user } = useUserStore();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isWindowVisible, setIsWindowVisible] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
+  const [type, setType] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>(chat.state.messages || []);
   const currentUserId = user?.userId || '';
   const CHATBOT_ID = "novaplus-support-bot";
@@ -1211,6 +1216,12 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   useEffect(() => {
     const handleNewMessage = (event: any) => {
       if (event.message) {
+        const result = checkMessage(event.message.text);
+        if (result.hasViolation) {
+          setType(result.type);
+          setShowWarning(true);
+        }
+
         setMessages(prev => {
           const existingIndex = prev.findIndex(msg => msg.id === event.message.id);
           if (existingIndex >= 0) {
@@ -1307,6 +1318,9 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
 
   return (
     <div className="flex flex-col h-full bg-white">
+      {showWarning && (
+        <ContactWarningBanner type={type} />
+      )}
       <ChatHeader 
         chat={chat} 
         onBack={onBack} 

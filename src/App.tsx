@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import SupportChat from './pages/ChatBot';
-import Home from './pages/Home';
+import EmailVerification from './pages/VerificationPage';
 import Dashboard from './pages/Dashboard';
 import MarketplaceUI from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
@@ -168,6 +168,7 @@ export function App() {
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
                   <Route path="/product/:id" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
+                  <Route path="/verification/:token" element={<EmailVerification />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/chat" element={<ProtectedRoute>

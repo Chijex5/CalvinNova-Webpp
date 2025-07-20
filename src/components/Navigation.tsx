@@ -65,7 +65,7 @@ const Navigation = () => {
   }
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+    <header className={`sticky top-0 left-0 right-0 z-50 mb-50 transition-all duration-500 ${
       isScrolled 
         ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50' 
         : 'bg-white/90 backdrop-blur-md'
@@ -76,12 +76,10 @@ const Navigation = () => {
           <Link to="/" className="flex items-center group">
             <div className="relative">
               <img 
-                src="/Logo.svg" 
+                src="/logo.svg" 
                 alt="NovaPlus Logo" 
-                className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105"
-                style={{ filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(232deg) brightness(102%) contrast(101%)' }}
+                className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105 group-hover:rotate-12"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
             <span className="ml-3 text-xl lg:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               NovaPlus

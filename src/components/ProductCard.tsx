@@ -18,6 +18,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
     e.stopPropagation();
     setCurrentImageIndex(prev => prev === product.images.length - 1 ? 0 : prev + 1);
   };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(price);
+  };
+
   const prevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -51,7 +59,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 {product.title}
               </h3>
               <p className="font-bold text-indigo-600 transition-colors duration-200">
-                ${product.price.toFixed(2)}
+                {formatPrice(product.price)}
               </p>
             </div>
             <p className="text-xs text-gray-500 mt-1 line-clamp-2 flex-grow">
