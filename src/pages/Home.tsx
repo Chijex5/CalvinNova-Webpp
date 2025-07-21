@@ -19,7 +19,7 @@ const Home = () => {
               <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                 Buy & Sell on Your Campus with{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300">
-                  NovaPlus
+                  CalvinNova
                 </span>
               </h1>
             </FadeIn>
@@ -83,7 +83,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <FadeIn direction="up">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-900">
-              How NovaPlus Works
+              How CalvinNova Works
             </h2>
           </FadeIn>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
@@ -181,7 +181,7 @@ const Home = () => {
             </FadeIn>
             <FadeIn direction="up" delay={0.2}>
               <p className="text-gray-600 text-lg text-center mb-10">
-                NovaPlus is designed with student safety in mind. Our platform
+                CalvinNova is designed with student safety in mind. Our platform
                 lets you chat before meeting, verify student profiles, and
                 report any issues instantly.
               </p>
@@ -242,7 +242,7 @@ const Home = () => {
           </FadeIn>
           <FadeIn direction="up" delay={0.1}>
             <p className="text-lg text-indigo-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of students who are already using NovaPlus to buy
+              Join thousands of students who are already using CalvinNova to buy
               and sell items on campus.
             </p>
           </FadeIn>

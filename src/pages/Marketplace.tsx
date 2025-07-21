@@ -478,7 +478,10 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
               </>
             ) : (
               <>
-                <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
+                <button 
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                  onClick={() => navigate(`/buy/${product.id}`)}
+                >
                   <ShoppingCart className="w-4 h-4" />
                   <span>Buy Now</span>
                 </button>

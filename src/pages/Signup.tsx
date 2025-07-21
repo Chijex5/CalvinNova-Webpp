@@ -11,8 +11,6 @@ import {
   MapPin, 
   Users, 
   Sparkles, 
-  Heart, 
-  Zap,
   ShoppingBag,
   ShoppingCart,
   TrendingUp,
@@ -251,7 +249,7 @@ const Signup = () => {
             <h1 className="text-4xl font-bold mb-4">
               Join{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300">
-                NovaPlus
+                CalvinNova
               </span>
             </h1>
             <p className="text-xl text-indigo-100 leading-relaxed">
@@ -311,7 +309,7 @@ const Signup = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              NovaPlus
+              CalvinNova
             </h1>
             <p className="text-gray-600 mt-2">Join the Campus Marketplace</p>
           </div>
@@ -376,7 +374,7 @@ const Signup = () => {
 
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        University Email
+                        Email Address
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -389,7 +387,7 @@ const Signup = () => {
                           className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 focus:bg-white ${
                             errors.email ? 'border-red-300' : 'border-gray-300'
                           }`}
-                          placeholder="your.email@university.edu"
+                          placeholder="jane.doe@example.com"
                         />
                       </div>
                       {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
@@ -476,7 +474,7 @@ const Signup = () => {
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Almost there!
                     </h2>
-                    <p className="text-gray-600">Tell us how you plan to use NovaPlus</p>
+                    <p className="text-gray-600">Tell us how you plan to use CalvinNova</p>
                   </div>
 
                   {errors.form && <ErrorDisplay error={errors.form} />}

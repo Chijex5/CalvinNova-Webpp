@@ -209,7 +209,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
         setTimeout(() => {
           showBotTyping();
           setTimeout(() => {
-            addBotMessage(`Hey ${user?.name || 'there'}! 👋\n\nI'm your NovaPlus support assistant. I can help you with:\n\n• Payment & payout questions 💰\n• Item disputes & issues 🛡️\n• Account verification ✅\n• Safe buying & selling tips 🛒\n• General marketplace questions ❓\n\nWhat's on your mind today?`);
+            addBotMessage(`Hey ${user?.name || 'there'}! 👋\n\nI'm your CalvinNova support assistant. I can help you with:\n\n• Payment & payout questions 💰\n• Item disputes & issues 🛡️\n• Account verification ✅\n• Safe buying & selling tips 🛒\n• General marketplace questions ❓\n\nWhat's on your mind today?`);
           }, 2000);
         }, 1000);
       }
@@ -234,7 +234,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
     };
 
     // Check for escalation messages
-    if (message.text?.includes('connected to a NovaPlus support agent') || 
+    if (message.text?.includes('connected to a CalvinNova support agent') || 
         message.text?.includes('human agent')) {
       setIsEscalated(true);
       newMessage.type = 'escalation';
@@ -607,7 +607,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                   }`} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white text-lg">NovaPlus Support</h3>
+                  <h3 className="font-semibold text-white text-lg">CalvinNova Support</h3>
                   <p className="text-sm text-blue-100">
                     {isEscalated ? `${agentInfo?.name || 'Human agent'} • Online` : 'AI Assistant • Always available'}
                   </p>

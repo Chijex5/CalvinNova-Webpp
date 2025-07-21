@@ -137,7 +137,7 @@ const Dashboard = () => {
   }, []);
   // Set random motivational quote
   useEffect(() => {
-    const quotes = ["Today's a great day to find what you need!", "One student's clutter is another's treasure.", 'Campus deals are just a message away!', 'Your next favorite item is waiting for you.', "Connect, buy, sell, repeat. That's the NovaPlus way!"];
+    const quotes = ["Today's a great day to find what you need!", "One student's clutter is another's treasure.", 'Campus deals are just a message away!', 'Your next favorite item is waiting for you.', "Connect, buy, sell, repeat. That's the CalvinNova way!"];
     setMotivationalQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   }, []);
   // Mock user activity data
@@ -431,7 +431,7 @@ const Dashboard = () => {
                           Campus Ambassadors
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
-                          Become a NovaPlus campus ambassador and earn rewards
+                          Become a CalvinNova campus ambassador and earn rewards
                           for helping fellow students!
                         </p>
                         <p className="text-xs text-purple-600 mt-2 font-medium">

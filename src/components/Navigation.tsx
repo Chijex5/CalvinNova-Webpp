@@ -78,12 +78,12 @@ const Navigation = () => {
             <div className="relative">
               <img 
                 src={logo} 
-                alt="NovaPlus Logo" 
+                alt="CalvinNova Logo" 
                 className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105 group-hover:rotate-12"
               />
             </div>
             <span className="ml-3 text-xl lg:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              NovaPlus
+              CalvinNova
             </span>
           </Link>
 

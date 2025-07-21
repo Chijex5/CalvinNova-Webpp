@@ -11,6 +11,7 @@ import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Sell from './pages/Sell';
 import Login from './pages/Login';
+import BuyPage from './pages/BuyNow';
 import Signup from './pages/Signup';
 import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -37,7 +38,7 @@ const ModernLoader: React.FC = () => {
         {/* CalvinNova brand logo placeholder */}
         <div className="relative mb-4">
           <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 animate-pulse">
-            NovaPlus
+            CalvinNova
           </div>
         </div>
         
@@ -166,6 +167,7 @@ export function App() {
                 <SupportChat />
                 <Routes>
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
+                  <Route path="/buy/:productId" element={<ProtectedRoute> <BuyPage /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
                   <Route path="/product/:slug" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
                   <Route path="/verification/:token" element={<EmailVerification />} />

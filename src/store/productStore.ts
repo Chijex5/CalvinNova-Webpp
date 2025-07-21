@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
 export interface Product {
-  id: string;
+  id: number;
   title: string;
   description: string;
   price: number;

@@ -38,7 +38,7 @@ const EmailSentNotification = ({
             Account Created! 🎉
           </h2>
           <p className="text-gray-600 text-sm sm:text-base">
-            You're almost done setting up your NovaPlus account.
+            You're almost done setting up your CalvinNova account.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ const EmailSentNotification = ({
         {/* Footer */}
         <div className="mt-4 pt-3 border-t border-gray-200 text-center">
           <p className="text-xs text-gray-500">
-            Need help? Contact us at <span className="text-indigo-600 font-medium">support@novaplus.com</span>
+            Need help? Contact us at <span className="text-indigo-600 font-medium">support@calvinnova.com</span>
           </p>
         </div>
       </div>
