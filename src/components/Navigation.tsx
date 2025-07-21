@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logo from './logo.svg'
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -76,7 +77,7 @@ const Navigation = () => {
           <Link to="/" className="flex items-center group">
             <div className="relative">
               <img 
-                src="./logo.svg" 
+                src={logo} 
                 alt="NovaPlus Logo" 
                 className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105 group-hover:rotate-12"
               />
