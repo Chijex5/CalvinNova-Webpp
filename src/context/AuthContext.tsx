@@ -1,5 +1,5 @@
 import React, { useEffect, useState, createContext, useContext, useRef } from 'react';
-import { useUserStore } from '../store/userStore';
+import { useUserStore, User } from '../store/userStore';
 import { useChatStore } from '../store/chatStore';
 import { client } from '../lib/stream-chat';
 import { useProductService } from '../services/productService';
@@ -9,16 +9,6 @@ import app from '../firebase/firebaseConfig';
 
 const auth = getAuth(app);
 
-interface User {
-  userId: string;
-  name: string;
-  email: string;
-  userToken: string;
-  campus: string;
-  avatarUrl: string;
-  isAdmin?: boolean;
-  role: 'buyer' | 'seller' | 'both' | 'admin';
-}
 
 interface SignupData {
   firstName: string;
@@ -43,6 +33,7 @@ interface AuthContextType {
   isMiddleOfAuthFlow: boolean;
   setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void
   setIsCheckingAuth: (checking: boolean) => void;
+  updateUser: (updates: Partial<User>) => Promise<{success: boolean, message?: string}>;
   login: (email: string, userId: string) => Promise<Response>;
   verifcation: (token: string) => Promise<{status: boolean, user?: User, message?: string}>;
   error: string | null;
@@ -76,6 +67,7 @@ export const AuthProvider: React.FC<{
     setUser, 
     clearUser, 
     isLoading, 
+    updateUser: storeUpdateUser,
     setLoading, 
     isAuthenticated, 
     setIsAuthenticated,
@@ -151,6 +143,20 @@ export const AuthProvider: React.FC<{
 
   const clearError = () => {
     setError(null);
+  };
+
+  const updateUser = async (updates: Partial<User>): Promise<{success: boolean, message?: string}> => {
+    try{
+      const response = await api.put('/api/user/update', updates);
+      if (response && response.data.success) {
+        storeUpdateUser(response.data.user);
+        return { success: true };
+      }
+      return { success: false, message: 'Update failed' };
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return { success: false, message: 'Failed to update user' };
+    }
   };
 
   const getUserDataFromBackend = async (retryCount = 0): Promise<User> => {
@@ -378,6 +384,7 @@ export const AuthProvider: React.FC<{
     isAdmin,
     login,
     setIsCheckingAuth,
+    updateUser,
     setError,
     error,
     verifcation,

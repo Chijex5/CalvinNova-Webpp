@@ -1,119 +1,259 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
-import { MessageSquareIcon, HeartIcon, ShareIcon, FlagIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { useMockProducts } from '../utils/mockData';
+import ProductDetailSkeleton from '../components/loaders/ProductDetsilSkeleton';
+import { 
+  MessageSquareIcon, 
+  HeartIcon, 
+  ShareIcon, 
+  FlagIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon,
+  MapPinIcon,
+  CalendarIcon,
+  EyeIcon
+} from 'lucide-react';
+import { useProductStore, Product } from '../store/productStore';
+import { productService } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 import { useChatStore } from '../store/chatStore';
 
 const ProductDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const { products, getSellerById } = useMockProducts();
   const { user } = useAuth();
+  
+  // State management
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
-  
-  // Using the Zustand chat store
-  const { startMessaging, chats, error, setError } = useChatStore();
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const product = products.find(p => p.id === id);
+  // Store hooks
+  const { products, loading: productsLoading, error: productError } = useProductStore();
+  const { startMessaging, chats, error: chatError, setError: setChatError } = useChatStore();const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(price);
+  };
 
-  if (!product) {
-    return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-        <p className="mb-6">
-          The product you're looking for doesn't exist or has been removed.
-        </p>
-        <Link to="/marketplace">
-          <Button variant="primary">Back to Marketplace</Button>
-        </Link>
-      </div>
-    );
-  }
 
-  const seller = getSellerById(product.sellerId);
-  const isOwnProduct = user?.userId === product.sellerId;
 
-  const nextImage = () => {
+  // Load product data
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        setLocalError(null);
+
+        // If products are not loaded yet, load them
+        if (!products.length && !productsLoading) {
+          await productService.fetchProducts();
+        }
+
+        // Find product by slug
+        const foundProduct = products.find(p => p.slug === slug);
+        
+        if (!foundProduct && products.length > 0) {
+          setLocalError('Product not found');
+        } else if (foundProduct) {
+          setProduct(foundProduct);
+        }
+      } catch (error) {
+        console.error('Failed to load product:', error);
+        setLocalError('Failed to load product');
+      }
+    };
+
+    if (slug) {
+      loadProduct();
+    }
+  }, [slug, products, productsLoading, user?.userId]);
+
+  // Image navigation handlers
+  const nextImage = useCallback(() => {
+    if (!product?.images?.length) return;
     setCurrentImageIndex(prev => 
       prev === product.images.length - 1 ? 0 : prev + 1
     );
-  };
+  }, [product?.images?.length]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
+    if (!product?.images?.length) return;
     setCurrentImageIndex(prev => 
       prev === 0 ? product.images.length - 1 : prev - 1
     );
-  };
+  }, [product?.images?.length]);
 
+  // Keyboard navigation for images
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'ArrowRight') nextImage();
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [nextImage, prevImage]);
+
+  // Contact seller handler
   const handleContactSeller = async () => {
     if (!user) {
-      // Redirect to login if not authenticated
-      navigate('/login');
+      navigate('/login', { state: { returnTo: `/product/${slug}` } });
       return;
     }
 
-    if (isOwnProduct) {
-      // Shouldn't happen, but just in case
-      return;
-    }
+    if (isOwnProduct) return;
+
     setIsContactingSeller(true);
-    setError(null); // Clear any previous errors
+    setChatError(null);
 
     try {
-      // Check if conversation already exists
-      const existingChat = chats.find(chat => {
-        const members = Object.keys(chat.state.members || {});
-        return members.includes(user.userId) && members.includes(seller.id);
-      });
+      const sellerId = product?.sellerId;
+      
+      // Check for existing conversation
+     if (!sellerId)  return;
+        const existingChat = chats.find(chat => {
+          const members = Object.keys(chat.state.members || {});
+          return members.includes(user.userId) && members.includes(sellerId);
+        });
 
       if (existingChat) {
-        console.log('Found existing conversation:', existingChat.id);
-        // Navigate to chat with existing conversation
         navigate(`/chat/${existingChat.id}`);
       } else {
-        console.log('Creating new chat between:', user.userId, 'and seller:', seller.id);
-        
-        // Create new conversation using Zustand store
-        await startMessaging([seller.id]);
-        
-        // Navigate to the chat page (assuming the chat store will set currentChat)
-        navigate('/chat');
+        // Create new conversation
+        const chatId = await startMessaging([sellerId]);       
+        navigate(`/chat/${chatId}`);
       }
-
     } catch (error) {
       console.error('Error creating/getting chat:', error);
-      setError('Failed to start conversation. Please try again.');
+      setChatError('Failed to start conversation. Please try again.');
       
-      // Show error message to user
-      setTimeout(() => {
-        setError(null);
-      }, 5000);
+      setTimeout(() => setChatError(null), 5000);
     } finally {
       setIsContactingSeller(false);
     }
   };
 
+  // Toggle favorite
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      navigate('/login', { state: { returnTo: `/product/${slug}` } });
+      return;
+    }
+
+    try {
+      setIsFavorited(prev => !prev);
+      // Here you would call your API to toggle favorite
+      // await productService.toggleFavorite(product.id);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      setIsFavorited(prev => !prev); // Revert on error
+    }
+  };
+
+  // Share product
+  const handleShare = async () => {
+    const shareData = {
+      title: product?.title,
+      text: `Check out this ${product?.category} for ${formatPrice(product?.price || 0)}: ${product?.title}`,
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        // You might want to show a toast notification here
+        alert('Product link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Failed to share:', error);
+    }
+  };
+
+  // Report product
+  const handleReport = () => {
+    // Navigate to report page or open modal
+    navigate(`/report/product/${slug}`);
+  };
+
+  // Calculate derived values
+  const isOwnProduct = user?.userId === product?.sellerId;
+  const displayError = localError || productError || chatError;
+
+  // Loading state
+  if (productsLoading) {
+    return <ProductDetailSkeleton />;
+  }
+
+  // Error state
+  if (displayError || !product) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Link 
+          to="/marketplace" 
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6"
+        >
+          <ChevronLeftIcon size={16} />
+          <span className="ml-1">Back to Marketplace</span>
+        </Link>
+        
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">
+            {localError === 'Product not found' ? 'Product Not Found' : 'Something went wrong'}
+          </h2>
+          <p className="mb-6 text-gray-600">
+            {localError === 'Product not found' 
+              ? "The product you're looking for doesn't exist or has been removed."
+              : displayError || 'Unable to load product details. Please try again.'
+            }
+          </p>
+          <div className="space-x-4">
+            <Button 
+              variant="primary" 
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
+            <Link to="/marketplace">
+              <Button variant="secondary">Back to Marketplace</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <Link 
-        to="/marketplace" 
-        className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6"
-      >
-        <ChevronLeftIcon size={16} />
-        <span className="ml-1">Back to Marketplace</span>
-      </Link>
+      {/* Breadcrumb navigation */}
+      <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <Link to="/marketplace" className="hover:text-blue-600">
+          Marketplace
+        </Link>
+        <span>›</span>
+        <Link to={`/marketplace?category=${product.category}`} className="hover:text-blue-600">
+          {product.category}
+        </Link>
+        <span>›</span>
+        <span className="text-gray-900">{product.title}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Product Images */}
         <div className="relative">
-          <div className="bg-gray-100 rounded-lg overflow-hidden aspect-w-1 aspect-h-1">
+          <div className="bg-gray-50 rounded-lg overflow-hidden aspect-square">
             <img 
               src={product.images[currentImageIndex]} 
               alt={product.title}
-              className="w-full h-80 md:h-96 object-contain"
+              className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                e.target.src = '/placeholder-image.jpg'; // Fallback image
+              }}
             />
           </div>
           
@@ -121,35 +261,42 @@ const ProductDetails = () => {
             <>
               <button
                 onClick={prevImage}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-2 shadow-md"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
                 aria-label="Previous image"
               >
                 <ChevronLeftIcon size={20} />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-2 shadow-md"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
                 aria-label="Next image"
               >
                 <ChevronRightIcon size={20} />
               </button>
+              
+              {/* Image counter */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                {currentImageIndex + 1} / {product.images.length}
+              </div>
             </>
           )}
           
           {/* Thumbnail navigation */}
           {product.images.length > 1 && (
-            <div className="flex mt-4 space-x-2 overflow-x-auto">
+            <div className="flex mt-4 space-x-2 overflow-x-auto pb-2">
               {product.images.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`w-16 h-16 rounded-md overflow-hidden border-2 ${
-                    index === currentImageIndex ? 'border-blue-600' : 'border-transparent'
+                  className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
+                    index === currentImageIndex 
+                      ? 'border-blue-600 ring-2 ring-blue-600/20' 
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <img 
                     src={image} 
-                    alt={`Thumbnail ${index + 1}`}
+                    alt={`View ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -159,70 +306,129 @@ const ProductDetails = () => {
         </div>
 
         {/* Product Info */}
-        <div>
-          <div className="flex justify-between items-start">
-            <h1 className="text-2xl font-bold">{product.title}</h1>
-            <div className="flex space-x-2">
-              <button 
-                className="p-2 text-gray-500 hover:text-red-500"
-                aria-label="Favorite"
-              >
-                <HeartIcon size={20} />
-              </button>
-              <button 
-                className="p-2 text-gray-500 hover:text-blue-500"
-                aria-label="Share"
-              >
-                <ShareIcon size={20} />
-              </button>
-              <button 
-                className="p-2 text-gray-500 hover:text-red-500"
-                aria-label="Report"
-              >
-                <FlagIcon size={20} />
-              </button>
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <div className="flex justify-between items-start mb-3">
+              <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                {product.title}
+              </h1>
+              <div className="flex space-x-1 ml-4">
+                <button 
+                  onClick={handleToggleFavorite}
+                  className={`p-2 rounded-full transition-colors ${
+                    isFavorited 
+                      ? 'text-red-500 bg-red-50 hover:bg-red-100' 
+                      : 'text-gray-500 hover:text-red-500 hover:bg-gray-100'
+                  }`}
+                  aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <HeartIcon size={20} fill={isFavorited ? 'currentColor' : 'none'} />
+                </button>
+                <button 
+                  onClick={handleShare}
+                  className="p-2 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Share product"
+                >
+                  <ShareIcon size={20} />
+                </button>
+                <button 
+                  onClick={handleReport}
+                  className="p-2 text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Report product"
+                >
+                  <FlagIcon size={20} />
+                </button>
+              </div>
+            </div>
+
+            <p className="text-3xl font-bold text-blue-600">
+              {formatPrice(product.price)}
+            </p>
+          </div>
+
+          {/* Metadata */}
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+              {product.category}
+            </span>
+            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              {product.condition}
+            </span>
+            {product.school && (
+              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center gap-1">
+                <MapPinIcon size={14} />
+                {product.school}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <h2 className="text-xl font-semibold mb-3 text-gray-900">Description</h2>
+            <div className="prose prose-sm max-w-none">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {product.description}
+              </p>
             </div>
           </div>
 
-          <p className="text-2xl font-bold text-blue-600 mt-2">
-            ${product.price.toFixed(2)}
-          </p>
-
-          <div className="mt-4 flex items-center space-x-2">
-            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-md text-sm">
-              {product.category}
-            </span>
-            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-md text-sm">
-              {product.condition}
-            </span>
+          {/* Product Stats */}
+          <div className="flex items-center space-x-6 text-sm text-gray-500 py-3 border-y border-gray-200">
+            <div className="flex items-center space-x-1">
+              <CalendarIcon size={16} />
+              <span>Listed {new Date(product.createdAt).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <EyeIcon size={16} />
+              <span>{product.views || 0} views</span>
+            </div>
           </div>
 
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-2">Description</h2>
-            <p className="text-gray-700">{product.description}</p>
-          </div>
-
-          <div className="mt-6 border-t border-gray-200 pt-6">
+          {/* Seller Info */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold mb-3 text-gray-900">Seller Information</h3>
             <div className="flex items-center">
               <img 
-                src={seller.avatar} 
-                alt={seller.name}
-                className="w-10 h-10 rounded-full mr-3"
+                src={product.sellerAvatar || '/default-avatar.png'} 
+                alt={product.sellerName}
+                className="w-12 h-12 rounded-full mr-3 ring-2 ring-white shadow-sm"
+                onError={(e) => {
+                  e.target.src = '/default-avatar.png';
+                }}
               />
               <div>
-                <p className="font-medium">{seller.name}</p>
-                <p className="text-sm text-gray-500">{product.school}</p>
+                <p className="font-medium text-gray-900">{product.sellerName}</p>
+                <p className="text-sm text-gray-600">{product.school}</p>
+                {product.sellerRating && (
+                  <p className="text-sm text-yellow-600">
+                    ⭐ {product.sellerRating.toFixed(1)} ({product.sellerRating || 0} reviews)
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="mt-6">
+          {/* Action Buttons */}
+          <div className="space-y-3">
             {isOwnProduct ? (
-              <div className="flex space-x-3">
-                <Button variant="secondary" fullWidth>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant="secondary" 
+                  fullWidth
+                  onClick={() => navigate(`/product/${slug}/edit`)}
+                >
                   Edit Listing
                 </Button>
-                <Button variant="danger" fullWidth>
+                <Button 
+                  variant="danger" 
+                  fullWidth
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this listing?')) {
+                      // Handle delete
+                    }
+                  }}
+                >
                   Delete Listing
                 </Button>
               </div>
@@ -230,22 +436,31 @@ const ProductDetails = () => {
               <Button 
                 variant="primary" 
                 fullWidth 
+                size="lg"
                 icon={<MessageSquareIcon size={18} />}
                 onClick={handleContactSeller}
                 disabled={isContactingSeller}
+                className="py-4"
               >
                 {isContactingSeller ? 'Starting conversation...' : 'Contact Seller'}
               </Button>
             )}
           </div>
 
-          {/* Error message display */}
-          {error && (
-            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-              {error}
+          {/* Error Message */}
+          {chatError && (
+            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              <p className="font-medium">Error</p>
+              <p className="text-sm">{chatError}</p>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Related Products Section */}
+      <div className="mt-16">
+        <h2 className="text-2xl font-bold mb-6">Similar Products</h2>
+        {/* You can add a RelatedProducts component here */}
       </div>
     </div>
   );

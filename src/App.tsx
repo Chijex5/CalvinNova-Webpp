@@ -167,7 +167,7 @@ export function App() {
                 <Routes>
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
-                  <Route path="/product/:id" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
+                  <Route path="/product/:slug" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
                   <Route path="/verification/:token" element={<EmailVerification />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />

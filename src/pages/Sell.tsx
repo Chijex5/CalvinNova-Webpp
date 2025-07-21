@@ -27,6 +27,7 @@ interface ImageUploadState {
   url?: string;
   id?: string;
   error?: string;
+  uploadId?: number;
 }
 
 const ModernItemListingForm = () => {
@@ -113,26 +114,32 @@ const ModernItemListingForm = () => {
     
     const filesToUpload = Array.from(files).slice(0, availableSlots);
     
-    // Initialize upload states
-    const initialUploadStates: ImageUploadState[] = filesToUpload.map(file => ({
+    // Initialize upload states with unique IDs
+    const initialUploadStates: ImageUploadState[] = filesToUpload.map((file, index) => ({
       file,
       status: 'uploading',
-      progress: 0
+      progress: 0,
+      uploadId: Date.now() + index // Add unique ID for tracking
     }));
     
     setUploadingImages(prev => [...prev, ...initialUploadStates]);
     
-    // Upload images concurrently
-    const uploadPromises = filesToUpload.map(async (file, index) => {
-      const uploadData = new FormData();
-      uploadData.append('file', file);
+    // Sequential upload instead of concurrent to avoid race conditions
+    const uploadResults: Array<{success: boolean, id?: string, url?: string, error?: string}> = [];
+    
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      const uploadId = initialUploadStates[i].uploadId;
       
       try {
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        
         // Simulate progress for better UX
         const progressInterval = setInterval(() => {
           setUploadingImages(prev => 
-            prev.map((state, i) => 
-              state.file === file 
+            prev.map((state) => 
+              state.uploadId === uploadId && state.progress < 90
                 ? { ...state, progress: Math.min(state.progress + 10, 90) }
                 : state
             )
@@ -147,21 +154,22 @@ const ModernItemListingForm = () => {
           // Update upload state to success
           setUploadingImages(prev => 
             prev.map(state => 
-              state.file === file 
+              state.uploadId === uploadId 
                 ? { ...state, status: 'success', progress: 100, url: response.data.url, id: response.data.id }
                 : state
             )
           );
           
-          // Add to formData
+          // Immediately add to formData to avoid state loss
+          const newImage = { id: response.data.id, url: response.data.url };
           setFormData(prev => ({
             ...prev,
-            images: [...prev.images, { id: response.data.id, url: response.data.url }]
+            images: [...prev.images, newImage]
           }));
           
-          return { success: true, id: response.data.id, url: response.data.url };
+          uploadResults.push({ success: true, id: response.data.id, url: response.data.url });
         } else {
-          throw new Error('Upload failed');
+          throw new Error(response.data.message || 'Upload failed');
         }
       } catch (error) {
         console.error('Upload error:', error);
@@ -169,28 +177,26 @@ const ModernItemListingForm = () => {
         // Update upload state to error
         setUploadingImages(prev => 
           prev.map(state => 
-            state.file === file 
-              ? { ...state, status: 'error', progress: 0, error: 'Upload failed' }
+            state.uploadId === uploadId 
+              ? { ...state, status: 'error', progress: 0, error: error.message || 'Upload failed' }
               : state
           )
         );
         
-        return { success: false, error: 'Upload failed' };
+        uploadResults.push({ success: false, error: error.message || 'Upload failed' });
       }
-    });
+    }
     
-    // Wait for all uploads to complete
-    const results = await Promise.all(uploadPromises);
-    
-    // Remove completed uploads from state after a delay
+    // Clean up uploading states after a delay
     setTimeout(() => {
       setUploadingImages(prev => 
-        prev.filter(state => !filesToUpload.includes(state.file))
+        prev.filter(state => !initialUploadStates.some(initial => initial.uploadId === state.uploadId))
       );
     }, 2000);
     
-    const successCount = results.filter(r => r.success).length;
-    const errorCount = results.filter(r => !r.success).length;
+    // Show results
+    const successCount = uploadResults.filter(r => r.success).length;
+    const errorCount = uploadResults.filter(r => !r.success).length;
     
     if (successCount > 0) {
       toast.success(`${successCount} image${successCount > 1 ? 's' : ''} uploaded successfully`);

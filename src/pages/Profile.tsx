@@ -1,14 +1,85 @@
-import React from 'react';
-import { User, Calendar, MapPin, Shield, LogOut, Settings, Moon, Bell, Edit3 } from 'lucide-react';
-
-// Import the actual hooks as specified
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Calendar, MapPin, Shield, LogOut, Settings, Moon, Bell, Edit3, CreditCard, Save, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUserStore } from '../store/userStore';
+import { toast } from 'sonner';
 
-const ProfilePage: React.FC = () => {
-  const { logout } = useAuth();
+const ProfilePage = () => {
+  const { logout, updateUser } = useAuth();
   const store = useUserStore.getState();
   const user = store.user;
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: user?.name,
+    email: user?.email,
+    campus: user?.campus,
+    avatarUrl: user?.avatarUrl
+  });
+  console.log('user in profile page:', user);
+
+  // Avatar selection state
+  const [avatarSeeds, setAvatarSeeds] = useState<string[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(user?.avatarUrl || 'https://api.dicebear.com/7.x/adventurer/svg?seed=random');
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const avatarContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Generate random seeds for avatars
+  const generateRandomSeeds = (count = 20) => {
+    return Array.from({ length: count }, () => 
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    );
+  };
+
+  // Load initial avatars
+  useEffect(() => {
+    const initialSeeds = generateRandomSeeds(20);
+    setAvatarSeeds(initialSeeds);
+  }, []);
+
+  // Load more avatars when scrolling
+  const loadMoreAvatars = useCallback(() => {
+    if (isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      const newSeeds = generateRandomSeeds(20);
+      setAvatarSeeds(prev => [...prev, ...newSeeds]);
+      setIsLoadingMore(false);
+    }, 500);
+  }, [isLoadingMore]);
+
+  // Fixed: Handle avatar container scroll with proper event typing
+  const handleAvatarScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const { scrollLeft, scrollWidth, clientWidth } = target;
+    
+    // Check if we're near the end of the scroll area
+    if (scrollLeft + clientWidth >= scrollWidth - 100) {
+      loadMoreAvatars();
+    }
+  }, [loadMoreAvatars]);
+
+  // Fixed: Add scroll event listener
+  useEffect(() => {
+    const container = avatarContainerRef.current;
+    if (container) {
+      const scrollHandler = (e: Event) => {
+        const target = e.target as HTMLDivElement;
+        const { scrollLeft, scrollWidth, clientWidth } = target;
+        
+        if (scrollLeft + clientWidth >= scrollWidth - 100) {
+          loadMoreAvatars();
+        }
+      };
+
+      container.addEventListener('scroll', scrollHandler);
+      return () => {
+        container.removeEventListener('scroll', scrollHandler);
+      };
+    }
+  }, [loadMoreAvatars]);
 
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -35,6 +106,38 @@ const ProfilePage: React.FC = () => {
       case 'buyer': return 'Buyer';
       case 'both': return 'Buyer & Seller';
       default: return role;
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      setIsLoading(true);
+      const response = await updateUser(editForm);
+      if (response.success) {
+        toast.success('Profile updated successfully');
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAvatarSelect = (seed: string) => {
+    const avatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+    setSelectedAvatar(avatarUrl);
+    setEditForm({ ...editForm, avatarUrl });
+  };
+
+  const scrollAvatars = (direction: 'left' | 'right') => {
+    if (avatarContainerRef.current) {
+      const scrollAmount = 200;
+      avatarContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -65,83 +168,303 @@ const ProfilePage: React.FC = () => {
           <p className="text-gray-600">Manage your account settings and preferences</p>
         </div>
 
+        {/* Avatar Selector Modal */}
+        {showAvatarSelector && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold text-gray-900">Choose Your Avatar</h2>
+                  <button
+                    onClick={() => setShowAvatarSelector(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="relative">
+                  <button
+                    onClick={() => scrollAvatars('left')}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow-lg rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <button
+                    onClick={() => scrollAvatars('right')}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow-lg rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  {/* Fixed: Proper scroll event handling */}
+                  <div
+                    ref={avatarContainerRef}
+                    className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4 px-12"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    onScroll={handleAvatarScroll}
+                  >
+                    {avatarSeeds.map((seed, index) => {
+                      const avatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+                      return (
+                        <div
+                          key={`${seed}-${index}`}
+                          className={`flex-shrink-0 cursor-pointer transition-all duration-200 ${
+                            selectedAvatar === avatarUrl 
+                              ? 'ring-4 ring-blue-500 scale-110' 
+                              : 'hover:scale-105'
+                          }`}
+                          onClick={() => handleAvatarSelect(seed)}
+                        >
+                          <img
+                            src={avatarUrl}
+                            alt={`Avatar ${index + 1}`}
+                            className="w-20 h-20 rounded-full bg-white shadow-md"
+                            loading="lazy"
+                          />
+                        </div>
+                      );
+                    })}
+                    
+                    {isLoadingMore && (
+                      <div className="flex-shrink-0 flex items-center justify-center w-20 h-20">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex justify-end mt-6 space-x-3">
+                  <button
+                    onClick={() => setShowAvatarSelector(false)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditForm({ ...editForm, avatarUrl: selectedAvatar });
+                      setShowAvatarSelector(false);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Select Avatar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Profile Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
           <div className="p-6 lg:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
-              {/* Left Column - Profile Image & Basic Info */}
-              <div className="flex-shrink-0 mb-6 lg:mb-0">
-                <div className="flex flex-col items-center lg:items-start">
-                  <div className="relative">
-                    <img
-                      src={user.avatarUrl}
-                      alt={user.name}
-                      className="w-24 h-24 rounded-full border-4 border-white shadow-lg ring-2 ring-gray-100"
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
-                  </div>
-                  <div className="mt-4 text-center lg:text-left">
-                    <h2 className="text-2xl font-semibold text-gray-900">{user.name}</h2>
-                    <p className="text-gray-600 mt-1">{user.email}</p>
-                    <div className="mt-3">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(user.role)}`}>
-                        {getRoleLabel(user.role)}
-                      </span>
+            {isEditing ? (
+              // Edit Form
+              <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
+                <div className="flex-shrink-0 mb-6 lg:mb-0">
+                  <div className="flex flex-col items-center lg:items-start">
+                    <div className="relative">
+                      <img
+                        src={editForm.avatarUrl}
+                        alt="Avatar"
+                        className="w-24 h-24 rounded-full border-4 border-white shadow-lg ring-2 ring-gray-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedAvatar(editForm.avatarUrl || 'https://api.dicebear.com/7.x/adventurer/svg?seed=random');
+                          setShowAvatarSelector(true);
+                        }}
+                        className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center hover:bg-blue-600 transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4 text-white" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Column - Metadata & Actions */}
-              <div className="flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Account Details */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-gray-900">Account Details</h3>
-                    
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span className="text-sm">{user.campus}</span>
+                <div className="flex-1 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
                     </div>
                     
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-sm">Joined {formatJoinDate(user.createdAt || '')}</span>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
                     </div>
                     
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <Shield className="w-4 h-4" />
-                      <span className="text-sm">Verified Account</span>
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Campus</label>
+                      <input
+                        type="text"
+                        value={editForm.campus}
+                        onChange={(e) => setEditForm({ ...editForm, campus: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-gray-900">Actions</h3>
-                    
-                    <div className="space-y-3">
-                      <button
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed transition-colors"
-                        disabled
-                        title="Coming Soon"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        <span>Edit Profile</span>
-                      </button>
-                      <p className="text-xs text-gray-500 text-center">Coming Soon</p>
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={handleEditSubmit}
+                      disabled={isLoading}
+                      className={`flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <Save className="w-4 h-4" />
+                      {isLoading ? (
+                        <span>Saving...</span>
+                      ) : (
+                        <span>Save Changes</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditForm({
+                          name: user.name,
+                          email: user.email,
+                          campus: user.campus,
+                          avatarUrl: user.avatarUrl
+                        });
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Cancel</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Display Mode
+              <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
+                <div className="flex-shrink-0 mb-6 lg:mb-0">
+                  <div className="flex flex-col items-center lg:items-start">
+                    <div className="relative">
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="w-24 h-24 rounded-full border-4 border-white shadow-lg ring-2 ring-gray-100"
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div className="mt-4 text-center lg:text-left">
+                      <h2 className="text-2xl font-semibold text-gray-900">{user.name}</h2>
+                      <p className="text-gray-600 mt-1">{user.email}</p>
+                      <div className="mt-3">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(user.role)}`}>
+                          {getRoleLabel(user.role)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-900">Account Details</h3>
                       
-                      <button
-                        onClick={logout}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Logout</span>
-                      </button>
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{user.campus}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-sm">Joined {formatJoinDate(user.createdAt || '')}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <Shield className="w-4 h-4" />
+                        <span className="text-sm">Verified Account</span>
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-900">Actions</h3>
+                      
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          <span>Edit Profile</span>
+                        </button>
+                        
+                        <button
+                          onClick={logout}
+                          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bank Details Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+          <div className="p-6 lg:p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <CreditCard className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-medium text-gray-900">Bank Details</h3>
+              <div className="flex-1"></div>
+              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                Protected - View Only
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500">Account Name</label>
+                <p className="text-gray-900 font-medium">{user.bankDetails?.accountName || 'Not provided'}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500">Account Number</label>
+                <p className="text-gray-900 font-medium font-mono">
+                  {user.bankDetails?.accountNumber 
+                    ? `****${user.bankDetails.accountNumber.slice(-4)}` 
+                    : 'Not provided'
+                  }
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500">Bank Name</label>
+                <p className="text-gray-900 font-medium">{user.bankDetails?.bankName || 'Not provided'}</p>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> Bank details are encrypted and cannot be edited from this interface. 
+                Contact support if you need to update your banking information.
+              </p>
             </div>
           </div>
         </div>
@@ -155,7 +478,6 @@ const ProfilePage: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Preferences */}
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900">Preferences</h4>
                 
@@ -182,7 +504,6 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Account Status */}
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900">Account Status</h4>
                 

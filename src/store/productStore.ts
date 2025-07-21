@@ -9,9 +9,14 @@ export interface Product {
   category: string;
   condition: string;
   images: string[];
-  school: string;
   sellerId: string;
+  sellerName?: string;
+  sellerAvatar?: string;
+  sellerCampus?:string;
+  sellerRating?: number;
+  school: string;
   createdAt: string;
+  slug: string;
 }
 
 interface ProductStore {

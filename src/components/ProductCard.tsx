@@ -1,6 +1,6 @@
 import React, { useState, lazy } from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../utils/types';
+import { Product } from '../store/productStore';
 import { HeartIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { FadeIn } from '../utils/animations';
 interface ProductCardProps {
@@ -32,10 +32,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
     setCurrentImageIndex(prev => prev === 0 ? product.images.length - 1 : prev - 1);
   };
   return <FadeIn direction="up" delay={delay} duration={0.4}>
-      <Link to={`/product/${product.id}`} className="group block" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
+      <Link to={`/product/${product.slug}`} className="group block" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
         <div className="bg-white rounded-xl overflow-hidden border border-gray-100 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-transparent h-full flex flex-col">
           <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gradient-to-tr from-indigo-50 to-purple-50 relative">
-            <img src={product.images[currentImageIndex]} alt={product.title} className="h-48 w-full object-cover object-center transition-all duration-300 group-hover:opacity-95 group-hover:scale-105" loading="lazy" />
+            <img src={product.images[currentImageIndex]} alt={product.slug} className="h-48 w-full object-cover object-center transition-all duration-300 group-hover:opacity-95 group-hover:scale-105" loading="lazy" />
             {/* Image navigation controls - only show when hovering and there are multiple images */}
             {product.images.length > 1 && isHovering && <>
                 <button onClick={prevImage} className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-white" aria-label="Previous image">

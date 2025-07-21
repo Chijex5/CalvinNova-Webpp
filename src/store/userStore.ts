@@ -1,8 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-interface User {
+export interface BankDetails {
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+}
+
+export interface User {
   userId: string;
+  bankDetails?: BankDetails;
   name: string;
   email: string;
   userToken: string;

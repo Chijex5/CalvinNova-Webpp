@@ -316,7 +316,7 @@ const Dashboard = () => {
                 <ListingSkeleton type="activeListings" count={2} />
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.id}`)}>
+                  {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
                         <div className="flex items-center space-x-3">
                           <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
                           <div className="flex-1 min-w-0">

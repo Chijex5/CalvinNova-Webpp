@@ -21,6 +21,8 @@ interface Product {
   sellerCampus?:string;
   sellerRating?: number;
   school: string;
+  createdAt: string;
+  slug: string;
 }
 
 // FadeIn Animation Component
