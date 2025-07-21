@@ -76,7 +76,7 @@ const Navigation = () => {
           <Link to="/" className="flex items-center group">
             <div className="relative">
               <img 
-                src="/logo.svg" 
+                src="./logo.svg" 
                 alt="NovaPlus Logo" 
                 className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105 group-hover:rotate-12"
               />
