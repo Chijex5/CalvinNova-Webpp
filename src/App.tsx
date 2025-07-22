@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
-import { ThemeProvider } from './context/themeContext';
+import PaymentSuccessPage from './pages/SuccessPage';
 import SupportChat from './pages/ChatBot';
 import EmailVerification from './pages/VerificationPage';
 import Dashboard from './pages/Dashboard';
@@ -15,7 +15,6 @@ import Sell from './pages/Sell';
 import Login from './pages/Login';
 import BuyPage from './pages/BuyNow';
 import Signup from './pages/Signup';
-import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
 import { ChatProvider } from './context/ChatContext';
@@ -178,6 +177,7 @@ export function App() {
                 <SupportChat />
                 <Routes>
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
+                  <Route path="/payment/success/:productId" element={<ProtectedRoute> <PaymentSuccessPage /> </ProtectedRoute>} />
                   <Route path="/buy/:productId" element={<ProtectedRoute> <BuyPage /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
                   <Route path="/product/:slug" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />

@@ -306,10 +306,8 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
       if (existingChat) {
         navigate(`/chat/${existingChat.id}`);
       } else {
-        await startMessaging([sellerId]);
-        
-        // Navigate to the chat page (assuming the chat store will set currentChat)
-        navigate('/chat');
+        const chatId = await startMessaging([sellerId]);        
+         navigate(`/chat/${chatId}`);
       }
 
     } catch (error) {
