@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
+import { ThemeProvider } from './context/themeContext';
 import SupportChat from './pages/ChatBot';
 import EmailVerification from './pages/VerificationPage';
 import Dashboard from './pages/Dashboard';

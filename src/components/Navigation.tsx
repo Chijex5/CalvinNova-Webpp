@@ -106,8 +106,8 @@ const Navigation = () => {
   return (
     <header className={`sticky top-0 left-0 right-0 z-50 mb-50 transition-all duration-500 ${
       isScrolled 
-        ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50' 
-        : 'bg-white/90 backdrop-blur-md'
+        ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-700/50' 
+        : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md'
     }`}>
       <div className="container mx-auto px-4 lg:px-6">
         <div className="flex justify-between items-center h-16 lg:h-18">
@@ -134,7 +134,7 @@ const Navigation = () => {
                 className={`group flex items-center space-x-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-full text-sm lg:text-base font-medium transition-all duration-300 ${
                   location.pathname === item.path
                     ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md'
-                    : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/80 hover:shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 hover:shadow-sm'
                 }`}
               >
                 {item.icon && (
@@ -149,7 +149,7 @@ const Navigation = () => {
             ))}
             
             {/* Notification Bell - Desktop */}
-            <button className="relative p-2 lg:p-3 ml-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/80 rounded-full transition-all duration-300 group">
+            <button className="relative p-2 lg:p-3 ml-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 group">
               <BellIcon size={20} className="group-hover:scale-110 transition-transform duration-300" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full animate-ping"></span>
@@ -158,7 +158,7 @@ const Navigation = () => {
             {/* User Avatar - Desktop */}
             {user && (
               <Link to="/profile" className="relative ml-2 group">
-                <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-indigo-100 group-hover:border-indigo-300 transition-all duration-300 group-hover:scale-105">
+                <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-indigo-100 dark:border-indigo-800 group-hover:border-indigo-300 dark:group-hover:border-indigo-600 transition-all duration-300 group-hover:scale-105">
                   <img 
                     src={user.avatarUrl} 
                     alt={user.name} 
@@ -173,7 +173,7 @@ const Navigation = () => {
           {/* Mobile Right Section */}
           <div className="flex items-center md:hidden space-x-2">
             {/* Notification Bell - Mobile */}
-            <button className="relative p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/80 rounded-full transition-all duration-300">
+            <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300">
               <BellIcon size={20} />
               <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
             </button>
@@ -181,7 +181,7 @@ const Navigation = () => {
             {/* User Avatar - Mobile */}
             {user && (
               <Link to="/profile" className="relative">
-                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-indigo-100 hover:border-indigo-300 transition-all duration-200">
+                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-indigo-100 dark:border-indigo-800 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-200">
                   <img 
                     src={user.avatarUrl} 
                     alt={user.name} 
@@ -194,19 +194,19 @@ const Navigation = () => {
             {/* Mobile Menu Button */}
             <button 
               onClick={toggleMenu} 
-              className="p-2 hover:bg-indigo-50/80 rounded-full transition-all duration-300 group"
+              className="p-2 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 group"
               aria-label="Toggle menu"
             >
               <div className="relative w-6 h-6">
                 <MenuIcon 
                   size={24} 
-                  className={`absolute inset-0 text-gray-700 transition-all duration-300 ${
+                  className={`absolute inset-0 text-gray-700 dark:text-gray-300 transition-all duration-300 ${
                     isMenuOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'
                   }`}
                 />
                 <XIcon 
                   size={24} 
-                  className={`absolute inset-0 text-gray-700 transition-all duration-300 ${
+                  className={`absolute inset-0 text-gray-700 dark:text-gray-300 transition-all duration-300 ${
                     isMenuOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'
                   }`}
                 />
@@ -222,7 +222,7 @@ const Navigation = () => {
           ? 'max-h-96 opacity-100' 
           : 'max-h-0 opacity-0 overflow-hidden'
       }`}>
-        <nav className="bg-white/95 backdrop-blur-lg border-t border-gray-200/50 shadow-lg">
+        <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200/50 dark:border-gray-700/50 shadow-lg">
           <div className="container mx-auto px-4 py-2">
             {navItems.map((item, index) => (
               <Link
@@ -231,7 +231,7 @@ const Navigation = () => {
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg my-1 transition-all duration-300 ${
                   location.pathname === item.path
                     ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md'
-                    : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/80'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
                 style={{ animationDelay: `${index * 50}ms` }}

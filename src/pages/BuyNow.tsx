@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,7 +8,6 @@ import {
   User, 
   Package,
   AlertCircle,
-  CheckCircle,
   X
 } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';

@@ -266,7 +266,7 @@ const Dashboard = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <p className="font-medium text-gray-900 truncate">
-                              {getOtherUser(convo).name}
+                              {getOtherUser(convo)?.name || 'Unknown User'}
                             </p>
                             <p className="text-xs text-gray-500">
                               {convo.state.last_message_at ? new Date(convo.state.last_message_at).toLocaleDateString() : 'No date'}
@@ -296,60 +296,62 @@ const Dashboard = () => {
                     <span className="text-indigo-600 font-medium">
                       Quick responses
                     </span>{' '}
-                    get you better deals! 🚀
+                    get you better deals! 
                   </p>
                 </div>}
             </div>
           </FadeIn>
           {/* Your Active Listings */}
-          <FadeIn direction="up" delay={0.3}>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="font-bold text-gray-900">
-                  Your Active Listings
-                </h2>
-                <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-                  Manage
-                </Button>
-              </div>
-              {loading ? (
-                <ListingSkeleton type="activeListings" count={2} />
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
-                        <div className="flex items-center space-x-3">
-                          <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">
-                              {listing.title}
-                            </p>
-                            <p className="text-indigo-600 font-bold">
-                              {formatPrice(listing.price)}
-                            </p>
-                            <div className="flex items-center mt-1">
-                              <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full">
-                                {listing.category}
-                              </span>
-                              <span className="text-xs text-gray-500 ml-2">
-                                {new Date(listing.createdAt).toLocaleDateString()}
-                              </span>
+          {(user.role === 'seller' || user.role === 'both') && (
+            <FadeIn direction="up" delay={0.3}>
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                  <h2 className="font-bold text-gray-900">
+                    Your Active Listings
+                  </h2>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+                    Manage
+                  </Button>
+                </div>
+                {loading ? (
+                  <ListingSkeleton type="activeListings" count={2} />
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
+                          <div className="flex items-center space-x-3">
+                            <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 truncate">
+                                {listing.title}
+                              </p>
+                              <p className="text-indigo-600 font-bold">
+                                {formatPrice(listing.price)}
+                              </p>
+                              <div className="flex items-center mt-1">
+                                <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full">
+                                  {listing.category}
+                                </span>
+                                <span className="text-xs text-gray-500 ml-2">
+                                  {new Date(listing.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>) : <div className="p-8 text-center">
-                      <ShoppingBagIcon size={32} className="text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">No active listings</p>
-                      <p className="text-sm text-gray-400 mt-1 mb-4">
-                        Start selling your unused items today!
-                      </p>
-                      <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
-                        Create Listing
-                      </Button>
-                    </div>}
+                        </div>) : <div className="p-8 text-center">
+                        <ShoppingBagIcon size={32} className="text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">No active listings</p>
+                        <p className="text-sm text-gray-400 mt-1 mb-4">
+                          Start selling your unused items today!
+                        </p>
+                        <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
+                          Create Listing
+                        </Button>
+                      </div>}
+                  </div>
+                )}
                 </div>
-              )}
-              </div>
-          </FadeIn>
+            </FadeIn>
+          )}
         </div>
         {/* Right Column - New Listings & Upcoming */}
         <div className="lg:col-span-2">

@@ -7,6 +7,7 @@ import {
   HeartIcon, 
   ShareIcon, 
   FlagIcon, 
+  ShoppingBagIcon, 
   ChevronLeftIcon, 
   ChevronRightIcon,
   MapPinIcon,
@@ -433,17 +434,28 @@ const ProductDetails = () => {
                 </Button>
               </div>
             ) : (
-              <Button 
-                variant="primary" 
-                fullWidth 
-                size="lg"
-                icon={<MessageSquareIcon size={18} />}
-                onClick={handleContactSeller}
-                disabled={isContactingSeller}
-                className="py-4"
-              >
-                {isContactingSeller ? 'Starting conversation...' : 'Contact Seller'}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant="primary" 
+                  fullWidth 
+
+                  icon={<MessageSquareIcon size={18} />}
+                  onClick={handleContactSeller}
+                  disabled={isContactingSeller}
+                  className="py-4"
+                >
+                  {isContactingSeller ? 'Starting conversation...' : 'Contact Seller'}
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  fullWidth 
+                  icon={<ShoppingBagIcon size={18} />}
+                  onClick={() => navigate(`/buy/${product.id}`)}
+                  className={`py-4 ${isFavorited ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-700'}`}
+                >
+                  Buy Now
+                </Button>
+              </div>
             )}
           </div>
 

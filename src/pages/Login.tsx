@@ -526,9 +526,9 @@ const Login = () => {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs text-gray-500 text-center">
                 By signing in, you agree to our{' '}
-                <a href="#" className="text-indigo-600 hover:underline">Terms of Service</a>{' '}
+                <a href="https://calvinnova.com/terms" className="text-indigo-600 hover:underline">Terms of Service</a>{' '}
                 and{' '}
-                <a href="#" className="text-indigo-600 hover:underline">Privacy Policy</a>
+                <a href="https://calvinnova.com/privacy" className="text-indigo-600 hover:underline">Privacy Policy</a>
               </p>
             </div>
           </div>
