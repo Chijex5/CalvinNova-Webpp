@@ -33,7 +33,8 @@ const ProductDetails = () => {
 
   // Store hooks
   const { products, loading: productsLoading, error: productError } = useProductStore();
-  const { startMessaging, chats, error: chatError, setError: setChatError } = useChatStore();const formatPrice = (price: number) => {
+  const { startMessaging, chats, error: chatError, setError: setChatError } = useChatStore();
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'

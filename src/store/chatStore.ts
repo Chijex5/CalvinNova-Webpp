@@ -74,45 +74,46 @@ export const useChatStore = create<ChatState>()(
       startMessaging: async (participantIds: string[]) => {
         try {
           set({ isCreatingChat: true, error: null });
-          
+
           const currentUser = client.userID;
           if (!currentUser) {
             throw new Error('User not authenticated');
           }
-          
-          // Include current user in participants
+
           const allParticipants = [...new Set([currentUser, ...participantIds])];
-          
-          // Create channel ID based on sorted participant IDs for consistency
           const channelId = allParticipants.sort().join('-');
-          
-          // Check if channel already exists
+
           let channel: Channel;
           try {
             channel = client.channel('messaging', channelId, {
               members: allParticipants,
               created_by_id: currentUser,
             });
-            
-            await channel.watch();
+
+            await channel.watch(); // If channel doesn't exist, this creates & watches it
           } catch (error) {
             console.error('Error creating/accessing channel:', error);
             throw error;
           }
-          
-          // Set as current chat and load messages
+
+          // Set as current chat
           set({ currentChat: channel });
           await get().getChatDetails(channelId);
-          
-          // Add to chats list if not already there
+
+          // Add to chat list if new
           const { chats } = get();
           if (!chats.find(chat => chat.id === channelId)) {
             set({ chats: [...chats, channel] });
           }
-          
+
+          return channelId;
+
         } catch (error) {
           console.error('Error starting messaging:', error);
-          set({ error: error instanceof Error ? error.message : 'Failed to start messaging' });
+          set({
+            error: error instanceof Error ? error.message : 'Failed to start messaging',
+          });
+          return null; // ❌ Don't return chatId on error
         } finally {
           set({ isCreatingChat: false });
         }
