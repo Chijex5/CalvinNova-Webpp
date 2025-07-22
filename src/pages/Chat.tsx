@@ -8,11 +8,11 @@ import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { checkMessage } from '../functions/noContact';
 import { useParams } from 'react-router-dom';
 import { Channel } from 'stream-chat';
-import aiApi from '../utils/apiService';
 import { client } from '../lib/stream-chat';
-import { set } from 'date-fns';
+import verifiedbadge from '../assets/icons/verified-badge.svg'
 
 const agent_id = "support-agent-id";
+const we = 'calvinnova_support_team'
 
 // Enhanced Types
 export interface User {
@@ -165,6 +165,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = 
     'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
     'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
   ];
+
   
   const getColorFromId = (id: string): string => {
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -173,6 +174,17 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = 
   
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
   
+  if (user?.id === we || user?.id === agent_id) {
+    return (
+      <img
+        src="https://i.imgur.com/cXQ5hXr.png"
+        alt={user.name || 'CalvinNova Support'}
+        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
   if (!user?.image || imageError) {
     return (
       <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white font-medium ${className}`}>
@@ -180,6 +192,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = 
       </div>
     );
   }
+
   
   return (
     <img
@@ -240,6 +253,20 @@ interface OnlineIndicatorProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+// VerifiedBadge.tsx
+export const VerifiedBadge = ({ size = 18 }: { size?: number }) => (
+  <img
+    src={verifiedbadge}
+    alt="Verified"
+    width={size}
+    height={size}
+    className="inline-block"
+  />
+);
+
+
+
+
 export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size = 'sm' }) => {
   const isOnline = useUserOnlineStatus(userId);
   const sizeClasses = {
@@ -249,7 +276,9 @@ export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ userId, size =
   };
   
   return (
-    <div className={`${sizeClasses[size]} rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white shadow-sm`} />
+    <>
+      {userId === we ? (<VerifiedBadge />) : <div className={`${sizeClasses[size]} rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white shadow-sm`} />}
+    </>
   );
 };
 
@@ -303,6 +332,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
   
 
   const name = (id: string) => { 
+    if (id === we) return 'CalvinNova';
     return getUserDisplayName(id, chat);
   }
   
@@ -352,7 +382,7 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
 
   const filteredChats = chats.filter((chat: Chat) => {
     const otherUser = getOtherUser(chat);
-    const chatName = otherUser?.name || 'Unknown User';
+    const chatName = otherUser?.id === we ? "CalvinNova" : otherUser?.name || 'Unknown User';
     return chatName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -464,7 +494,7 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className={`text-sm sm:text-base font-semibold truncate ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
-                        {otherUser?.name || 'Unknown User'}
+                        {otherUser?.id === we ? 'CalvinNova' : otherUser?.name || 'Unknown User'} 
                       </h3>
                       <div className="flex items-center space-x-2 flex-shrink-0">
                         {lastMessageTime && (
@@ -547,9 +577,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
         
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
-            {otherUser?.name || 'Unknown User'}
+            {otherUser?.id === we ? 'CalvinNova' : otherUser?.name || 'Unknown User'}
             <p className="text-sm text-gray-500 truncate">
-              {isOtherUserOnline ? 'Online' : 'CalvinNova Student'}
+              {isOtherUserOnline ? 'Online' : otherUser?.id === we ? 'CalvinNova Support' : 'CalvinNova Student'}
             </p>
           </h3>
         </div>

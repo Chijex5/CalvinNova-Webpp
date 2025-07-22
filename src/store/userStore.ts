@@ -18,7 +18,7 @@ export interface User {
   isAdmin?: boolean;
   createdAt?: string;
   updatedAt?: string;
-  role: 'buyer' | 'seller' | 'both' | 'admin';
+  role: 'buyer' | 'seller' | 'both' | 'admin' | 'agent';
 }
 
 interface UserStore {

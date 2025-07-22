@@ -427,47 +427,49 @@ const ProfilePage = () => {
         </div>
 
         {/* Bank Details Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="p-6 lg:p-8">
-            <div className="flex items-center space-x-3 mb-6">
-              <CreditCard className="w-5 h-5 text-gray-600" />
-              <h3 className="text-lg font-medium text-gray-900">Bank Details</h3>
-              <div className="flex-1"></div>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                Protected - View Only
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Account Name</label>
-                <p className="text-gray-900 font-medium">{user.bankDetails?.accountName || 'Not provided'}</p>
+        {user.role === 'seller' || user.role === 'both' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="p-6 lg:p-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <CreditCard className="w-5 h-5 text-gray-600" />
+                <h3 className="text-lg font-medium text-gray-900">Bank Details</h3>
+                <div className="flex-1"></div>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                  Protected - View Only
+                </span>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Account Number</label>
-                <p className="text-gray-900 font-medium font-mono">
-                  {user.bankDetails?.accountNumber 
-                    ? `****${user.bankDetails.accountNumber.slice(-4)}` 
-                    : 'Not provided'
-                  }
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500">Account Name</label>
+                  <p className="text-gray-900 font-medium">{user.bankDetails?.accountName || 'Not provided'}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500">Account Number</label>
+                  <p className="text-gray-900 font-medium font-mono">
+                    {user.bankDetails?.accountNumber 
+                      ? `****${user.bankDetails.accountNumber.slice(-4)}` 
+                      : 'Not provided'
+                    }
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500">Bank Name</label>
+                  <p className="text-gray-900 font-medium">{user.bankDetails?.bankName || 'Not provided'}</p>
+                </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Bank details are encrypted and cannot be edited from this interface. 
+                  Contact support if you need to update your banking information.
                 </p>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Bank Name</label>
-                <p className="text-gray-900 font-medium">{user.bankDetails?.bankName || 'Not provided'}</p>
-              </div>
-            </div>
-            
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Bank details are encrypted and cannot be edited from this interface. 
-                Contact support if you need to update your banking information.
-              </p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Account Settings Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

@@ -6,6 +6,7 @@ import SupportChat from './pages/ChatBot';
 import EmailVerification from './pages/VerificationPage';
 import Dashboard from './pages/Dashboard';
 import MarketplaceUI from './pages/Marketplace';
+import AdminUsersPage from './pages/admin/Users';
 import ProductDetails from './pages/ProductDetails';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
@@ -155,7 +156,16 @@ const SellerRoute = ({
   }
   return <>{children}</>;
 };
-// Route wrapper component to handle conditional rendering
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  if (user && user.role === 'admin') {
+    return <>{children}</>;
+  }
+  return <Navigate to="/" replace />;
+};
+
+
 export function App() {
   return <Router>
       <Toaster position="top-right" richColors />
@@ -189,9 +199,13 @@ export function App() {
                       </SellerRoute>
                       </ProtectedRoute>
                     } />
-                  <Route path="/admin" element={<ProtectedRoute>
-                        <AdminDashboard />
-                      </ProtectedRoute>} />
+                    <Route path="/admin/users" element={
+                      <ProtectedRoute>
+                        <AdminRoute>
+                          <AdminUsersPage />
+                        </AdminRoute>
+                      </ProtectedRoute>
+                    } />               
                 </Routes>
               </Layout>
             </div>

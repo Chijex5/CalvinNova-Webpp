@@ -28,9 +28,9 @@ interface ProductStore {
   // Actions
   setProducts: (products: Product[]) => void;
   addProduct: (product: Product) => void;
-  updateProduct: (id: string, updates: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
-  getProduct: (id: string) => Product | undefined;
+  updateProduct: (id: number, updates: Partial<Product>) => void;
+  deleteProduct: (id: number) => void;
+  getProduct: (id: number) => Product | undefined;
   getProductsByCategory: (category: string) => Product[];
   getProductsBySchool: (school: string) => Product[];
   getProductsBySeller: (sellerId: string) => Product[];

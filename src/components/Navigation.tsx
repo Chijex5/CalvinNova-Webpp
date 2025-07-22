@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon } from 'lucide-react';
+import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, SettingsIcon, BarChart3Icon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from './logo.svg'
 
@@ -10,7 +10,6 @@ const Navigation = () => {
   const location = useLocation();
   const {
     user,
-    isAdmin,
     isAuthenticated,
     isLoading
   } = useAuth();
@@ -31,35 +30,74 @@ const Navigation = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const navItems: Array<{
-    name: string;
-    path: string;
-    icon: React.ReactElement | null;
-  }> = [{
-    name: 'Home',
-    path: '/',
-    icon: <HomeIcon size={20} />
-  }, {
-    name: 'Marketplace',
-    path: '/marketplace',
-    icon: <ShoppingBagIcon size={20} />
-  }, {
-    name: 'Chat',
-    path: '/chat',
-    icon: <MessageSquareIcon size={20} />
-  }, {
-    name: 'Sell',
-    path: '/sell',
-    icon: <PlusCircleIcon size={20} />
-  }];
+  // Define navigation items based on user roles
+  const getNavigationItems = () => {
+    if (!user || !user.role) return [];
 
-  if (isAdmin) {
-    navItems.push({
-      name: 'Admin',
-      path: '/admin',
-      icon: null
-    });
-  }
+    const baseItems = [
+      {
+        name: 'Home',
+        path: '/',
+        icon: <HomeIcon size={20} />,
+        roles: ['buyer', 'seller', 'admin', 'both']
+      },
+      {
+        name: 'Marketplace',
+        path: '/marketplace',
+        icon: <ShoppingBagIcon size={20} />,
+        roles: ['buyer', 'seller', 'admin', 'both']
+      },
+      {
+        name: 'Chat',
+        path: '/chat',
+        icon: <MessageSquareIcon size={20} />,
+        roles: ['buyer', 'seller', 'admin', 'both']
+      }
+    ];
+
+    // Seller-specific items
+    const sellerItems = [
+      {
+        name: 'Sell',
+        path: '/sell',
+        icon: <PlusCircleIcon size={20} />,
+        roles: ['seller', 'both']
+      },
+      {
+        name: 'My Products',
+        path: '/my-products',
+        icon: <BarChart3Icon size={20} />,
+        roles: ['seller', 'both']
+      }
+    ];
+
+    // Admin-specific items
+    const adminItems = [
+      {
+        name: 'Users',
+        path: '/admin/users',
+        icon: <UserIcon size={20} />,
+        roles: ['admin']
+      },
+      {
+        name: 'Settings',
+        path: '/admin/settings',
+        icon: <SettingsIcon size={20} />,
+        roles: ['admin']
+      }
+    ];
+
+    // Combine all items
+    const allItems = [...baseItems, ...sellerItems, ...adminItems];
+
+    // Filter items based on user role
+    return allItems.filter(item => 
+      item.roles.includes(user.role) || 
+      (user.role === 'both' && (item.roles.includes('buyer') || item.roles.includes('seller')))
+    );
+  };
+
+  const navItems = getNavigationItems();
 
   if (!isAuthenticated || isLoading) {
     return null;
