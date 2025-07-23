@@ -1373,7 +1373,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
         channel={chat}
       />
 
-      {isAdminView && otherUser?.user?.id && (
+      {user?.userId === agent_id && otherUser?.user?.id && (
         <MarkAsResolvedButton
           userId={otherUser?.user?.id || ''}
           isResolved={false}
