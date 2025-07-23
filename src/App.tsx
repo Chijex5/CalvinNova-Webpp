@@ -15,6 +15,7 @@ import Sell from './pages/Sell';
 import Login from './pages/Login';
 import BuyPage from './pages/BuyNow';
 import Signup from './pages/Signup';
+import QRTransactionSystem from './pages/QRCodeGenerator';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
 import { ChatProvider } from './context/ChatContext';
@@ -177,6 +178,7 @@ export function App() {
                 <SupportChat />
                 <Routes>
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
+                  <Route path="/transaction/verify/:transactionId" element={<ProtectedRoute> <QRTransactionSystem /> </ProtectedRoute>} />
                   <Route path="/payment/success/:productId" element={<ProtectedRoute> <PaymentSuccessPage /> </ProtectedRoute>} />
                   <Route path="/buy/:productId" element={<ProtectedRoute> <BuyPage /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
