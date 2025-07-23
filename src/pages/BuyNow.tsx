@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,11 +8,11 @@ import {
   User, 
   Package,
   AlertCircle,
-  CheckCircle,
   X
 } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';
 import { productService } from '../services/productService';
+import selfService from '../services/selfServices';
 import { useAuth } from '../context/AuthContext';
 
 // Product interface (matching your existing structure)
@@ -125,10 +125,7 @@ const BuyPage = () => {
         if (!products.length && !productsLoading) {
           await productService.fetchProducts();
         }
-        console.log(products);
 
-        // Find product by ID
-        console.log(productId)
         const foundProduct = products.find(p => p.id === parseInt(productId || '0', 10));
         
         if (!foundProduct && products.length > 0) {
@@ -205,23 +202,31 @@ const BuyPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const generateTransactionId = () => {
+    const transactionId = `tr-${Date.now()}`;
+    return transactionId;
+  };
+
+  const transactionId = generateTransactionId();
+
   const handlePayment = async () => {
     if (!validateCard() || !product || !user) return;
 
     setIsProcessing(true);
     
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // In real implementation, integrate with Paystack/Flutterwave
-      console.log('Processing payment...', {
+      const result = await selfService.checkout({
         productId: product.id,
         sellerId: product.sellerId,
+        transactionId: transactionId,
+        buyerEmail: user.email,
         buyerId: user.userId,
         amount: totalAmount,
-        cardDetails: { ...cardDetails, cvv: '***' } // Don't log CVV
       });
+      if (!result.success) {
+        throw new Error(result.message || 'Payment processing failed');
+      }
+
       
       // Redirect to success page
       navigate(`/payment/success/${product.id}`, {

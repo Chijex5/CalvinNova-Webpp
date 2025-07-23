@@ -42,7 +42,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = 
   
   if (!user?.image || imageError) {
     return (
-      <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white font-medium ${className}`}>
+      <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white dark:text-gray-900 font-medium ${className}`}>
         {initials}
       </div>
     );
@@ -158,332 +158,349 @@ const Dashboard = () => {
   const activeListings = products.filter(product => product.sellerId === user?.userId).slice(0, 2);
   const nearbyListings = products.filter(product => product.sellerId !== user?.userId).slice(0, 4);
   if (!user) return null;
-  return <div className="container mx-auto px-4 py-6">
-      {/* Personal Greeting Section */}
-      <FadeIn direction="up">
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {greeting},{' '}
-                <span className="text-indigo-600">
-                  {user.name.split(' ')[0]}
-                </span>{' '}
-                👋
-              </h1>
-              <p className="text-gray-600 mt-1">{motivationalQuote}</p>
-            </div>
-            <div className="mt-4 md:mt-0 flex items-center space-x-2">
-              <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
-                List an Item
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
-                Browse
-              </Button>
-            </div>
-          </div>
-        </div>
-      </FadeIn>
-      {/* Activity Cards */}
-      <FadeIn direction="up" delay={0.1}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center space-x-3">
-              <div className="bg-indigo-100 p-2 rounded-lg">
-                <MessageSquareIcon size={20} className="text-indigo-600" />
-              </div>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <div className="container mx-auto px-4 py-6">
+        {/* Personal Greeting Section */}
+        <FadeIn direction="up">
+          <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-xl p-6 mb-8 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/10">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
-                <p className="text-xl font-bold text-indigo-600">
-                  {userActivity.newMessages}
-                </p>
-                <p className="text-sm text-gray-600">New messages</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                  {greeting},{' '}
+                  <span className="text-indigo-600 dark:text-indigo-400">
+                    {user.name.split(' ')[0]}
+                  </span>{' '}
+                  👋
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">{motivationalQuote}</p>
               </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-100 p-2 rounded-lg">
-                <CheckCircleIcon size={20} className="text-green-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-green-600">
-                  {userActivity.itemsSoldThisWeek}
-                </p>
-                <p className="text-sm text-gray-600">Items sold this week</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center space-x-3">
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <TrendingUpIcon size={20} className="text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-purple-600">
-                  {userActivity.viewsOnListings}
-                </p>
-                <p className="text-sm text-gray-600">Views on your listings</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center space-x-3">
-              <div className="bg-amber-100 p-2 rounded-lg">
-                <ShoppingBagIcon size={20} className="text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-amber-600">
-                  {userActivity.savedItems}
-                </p>
-                <p className="text-sm text-gray-600">Saved items</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </FadeIn>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Active Conversations */}
-        <div className="lg:col-span-1">
-          <FadeIn direction="up" delay={0.2}>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-8">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="font-bold text-gray-900">
-                  Recent Conversations
-                </h2>
-                <Button variant="outline" size="sm" onClick={() => navigate('/chat')}>
-                  See All
+              <div className="mt-4 md:mt-0 flex items-center space-x-2">
+                <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
+                  List an Item
                 </Button>
-              </div>
-              {isLoadingChats ? <RecentConversationsSkeleton count={3} /> : (
-                <div className="divide-y divide-gray-100">
-                  {
-                  chats.slice(0, 3).map(convo => <div key={getOtherUser(convo)?.userId || ''} className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <UserAvatar user={getOtherUser(convo)} size="md" className="flex-shrink-0" />
-                          {<OnlineIndicator userId={getOtherUser(convo)?.userId || ''} size="sm" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <p className="font-medium text-gray-900 truncate">
-                              {getOtherUser(convo).name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {convo.state.last_message_at ? new Date(convo.state.last_message_at).toLocaleDateString() : 'No date'}
-                            </p>
-                          </div>
-                          <p className="text-sm text-gray-600 truncate">
-                            {getLastMessage(convo)}
-                          </p>
-                        </div>
-                        {convo.countUnread() > 0 && <span className="bg-indigo-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                            {convo.countUnread()}
-                          </span>}
-                      </div>
-                    </div>)}
-                  {chats.length === 0 && <div className="p-8 text-center">
-                      <MessageSquareIcon size={32} className="text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">No conversations yet</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Start browsing to find items and chat with sellers!
-                      </p>
-                    </div>}
-                </div>
-              )}
-              {chats.length > 0 && <div className="px-6 py-3 bg-gray-50 text-center">
-                  <p className="text-sm text-gray-500">
-                    Pro tip:{' '}
-                    <span className="text-indigo-600 font-medium">
-                      Quick responses
-                    </span>{' '}
-                    get you better deals! 🚀
-                  </p>
-                </div>}
-            </div>
-          </FadeIn>
-          {/* Your Active Listings */}
-          <FadeIn direction="up" delay={0.3}>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="font-bold text-gray-900">
-                  Your Active Listings
-                </h2>
-                <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-                  Manage
-                </Button>
-              </div>
-              {loading ? (
-                <ListingSkeleton type="activeListings" count={2} />
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
-                        <div className="flex items-center space-x-3">
-                          <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">
-                              {listing.title}
-                            </p>
-                            <p className="text-indigo-600 font-bold">
-                              {formatPrice(listing.price)}
-                            </p>
-                            <div className="flex items-center mt-1">
-                              <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full">
-                                {listing.category}
-                              </span>
-                              <span className="text-xs text-gray-500 ml-2">
-                                {new Date(listing.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>) : <div className="p-8 text-center">
-                      <ShoppingBagIcon size={32} className="text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">No active listings</p>
-                      <p className="text-sm text-gray-400 mt-1 mb-4">
-                        Start selling your unused items today!
-                      </p>
-                      <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
-                        Create Listing
-                      </Button>
-                    </div>}
-                </div>
-              )}
-              </div>
-          </FadeIn>
-        </div>
-        {/* Right Column - New Listings & Upcoming */}
-        <div className="lg:col-span-2">
-          {/* New Listings Near You */}
-          <FadeIn direction="up" delay={0.2}>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-8">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="font-bold text-gray-900">
-                  New Listings Near You
-                </h2>
                 <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
-                  See All
+                  Browse
                 </Button>
               </div>
-              <div className="p-6">
-                {loading ? (
-                  <ListingSkeleton type="nearbyListings" count={4} />
-                ) : nearbyListings.length === 0 ? (
-                  <div className="text-center p-8">
-                    <ShoppingBagIcon size={32} className="text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">No new listings nearby</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Check back later or explore the marketplace!
-                    </p>
-                  </div>
-                ) : null}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {nearbyListings.map((product, index) => <ProductCard key={product.id} product={product} delay={0.1 * index} />)}
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Activity Cards */}
+        <FadeIn direction="up" delay={0.1}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+                  <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-500 mb-2">
-                    Found something you like?{' '}
-                    <span className="text-indigo-600 font-medium">
-                      Message the seller
-                    </span>{' '}
-                    to reserve it!
+                <div>
+                  <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {userActivity.newMessages}
                   </p>
-                  <Button variant="secondary" size="sm" onClick={() => navigate('/marketplace')}>
-                    Explore More Items
+                  <p className="text-sm text-gray-600 dark:text-gray-400">New messages</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
+                  <CheckCircleIcon size={20} className="text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                    {userActivity.itemsSoldThisWeek}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Items sold this week</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
+                  <TrendingUpIcon size={20} className="text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                    {userActivity.viewsOnListings}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Views on your listings</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
+                  <ShoppingBagIcon size={20} className="text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                    {userActivity.savedItems}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Saved items</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Active Conversations */}
+          <div className="lg:col-span-1">
+            <FadeIn direction="up" delay={0.2}>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <h2 className="font-bold text-gray-900 dark:text-white">
+                    Recent Conversations
+                  </h2>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/chat')}>
+                    See All
                   </Button>
                 </div>
+                {isLoadingChats ? <RecentConversationsSkeleton count={3} /> : (
+                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {
+                    chats.slice(0, 3).map(convo => <div key={getOtherUser(convo)?.userId || ''} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <UserAvatar user={getOtherUser(convo)} size="md" className="flex-shrink-0" />
+                            {<OnlineIndicator userId={getOtherUser(convo)?.userId || ''} size="sm" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <p className="font-medium text-gray-900 dark:text-white truncate">
+                                {getOtherUser(convo)?.name || 'Unknown User'}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {convo.state.last_message_at ? new Date(convo.state.last_message_at).toLocaleDateString() : 'No date'}
+                              </p>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                              {getLastMessage(convo)}
+                            </p>
+                          </div>
+                          {convo.countUnread() > 0 && <span className="bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                              {convo.countUnread()}
+                            </span>}
+                        </div>
+                      </div>)}
+                    {chats.length === 0 && <div className="p-8 text-center">
+                        <MessageSquareIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400">No conversations yet</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                          Start browsing to find items and chat with sellers!
+                        </p>
+                      </div>}
+                  </div>
+                )}
+                {chats.length > 0 && <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/50 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Pro tip:{' '}
+                      <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                        Quick responses
+                      </span>{' '}
+                      get you better deals! 
+                    </p>
+                  </div>}
               </div>
-            </div>
-          </FadeIn>
-          {/* Campus Events & Upcoming */}
-          <FadeIn direction="up" delay={0.3}>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="font-bold text-gray-900">Campus Happenings</h2>
+            </FadeIn>
+
+            {/* Your Active Listings */}
+            {(user.role === 'seller' || user.role === 'both') && (
+              <FadeIn direction="up" delay={0.3}>
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h2 className="font-bold text-gray-900 dark:text-white">
+                      Your Active Listings
+                    </h2>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+                      Manage
+                    </Button>
+                  </div>
+                  {loading ? (
+                    <ListingSkeleton type="activeListings" count={2} />
+                  ) : (
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
+                            <div className="flex items-center space-x-3">
+                              <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 dark:text-white truncate">
+                                  {listing.title}
+                                </p>
+                                <p className="text-indigo-600 dark:text-indigo-400 font-bold">
+                                  {formatPrice(listing.price)}
+                                </p>
+                                <div className="flex items-center mt-1">
+                                  <span className="text-xs px-2 py-1 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
+                                    {listing.category}
+                                  </span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                    {new Date(listing.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>) : <div className="p-8 text-center">
+                          <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                          <p className="text-gray-500 dark:text-gray-400">No active listings</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">
+                            Start selling your unused items today!
+                          </p>
+                          <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
+                            Create Listing
+                          </Button>
+                        </div>}
+                    </div>
+                  )}
+                  </div>
+              </FadeIn>
+            )}
+          </div>
+
+          {/* Right Column - New Listings & Upcoming */}
+          <div className="lg:col-span-2">
+            {/* New Listings Near You */}
+            <FadeIn direction="up" delay={0.2}>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <h2 className="font-bold text-gray-900 dark:text-white">
+                    New Listings Near You
+                  </h2>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
+                    See All
+                  </Button>
+                </div>
+                <div className="p-6">
+                  {loading ? (
+                    <ListingSkeleton type="nearbyListings" count={4} />
+                  ) : nearbyListings.length === 0 ? (
+                    <div className="text-center p-8">
+                      <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400">No new listings nearby</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                        Check back later or explore the marketplace!
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {nearbyListings.map((product, index) => <ProductCard key={product.id} product={product} delay={0.1 * index} />)}
+                  </div>
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                      Found something you like?{' '}
+                      <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                        Message the seller
+                      </span>{' '}
+                      to reserve it!
+                    </p>
+                    <Button variant="secondary" size="sm" onClick={() => navigate('/marketplace')}>
+                      Explore More Items
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200">
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-white p-2 rounded-lg">
-                        <CalendarIcon size={20} className="text-indigo-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">
-                          End of Semester Sale
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Graduating seniors are listing items at huge
-                          discounts! Check the marketplace this weekend.
-                        </p>
-                        <p className="text-xs text-indigo-600 mt-2 font-medium">
-                          May 15-20
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-white p-2 rounded-lg">
-                        <UserIcon size={20} className="text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">
-                          Campus Ambassadors
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Become a CalvinNova campus ambassador and earn rewards
-                          for helping fellow students!
-                        </p>
-                        <p className="text-xs text-purple-600 mt-2 font-medium">
-                          Applications open
-                        </p>
+            </FadeIn>
+
+            {/* Campus Events & Upcoming */}
+            <FadeIn direction="up" delay={0.3}>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="font-bold text-gray-900 dark:text-white">Campus Happenings</h2>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800/50">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-indigo-200 dark:ring-indigo-800/50">
+                          <CalendarIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            End of Semester Sale
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Graduating seniors are listing items at huge
+                            discounts! Check the marketplace this weekend.
+                          </p>
+                          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2 font-medium">
+                            May 15-20
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4 border border-amber-200">
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-white p-2 rounded-lg">
-                        <RefreshCwIcon size={20} className="text-amber-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">
-                          Textbook Exchange
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Find and swap textbooks for your upcoming classes.
-                          Save money and help the environment!
-                        </p>
-                        <p className="text-xs text-amber-600 mt-2 font-medium">
-                          Ongoing
-                        </p>
+
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800/50">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-purple-200 dark:ring-purple-800/50">
+                          <UserIcon size={20} className="text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            Campus Ambassadors
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Become a CalvinNova campus ambassador and earn rewards
+                            for helping fellow students!
+                          </p>
+                          <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 font-medium">
+                            Applications open
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-200">
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-white p-2 rounded-lg">
-                        <BellIcon size={20} className="text-teal-600" />
+
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800/50">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-amber-200 dark:ring-amber-800/50">
+                          <RefreshCwIcon size={20} className="text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            Textbook Exchange
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Find and swap textbooks for your upcoming classes.
+                            Save money and help the environment!
+                          </p>
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                            Ongoing
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">
-                          Set Item Alerts
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Looking for something specific? Set alerts and we'll
-                          notify you when it's listed!
-                        </p>
-                        <Button variant="outline" size="sm" className="mt-2 text-xs py-1 px-2 border-teal-300 text-teal-700 hover:bg-teal-50">
-                          Create Alert
-                        </Button>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl p-4 border border-teal-200 dark:border-teal-800/50">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-teal-200 dark:ring-teal-800/50">
+                          <BellIcon size={20} className="text-teal-600 dark:text-teal-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            Set Item Alerts
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Looking for something specific? Set alerts and we'll
+                            notify you when it's listed!
+                          </p>
+                          <Button variant="outline" size="sm" className="mt-2 text-xs py-1 px-2 border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/50">
+                            Create Alert
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </FadeIn>
+            </FadeIn>
+          </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default Dashboard;

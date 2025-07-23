@@ -390,13 +390,13 @@ const Login = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               CalvinNova
             </h1>
-            <p className="text-gray-600 mt-2">Campus Marketplace</p>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">Campus Marketplace</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
-              <p className="text-gray-600">Sign in to your account to continue</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back!</h2>
+              <p className="text-gray-600 dark:text-gray-300">Sign in to your account to continue</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-6">
@@ -437,7 +437,7 @@ const Login = () => {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="password"
@@ -447,7 +447,7 @@ const Login = () => {
                     onBlur={() => handleInputBlur('password')}
                     onKeyPress={handleKeyPress}
                     className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 focus:bg-white ${
-                      errors.password ? 'border-red-500' : 'border-gray-300'
+                      errors.password ? 'border-red-500' : 'border-gray-300 dark:text-gray-600'
                     }`}
                     placeholder="Enter your password"
                     required
@@ -455,7 +455,7 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 transition-colors"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -512,7 +512,7 @@ const Login = () => {
             </form>
 
             <div className="mt-8 text-center">
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 Don't have an account?{' '}
                 <a
                   href="/signup"
@@ -524,11 +524,11 @@ const Login = () => {
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 By signing in, you agree to our{' '}
-                <a href="#" className="text-indigo-600 hover:underline">Terms of Service</a>{' '}
+                <a href="https://calvinnova.com/terms" className="text-indigo-600 hover:underline">Terms of Service</a>{' '}
                 and{' '}
-                <a href="#" className="text-indigo-600 hover:underline">Privacy Policy</a>
+                <a href="https://calvinnova.com/privacy" className="text-indigo-600 hover:underline">Privacy Policy</a>
               </p>
             </div>
           </div>
@@ -538,24 +538,24 @@ const Login = () => {
       {/* Forgot Password Modal */}
       {showForgotModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md relative">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md relative">
             <button
               onClick={() => {
                 setShowForgotModal(false);
                 setErrors(prev => ({ ...prev, forgotEmail: '' }));
                 setFormData(prev => ({ ...prev, forgotEmail: '' }));
               }}
-              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 transition-colors"
             >
               <X size={24} />
             </button>
             
             <div className="text-center mb-6">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="text-white" size={24} />
+                <Mail className="text-white dark:text-gray-900" size={24} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Forgot Password?</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Forgot Password?</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Enter your email address and we'll send you a link to reset your password.
               </p>
             </div>
