@@ -219,7 +219,7 @@ const MarkAsResolvedButton: React.FC<ResolvedButtonProps> = ({
   const handleClick = async () => {
     setIsLoading(true);
     try {
-      await axios.post('https://calvinnova-backend-1.onrender.com/admin/resolve-chat', { agent_id, user_id: userId, chat_id:chatId });
+      await axios.post('https://chat.calvinnova.com/admin/resolve-chat', { agent_id, user_id: userId, chat_id:chatId });
     } catch (error) {
       console.error('Failed to mark as resolved:', error);
     } finally {
@@ -1373,7 +1373,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
         channel={chat}
       />
 
-      {isAdminView && otherUser?.user?.id && (
+      {user?.userId === agent_id && otherUser?.user?.id && (
         <MarkAsResolvedButton
           userId={otherUser?.user?.id || ''}
           isResolved={false}
