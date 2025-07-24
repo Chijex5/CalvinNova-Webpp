@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import api from '../utils/apiService';
 import { Camera, CheckCircle, AlertCircle, ArrowLeft, Smartphone, Package, X, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import jsQR from 'jsqr';
 
 export interface TransactionData {
   transactionId: string;
@@ -185,141 +186,22 @@ const ScanQRCode = ({ transactionData, onBack }: {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [jsQRLoaded, setJsQRLoaded] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load jsQR library and wait for it to be available
-  useEffect(() => {
-    const loadJsQR = async () => {
-      try {
-        // Check if jsQR is already loaded
-        if ((window as any).jsQR) {
-          console.log('jsQR already loaded');
-          setJsQRLoaded(true);
-          return;
-        }
-
-        console.log('Loading jsQR library...');
-
-        // Try multiple CDN sources as fallback
-        const cdnSources = [
-          'https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js',
-          'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js',
-          'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'
-        ];
-
-        let loadSuccess = false;
-        
-        for (const src of cdnSources) {
-          try {
-            console.log(`Trying to load jsQR from: ${src}`);
-            
-            // Remove any existing script first
-            const existingScript = document.querySelector(`script[src*="jsqr"], script[src*="jsQR"]`);
-            if (existingScript) {
-              document.head.removeChild(existingScript);
-            }
-
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-            script.crossOrigin = 'anonymous'; // Add CORS attribute
-            
-            const scriptLoadPromise = new Promise<void>((resolve, reject) => {
-              const timeout = setTimeout(() => {
-                reject(new Error('Script load timeout'));
-              }, 10000); // 10 second timeout
-
-              script.onload = () => {
-                clearTimeout(timeout);
-                console.log(`Script loaded from ${src}`);
-                
-                // Wait for library initialization with multiple checks
-                let checkCount = 0;
-                const maxChecks = 20;
-                
-                const checkLibrary = () => {
-                  checkCount++;
-                  console.log(`Checking jsQR availability (attempt ${checkCount})`);
-                  
-                  if ((window as any).jsQR && typeof (window as any).jsQR === 'function') {
-                    console.log('jsQR is now available!');
-                    resolve();
-                  } else if (checkCount < maxChecks) {
-                    setTimeout(checkLibrary, 200);
-                  } else {
-                    reject(new Error('jsQR failed to initialize after loading'));
-                  }
-                };
-                
-                // Start checking immediately
-                checkLibrary();
-              };
-              
-              script.onerror = (error) => {
-                clearTimeout(timeout);
-                console.error(`Failed to load from ${src}:`, error);
-                reject(new Error(`Failed to load from ${src}`));
-              };
-            });
-            
-            document.head.appendChild(script);
-            await scriptLoadPromise;
-            
-            loadSuccess = true;
-            setJsQRLoaded(true);
-            break; // Success, exit the loop
-            
-          } catch (error) {
-            console.warn(`Failed to load jsQR from ${src}:`, error);
-            // Continue to next CDN source
-          }
-        }
-        
-        if (!loadSuccess) {
-          throw new Error('All CDN sources failed to load jsQR');
-        }
-        
-      } catch (err) {
-        console.error('Error loading jsQR:', err);
-        setError(`Failed to load QR scanner library. Please check your internet connection and refresh the page. Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
-    };
-
-    loadJsQR();
-    
-    return () => {
-      // Cleanup: remove script if it exists
-      const existingScript = document.querySelector(`script[src*="jsqr"], script[src*="jsQR"]`);
-      if (existingScript && document.head.contains(existingScript)) {
-        try {
-          document.head.removeChild(existingScript);
-        } catch (e) {
-          console.warn('Could not remove script:', e);
-        }
-      }
-    };
-  }, []);
-
   const startCamera = async () => {
-    if (!jsQRLoaded) {
-      setError('QR scanner library not loaded yet. Please wait and try again, or refresh the page if the issue persists.');
-      return;
-    }
-
-    // Check if jsQR is actually available
-    if (!(window as any).jsQR || typeof (window as any).jsQR !== 'function') {
-      setError('QR scanner library is not properly initialized. Please refresh the page and try again.');
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Stop existing stream if any
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
       
       // Check if getUserMedia is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -328,46 +210,54 @@ const ScanQRCode = ({ transactionData, onBack }: {
       
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: { ideal: 'environment' }, // Prefer back camera but don't require it
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1280, min: 640 },
           height: { ideal: 720, min: 480 }
-        } 
+        },
+        audio: false
       });
       
       setStream(mediaStream);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        
-        const handleVideoReady = () => {
-          if (videoRef.current && videoRef.current.readyState >= 2) {
-            videoRef.current.play()
-              .then(() => {
-                console.log('Video playing successfully');
-                setIsScanning(true);
-                setIsLoading(false);
-                // Start scanning after video is properly playing
-                setTimeout(() => {
-                  startScanning();
-                }, 1000);
-              })
-              .catch((playError) => {
-                console.error('Error playing video:', playError);
-                setError('Failed to start camera stream. Please allow camera permissions and try again.');
-                setIsLoading(false);
-              });
-          }
-        };
-        
-        videoRef.current.onloadedmetadata = handleVideoReady;
-        videoRef.current.oncanplay = handleVideoReady;
-        
-        videoRef.current.onerror = (e) => {
-          console.error('Video error:', e);
-          setError('Camera stream error. Please check camera permissions and try again.');
+      // Wait for video element to be available
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          
+          const handleCanPlay = () => {
+            console.log('Video can play, starting...');
+            videoRef.current?.removeEventListener('canplay', handleCanPlay);
+            
+            console.log('Video playing successfully');
+            setIsScanning(true);
+            setIsLoading(false);
+            
+            // Start scanning after a brief delay to ensure video is stable
+            setTimeout(() => {
+              startScanning();
+            }, 500);
+          };
+
+          videoRef.current.addEventListener('canplay', handleCanPlay);
+          
+          // Fallback timeout
+          setTimeout(() => {
+            if (isLoading) {
+              console.log('Fallback: setting states');
+              videoRef.current?.removeEventListener('canplay', handleCanPlay);
+              setIsScanning(true);
+              setIsLoading(false);
+              setTimeout(() => {
+                startScanning();
+              }, 500);
+            }
+          }, 2000);
+        } else {
+          setError('Video element not found');
           setIsLoading(false);
-        };
-      }
+        }
+      }, 100);
+      
     } catch (err: any) {
       console.error('Camera access error:', err);
       let errorMessage = 'Camera access failed. ';
@@ -400,15 +290,15 @@ const ScanQRCode = ({ transactionData, onBack }: {
   };
 
   const scanFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !isScanning || !jsQRLoaded) {
+    if (!videoRef.current || !canvasRef.current || !isScanning) {
       return;
     }
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    // Check if video is ready and has dimensions
-    if (video.videoWidth === 0 || video.videoHeight === 0 || video.readyState < 2) {
+    // Check if video is ready
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
       return;
     }
     
@@ -429,15 +319,7 @@ const ScanQRCode = ({ transactionData, onBack }: {
       // Get image data from canvas
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       
-      // Use jsQR to scan for QR codes
-      const jsQR = (window as any).jsQR;
-      if (!jsQR || typeof jsQR !== 'function') {
-        console.error('jsQR not available or not a function');
-        setError('QR scanner library became unavailable. Please refresh the page.');
-        stopCamera();
-        return;
-      }
-      
+      // Use imported jsQR directly
       const code = jsQR(imageData.data, canvas.width, canvas.height, {
         inversionAttempts: "dontInvert",
       });
@@ -449,7 +331,6 @@ const ScanQRCode = ({ transactionData, onBack }: {
     } catch (scanError) {
       console.error('Scan error:', scanError);
       // Don't show error to user for individual scan failures, just log them
-      // The scanning will continue automatically
     }
   };
 
@@ -546,11 +427,6 @@ const ScanQRCode = ({ transactionData, onBack }: {
     const file = event.target.files?.[0];
     if (!file) return;
     
-    if (!jsQRLoaded) {
-      setError('QR scanner library not loaded yet. Please wait and try again.');
-      return;
-    }
-    
     setIsLoading(true);
     setError(null);
     
@@ -586,14 +462,7 @@ const ScanQRCode = ({ transactionData, onBack }: {
           // Get image data
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           
-          // Use jsQR to scan for QR codes
-          const jsQR = (window as any).jsQR;
-          if (!jsQR) {
-            setError('QR scanner library not available');
-            setIsLoading(false);
-            return;
-          }
-          
+          // Use imported jsQR directly
           const code = jsQR(imageData.data, canvas.width, canvas.height);
           
           if (code && code.data) {
@@ -698,16 +567,6 @@ const ScanQRCode = ({ transactionData, onBack }: {
           </div>
         </div>
 
-        {/* Library Loading Status */}
-        {!jsQRLoaded && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent"></div>
-              <p className="text-sm text-blue-800 dark:text-blue-300">Loading QR scanner...</p>
-            </div>
-          </div>
-        )}
-
         {/* Scanner Area */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           {!isScanning && !isLoading && (
@@ -723,18 +582,16 @@ const ScanQRCode = ({ transactionData, onBack }: {
               <div className="space-y-3">
                 <button
                   onClick={startCamera}
-                  disabled={!jsQRLoaded}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Camera className="w-5 h-5" />
-                  <span>{jsQRLoaded ? 'Start Camera Scanner' : 'Loading Scanner...'}</span>
+                  <span>Start Camera Scanner</span>
                 </button>
                 
                 <div className="text-sm text-gray-500 dark:text-gray-400">or</div>
                 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={!jsQRLoaded}
                   className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Upload QR Code Image
@@ -754,11 +611,11 @@ const ScanQRCode = ({ transactionData, onBack }: {
           {isLoading && (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-300">Processing...</p>
+              <p className="text-gray-600 dark:text-gray-300">Starting camera...</p>
             </div>
           )}
 
-          {isScanning && !isLoading && (
+          {(isScanning || isLoading) && (
             <div className="text-center py-8">
               <div className="w-full h-64 bg-black rounded-lg mb-4 relative overflow-hidden">
                 <video
@@ -773,19 +630,25 @@ const ScanQRCode = ({ transactionData, onBack }: {
                     transform: 'scaleX(-1)' // Mirror the video for better UX
                   }}
                 />
-                <div className="absolute inset-8 border-2 border-green-400 rounded animate-pulse"></div>
+                {isScanning && (
+                  <div className="absolute inset-8 border-2 border-green-400 rounded animate-pulse"></div>
+                )}
               </div>
               <canvas
                 ref={canvasRef}
                 className="hidden"
               />
-              <p className="text-gray-600 dark:text-gray-300 mb-4">Scanning for QR code...</p>
-              <button
-                onClick={stopCamera}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-              >
-                Stop Scanning
-              </button>
+              {isScanning && (
+                <>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">Scanning for QR code...</p>
+                  <button
+                    onClick={stopCamera}
+                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                  >
+                    Stop Scanning
+                  </button>
+                </>
+              )}
             </div>
           )}
 
