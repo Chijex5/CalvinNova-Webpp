@@ -88,14 +88,14 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
         </div>
 
         {/* QR Code Display */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center mb-6">
-          <div className="bg-white p-4 rounded-lg inline-block shadow-inner">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2 text-center mb-6">
+          <div className="bg-white p-2 rounded-lg inline-block shadow-inner">
             {qrData && (
               <QRCodeSVG 
                 value={qrData} 
-                size={256}
+                size={320}
                 level="M"
-                includeMargin={true}
+                includeMargin={false}
                 className="mx-auto"
               />
             )}
@@ -180,6 +180,7 @@ const ScanQRCode = ({ transactionData, onBack }: {
   transactionData: TransactionData; 
   onBack: () => void;
 }) => {
+
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -227,10 +228,8 @@ const ScanQRCode = ({ transactionData, onBack }: {
           videoRef.current.srcObject = mediaStream;
           
           const handleCanPlay = () => {
-            console.log('Video can play, starting...');
             videoRef.current?.removeEventListener('canplay', handleCanPlay);
-            
-            console.log('Video playing successfully');
+
             setIsScanning(true);
             setIsLoading(false);
             
@@ -245,7 +244,7 @@ const ScanQRCode = ({ transactionData, onBack }: {
           // Fallback timeout
           setTimeout(() => {
             if (isLoading) {
-              console.log('Fallback: setting states');
+
               videoRef.current?.removeEventListener('canplay', handleCanPlay);
               setIsScanning(true);
               setIsLoading(false);
@@ -284,13 +283,18 @@ const ScanQRCode = ({ transactionData, onBack }: {
       clearInterval(scanIntervalRef.current);
     }
     
-    console.log('Starting QR code scanning...');
     
     scanIntervalRef.current = setInterval(() => {
       scanFrame();
-    }, 300); // Scan every 300ms for better performance
+      console.log('Started scanning interval:', scanIntervalRef.current);
+    }, 300);
   };
 
+  console.log('ScanFrame called:', {
+    videoRef: !!videoRef.current,
+    canvasRef: !!canvasRef.current,
+    isScanning,
+  });
   const scanFrame = () => {
     if (!videoRef.current || !canvasRef.current || !isScanning) {
       return;
@@ -326,6 +330,8 @@ const ScanQRCode = ({ transactionData, onBack }: {
       
       // Get image data from canvas
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      console.log('Pixel sample:', imageData.data.slice(0, 10));
+
       
       // Use imported jsQR directly
       const code = jsQR(imageData.data, canvas.width, canvas.height, {
@@ -343,12 +349,10 @@ const ScanQRCode = ({ transactionData, onBack }: {
   };
 
   const stopCamera = () => {
-    console.log('Stopping camera...');
     
     if (stream) {
       stream.getTracks().forEach(track => {
         track.stop();
-        console.log('Track stopped:', track.kind);
       });
       setStream(null);
     }
@@ -745,7 +749,11 @@ const ScanQRCode = ({ transactionData, onBack }: {
                 )}
               </div>
               
-              <canvas ref={canvasRef} className="hidden" />
+              <canvas
+                ref={canvasRef}
+                style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '320px', height: '240px' }}
+              />
+
             </div>
           )}
 
