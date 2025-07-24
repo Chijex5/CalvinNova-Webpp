@@ -186,6 +186,8 @@ const ScanQRCode = ({ transactionData, onBack }: {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [scanAttempts, setScanAttempts] = useState(0);
+  const [lastScanTime, setLastScanTime] = useState(Date.now());
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -313,20 +315,21 @@ const ScanQRCode = ({ transactionData, onBack }: {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
-      // Draw video frame to canvas (flip horizontally to counteract the CSS transform)
-      ctx.save();
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-      ctx.restore();
+      // Draw video frame to canvas normally (don't flip since we want to scan the actual orientation)
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
       console.log('Canvas drawn - dimensions:', canvas.width, canvas.height);
+      
+      // Update scan attempts counter for visual feedback
+      setScanAttempts(prev => prev + 1);
+      setLastScanTime(Date.now());
       
       // Get image data from canvas
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       
       // Use imported jsQR directly
       const code = jsQR(imageData.data, canvas.width, canvas.height, {
-        inversionAttempts: "dontInvert",
+        inversionAttempts: "attemptBoth",
       });
       
       if (code && code.data) {
@@ -522,6 +525,8 @@ const ScanQRCode = ({ transactionData, onBack }: {
     setIsScanning(false);
     setIsLoading(false);
     setShowConfirmModal(false);
+    setScanAttempts(0);
+    setLastScanTime(Date.now());
     stopCamera();
   };
 
@@ -662,9 +667,6 @@ const ScanQRCode = ({ transactionData, onBack }: {
                   playsInline
                   muted
                   className="w-full h-full object-cover"
-                  style={{ 
-                    transform: 'scaleX(-1)' // Mirror the video for better UX
-                  }}
                 />
                 
                 {/* Scanning Overlay */}
@@ -677,21 +679,32 @@ const ScanQRCode = ({ transactionData, onBack }: {
                           {/* Main scanning area - larger size */}
                           <div className="w-64 h-64 border-4 border-white rounded-2xl bg-transparent shadow-lg">
                             {/* Corner indicators */}
-                            <div className="absolute -top-2 -left-2 w-8 h-8 border-l-4 border-t-4 border-green-400 rounded-tl-lg"></div>
-                            <div className="absolute -top-2 -right-2 w-8 h-8 border-r-4 border-t-4 border-green-400 rounded-tr-lg"></div>
-                            <div className="absolute -bottom-2 -left-2 w-8 h-8 border-l-4 border-b-4 border-green-400 rounded-bl-lg"></div>
-                            <div className="absolute -bottom-2 -right-2 w-8 h-8 border-r-4 border-b-4 border-green-400 rounded-br-lg"></div>
+                            <div className="absolute -top-2 -left-2 w-8 h-8 border-l-4 border-t-4 border-green-400 rounded-tl-lg animate-pulse"></div>
+                            <div className="absolute -top-2 -right-2 w-8 h-8 border-r-4 border-t-4 border-green-400 rounded-tr-lg animate-pulse"></div>
+                            <div className="absolute -bottom-2 -left-2 w-8 h-8 border-l-4 border-b-4 border-green-400 rounded-bl-lg animate-pulse"></div>
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 border-r-4 border-b-4 border-green-400 rounded-br-lg animate-pulse"></div>
                             
-                            {/* Scanning line animation */}
+                            {/* Active scanning line animation */}
                             <div className="absolute inset-0 overflow-hidden rounded-xl">
-                              <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse absolute top-1/2 transform -translate-y-1/2"></div>
+                              <div 
+                                className="w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent absolute animate-bounce"
+                                style={{
+                                  top: `${(scanAttempts % 20) * 5}%`,
+                                  transition: 'top 0.3s ease-in-out'
+                                }}
+                              ></div>
+                            </div>
+                            
+                            {/* Scan activity indicator */}
+                            <div className="absolute top-2 right-2">
+                              <div className={`w-3 h-3 rounded-full ${Date.now() - lastScanTime < 500 ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div>
                             </div>
                           </div>
                           
                           {/* Crosshair center */}
-                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6">
+                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8">
                             <div className="absolute inset-0 border-2 border-green-400 rounded-full animate-ping"></div>
-                            <div className="absolute inset-2 bg-green-400 rounded-full"></div>
+                            <div className="absolute inset-2 bg-green-400 rounded-full animate-pulse"></div>
                           </div>
                         </div>
                       </div>
@@ -704,10 +717,18 @@ const ScanQRCode = ({ transactionData, onBack }: {
               <div className="p-6 text-center">
                 {isScanning ? (
                   <>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Scanning for QR Code</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                      Position the QR code within the frame above
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <div className={`w-2 h-2 rounded-full ${Date.now() - lastScanTime < 500 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {Date.now() - lastScanTime < 500 ? 'Actively Scanning' : 'Scanning...'}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                      Scanned {scanAttempts} frames • Keep QR code steady in frame
                     </p>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                      {Date.now() - lastScanTime < 500 ? '📡 Signal detected' : '🔍 Searching for QR code'}
+                    </div>
                     <button
                       onClick={stopCamera}
                       className="inline-flex items-center space-x-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
