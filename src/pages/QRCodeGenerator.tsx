@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import api from '../utils/apiService';
-import { Camera, CheckCircle, AlertCircle, ArrowLeft, Smartphone, Package, X, Moon, Sun } from 'lucide-react';
+import { Camera, CheckCircle, AlertCircle, ArrowLeft, User, Package, X, StopCircle, Lightbulb, AlertTriangle, Upload, QrCode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import jsQR from 'jsqr';
 
@@ -313,8 +313,13 @@ const ScanQRCode = ({ transactionData, onBack }: {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
-      // Draw video frame to canvas
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Draw video frame to canvas (flip horizontally to counteract the CSS transform)
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.restore();
+      
+      console.log('Canvas drawn - dimensions:', canvas.width, canvas.height);
       
       // Get image data from canvas
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -458,9 +463,11 @@ const ScanQRCode = ({ transactionData, onBack }: {
           
           // Draw image to canvas
           ctx.drawImage(img, 0, 0);
+          console.log('Canvas drawn - dimensions:', canvas.width, canvas.height);
           
           // Get image data
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          console.log('Image data:', imageData.data.length, imageData.data.constructor.name);
           
           // Use imported jsQR directly
           const code = jsQR(imageData.data, canvas.width, canvas.height);
@@ -536,65 +543,91 @@ const ScanQRCode = ({ transactionData, onBack }: {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm sticky top-0 z-10 border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:scale-105"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Scan QR Code</h1>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Scan QR Code</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Complete your transaction</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-md mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto px-4 py-6">
+        {/* Transaction Info Card */}
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-white">{transactionData.sellerName}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Transaction #{transactionData.transactionId.slice(-6)}</p>
+            </div>
+            <div className="text-right">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
         {/* Instructions */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl border border-blue-200/50 dark:border-gray-600/50 p-5 mb-6">
           <div className="flex items-start space-x-3">
-            <Smartphone className="w-6 h-6 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+              <QrCode className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
             <div>
-              <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Verify Item Receipt</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Scan the seller's QR code to confirm you've received the item and complete the transaction.
+              <h2 className="font-semibold text-gray-900 dark:text-white mb-1">How it works</h2>
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                Ask the seller to show you their QR code, then scan it to confirm you've received the item safely.
               </p>
             </div>
           </div>
         </div>
 
         {/* Scanner Area */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          {!isScanning && !isLoading && (
-            <div className="text-center">
-              <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Camera className="w-16 h-16 text-gray-400 dark:text-gray-500" />
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          {!isScanning && !isLoading && !error && (
+            <div className="p-8 text-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <Camera className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="font-medium text-gray-900 dark:text-white mb-2">Ready to Scan</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Position the QR code within the camera frame
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-2">Ready to Scan</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                Choose how you'd like to scan the seller's QR code
               </p>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <button
                   onClick={startCamera}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Camera className="w-5 h-5" />
-                  <span>Start Camera Scanner</span>
+                  <span>Use Camera</span>
                 </button>
                 
-                <div className="text-sm text-gray-500 dark:text-gray-400">or</div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600"></div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">OR</span>
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600"></div>
+                </div>
                 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-md transform hover:scale-[1.01] active:scale-[0.99]"
                 >
-                  Upload QR Code Image
+                  <Upload className="w-5 h-5" />
+                  <span>Upload Image</span>
                 </button>
                 
                 <input
@@ -609,96 +642,185 @@ const ScanQRCode = ({ transactionData, onBack }: {
           )}
 
           {isLoading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-300">Starting camera...</p>
+            <div className="p-8 text-center">
+              <div className="relative w-16 h-16 mx-auto mb-6">
+                <div className="absolute inset-0 rounded-full border-4 border-indigo-200 dark:border-indigo-800"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-indigo-600 dark:border-indigo-400 border-t-transparent animate-spin"></div>
+              </div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Initializing Camera</h3>
+              <p className="text-gray-600 dark:text-gray-300">Please wait a moment...</p>
             </div>
           )}
 
           {(isScanning || isLoading) && (
-            <div className="text-center py-8">
-              <div className="w-full h-64 bg-black rounded-lg mb-4 relative overflow-hidden">
+            <div className="relative">
+              {/* Camera Feed */}
+              <div className="relative bg-black rounded-t-2xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
+                  className="w-full h-full object-cover"
                   style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
                     transform: 'scaleX(-1)' // Mirror the video for better UX
                   }}
                 />
+                
+                {/* Scanning Overlay */}
                 {isScanning && (
-                  <div className="absolute inset-8 border-2 border-green-400 rounded animate-pulse"></div>
+                  <>
+                    {/* Dark overlay with cutout */}
+                    <div className="absolute inset-0 bg-black/50">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          {/* Main scanning area - larger size */}
+                          <div className="w-64 h-64 border-4 border-white rounded-2xl bg-transparent shadow-lg">
+                            {/* Corner indicators */}
+                            <div className="absolute -top-2 -left-2 w-8 h-8 border-l-4 border-t-4 border-green-400 rounded-tl-lg"></div>
+                            <div className="absolute -top-2 -right-2 w-8 h-8 border-r-4 border-t-4 border-green-400 rounded-tr-lg"></div>
+                            <div className="absolute -bottom-2 -left-2 w-8 h-8 border-l-4 border-b-4 border-green-400 rounded-bl-lg"></div>
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 border-r-4 border-b-4 border-green-400 rounded-br-lg"></div>
+                            
+                            {/* Scanning line animation */}
+                            <div className="absolute inset-0 overflow-hidden rounded-xl">
+                              <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse absolute top-1/2 transform -translate-y-1/2"></div>
+                            </div>
+                          </div>
+                          
+                          {/* Crosshair center */}
+                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6">
+                            <div className="absolute inset-0 border-2 border-green-400 rounded-full animate-ping"></div>
+                            <div className="absolute inset-2 bg-green-400 rounded-full"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-              <canvas
-                ref={canvasRef}
-                className="hidden"
-              />
-              {isScanning && (
-                <>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">Scanning for QR code...</p>
-                  <button
-                    onClick={stopCamera}
-                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-                  >
-                    Stop Scanning
-                  </button>
-                </>
-              )}
+              
+              {/* Controls */}
+              <div className="p-6 text-center">
+                {isScanning ? (
+                  <>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Scanning for QR Code</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                      Position the QR code within the frame above
+                    </p>
+                    <button
+                      onClick={stopCamera}
+                      className="inline-flex items-center space-x-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
+                    >
+                      <StopCircle className="w-4 h-4" />
+                      <span>Stop Scanning</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+                  </div>
+                )}
+              </div>
+              
+              <canvas ref={canvasRef} className="hidden" />
             </div>
           )}
 
           {error && (
-            <div className="text-center py-8">
-              <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
               </div>
-              <h3 className="font-medium text-gray-900 dark:text-white mb-2">Scan Failed</h3>
-              <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
+              <h3 className="font-semibold text-red-900 dark:text-red-100 mb-2">Scan Failed</h3>
+              <p className="text-sm text-red-700 dark:text-red-300 mb-6 leading-relaxed px-4">{error}</p>
               <button
                 onClick={resetScanner}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
               >
                 Try Again
               </button>
             </div>
           )}
         </div>
+
+        {/* Tips */}
+        <div className="mt-6 bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200/50 dark:border-amber-800/50 p-4">
+          <div className="flex items-start space-x-3">
+            <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-1">Tips for better scanning</h4>
+              <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
+                <li>• Ensure good lighting</li>
+                <li>• Hold your phone steady</li>
+                <li>• Keep QR code within the frame</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Buyer Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Confirm Receipt</h3>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">QR Code Verified!</h3>
+                    <p className="text-green-100 text-sm">Ready to complete transaction</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Confirm that you have received the item from {transactionData.sellerName} and that it is correct and intact with nothing wrong. If you accept, we will immediately pay {getSellerFirstName(transactionData.sellerName)} their money.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmReceipt}
-                className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-              >
-                I Agree
-              </button>
+            
+            {/* Content */}
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Confirm Item Receipt</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                  Please confirm you have received the item from <span className="font-medium text-gray-900 dark:text-white">{transactionData.sellerName}</span> and verify it's correct and undamaged.
+                </p>
+              </div>
+              
+              <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200/50 dark:border-amber-800/50 p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    Once confirmed, payment will be released to {getSellerFirstName(transactionData.sellerName)} immediately.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmReceipt}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                >
+                  Confirm Receipt
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -747,14 +869,12 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
 const QRTransactionSystem = () => {
   const [currentView, setCurrentView] = useState('loading');
   const [transactionData, setTransactionData] = useState<TransactionData | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
   const { transactionId } = useParams();
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchTransactionData = async () => {
       try {
-        // TODO: Replace with actual API call
         const response = await api.get(`/api/transactions/complete/${transactionId}`);
         if(!response.data.success){
           setCurrentView('error');
