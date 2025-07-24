@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { NotFoundException } from '@zxing/library';
 import api from '../utils/apiService';
@@ -1382,6 +1383,7 @@ const QRTransactionSystem = () => {
       try {
         const response = await api.get(`/api/transactions/complete/${transactionId}`);
         if(!response.data.success){
+          toast.error(response.data.message || 'Failed to fetch transaction data.');
           setCurrentView('error');
           console.error("Failed to fetch transaction data:", response.data.message);
           return;
@@ -1400,9 +1402,13 @@ const QRTransactionSystem = () => {
         
         setTransactionData(data);
         setCurrentView('main');
-      } catch (error) {
-        console.error('Error fetching transaction:', error);
-        setCurrentView('error');
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Something went wrong while fetching the transaction.';
+        toast.error(message);
+        setCurrentView('error')
       }
     };
 
