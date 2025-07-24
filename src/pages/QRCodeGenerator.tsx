@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
+import { BrowserQRCodeReader } from '@zxing/browser';
+import { NotFoundException } from '@zxing/library';
 import api from '../utils/apiService';
-import { Camera, CheckCircle, AlertCircle, ArrowLeft, User, Package, X, StopCircle, Lightbulb, AlertTriangle, Upload, QrCode } from 'lucide-react';
+import { Camera, CheckCircle, AlertCircle, ArrowLeft, ArrowRight, Shield, Star, Sparkles, CreditCard, Clock, Trophy, Heart, Zap, User, Package, X, StopCircle, Lightbulb, AlertTriangle, Upload, QrCode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import jsQR from 'jsqr';
+import { tr } from 'date-fns/locale';
 
 export interface TransactionData {
   transactionId: string;
@@ -38,10 +40,16 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
     return () => clearTimeout(timer);
   }, [transactionData]);
 
-  const handleConfirm = () => {
-    setShowConfirmModal(false);
-    onConfirm();
-    // TODO: Implement backend call to confirm seller has agreed to payout
+  const handleConfirm = async () => {
+    try {
+      const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`)
+      if (response && response.data.success){
+        setShowConfirmModal(false);
+        onConfirm();
+      }
+    } catch (error) {
+      console.error('Error confirming transaction:', error);
+    }
   };
 
   if (isLoading) {
@@ -131,12 +139,6 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowConfirmModal(true)}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-        >
-          Buyer Has Confirmed - Complete Transaction
-        </button>
       </div>
 
       {/* Seller Confirmation Modal */}
@@ -176,206 +178,173 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
   );
 };
 
-const ScanQRCode = ({ transactionData, onBack }: { 
+const ScanQRCode = ({ transactionData, onBack, onComplete }: { 
   transactionData: TransactionData; 
   onBack: () => void;
+  onComplete: () => void; 
 }) => {
 
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [transactionProcessing, setTransactionProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [scanAttempts, setScanAttempts] = useState(0);
   const [lastScanTime, setLastScanTime] = useState(Date.now());
+  const [isProcessingConfirmation, setIsProcessingConfirmation] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const controlsRef = useRef<any>(null); // Store the controls returned by decodeFromVideoDevice
 
   const startCamera = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Stop existing stream if any
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        setStream(null);
+      // Stop existing streams first
+      await stopCamera();
+      
+      // Initialize ZXing code reader
+      if (!codeReaderRef.current) {
+        codeReaderRef.current = new BrowserQRCodeReader();
       }
       
-      // Check if getUserMedia is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.');
-      }
+      const codeReader = codeReaderRef.current;
       
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 }
-        },
-        audio: false
-      });
-      
-      setStream(mediaStream);
-      
-      // Wait for video element to be available
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          
-          const handleCanPlay = () => {
-            videoRef.current?.removeEventListener('canplay', handleCanPlay);
-
-            setIsScanning(true);
-            setIsLoading(false);
-            
-            // Start scanning after a brief delay to ensure video is stable
-            setTimeout(() => {
-              startScanning();
-            }, 500);
-          };
-
-          videoRef.current.addEventListener('canplay', handleCanPlay);
-          
-          // Fallback timeout
-          setTimeout(() => {
-            if (isLoading) {
-
-              videoRef.current?.removeEventListener('canplay', handleCanPlay);
-              setIsScanning(true);
-              setIsLoading(false);
-              setTimeout(() => {
-                startScanning();
-              }, 500);
-            }
-          }, 2000);
-        } else {
-          setError('Video element not found');
-          setIsLoading(false);
+      try {
+        // Get available video devices
+        const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+        
+        if (videoInputDevices.length === 0) {
+          throw new Error('No camera found on this device. You can try uploading an image instead.');
         }
-      }, 100);
+        
+        // Try to find back camera first, fallback to first available
+        const selectedDeviceId = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('environment')
+        )?.deviceId || videoInputDevices[0].deviceId;
+        
+        setIsScanning(true);
+        setIsLoading(false);
+        
+        // Start continuous decode from video device and store the controls
+        controlsRef.current = await codeReader.decodeFromVideoDevice(
+          selectedDeviceId, 
+          videoRef.current!, 
+          (result, error, controls) => {
+            setScanAttempts(prev => prev + 1);
+            setLastScanTime(Date.now());
+            
+            if (result) {
+              handleScanSuccess(result.getText());
+            }
+            
+            if (error && !(error instanceof NotFoundException)) {
+              console.error('Scan error:', error);
+            }
+          }
+        );
+        
+      } catch (cameraError: any) {
+        console.error('Camera setup error:', cameraError);
+        let errorMessage = 'Camera access failed. ';
+        
+        if (cameraError.name === 'NotAllowedError' || cameraError.name === 'PermissionDeniedError') {
+          errorMessage += 'Please allow camera access in your browser settings and try again.';
+        } else if (cameraError.name === 'NotFoundError' || cameraError.name === 'DevicesNotFoundError') {
+          errorMessage += 'No camera found on this device. You can try uploading an image instead.';
+        } else if (cameraError.name === 'NotSupportedError' || cameraError.name === 'ConstraintNotSatisfiedError') {
+          errorMessage += 'Camera not supported or constraints not satisfied. Try uploading an image instead.';
+        } else {
+          errorMessage += cameraError.message || 'Unknown error occurred. Please refresh and try again.';
+        }
+        
+        setError(errorMessage);
+        setIsLoading(false);
+        setIsScanning(false);
+      }
       
     } catch (err: any) {
-      console.error('Camera access error:', err);
-      let errorMessage = 'Camera access failed. ';
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMessage += 'Please allow camera access in your browser settings and try again.';
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        errorMessage += 'No camera found on this device. You can try uploading an image instead.';
-      } else if (err.name === 'NotSupportedError' || err.name === 'ConstraintNotSatisfiedError') {
-        errorMessage += 'Camera not supported or constraints not satisfied. Try uploading an image instead.';
-      } else {
-        errorMessage += err.message || 'Unknown error occurred. Please refresh and try again.';
-      }
-      
-      setError(errorMessage);
+      console.error('General camera error:', err);
+      setError('Failed to initialize camera. Please refresh and try again.');
       setIsLoading(false);
+      setIsScanning(false);
     }
   };
 
-  const startScanning = () => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-    }
-    
-    
-    scanIntervalRef.current = setInterval(() => {
-      scanFrame();
-      console.log('Started scanning interval:', scanIntervalRef.current);
-    }, 300);
-  };
-
-  console.log('ScanFrame called:', {
-    videoRef: !!videoRef.current,
-    canvasRef: !!canvasRef.current,
-    isScanning,
-  });
-  const scanFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !isScanning) {
-      return;
-    }
-    
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    // Check if video is ready
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      return;
-    }
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('Could not get canvas context');
-      return;
-    }
-    
+  const stopCamera = async () => {
     try {
-      // Set canvas size to match video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      // Draw video frame to canvas normally (don't flip since we want to scan the actual orientation)
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      console.log('Canvas drawn - dimensions:', canvas.width, canvas.height);
-      
-      // Update scan attempts counter for visual feedback
-      setScanAttempts(prev => prev + 1);
-      setLastScanTime(Date.now());
-      
-      // Get image data from canvas
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      console.log('Pixel sample:', imageData.data.slice(0, 10));
-
-      
-      // Use imported jsQR directly
-      const code = jsQR(imageData.data, canvas.width, canvas.height, {
-        inversionAttempts: "attemptBoth",
-      });
-      
-      if (code && code.data) {
-        console.log('QR Code detected:', code.data);
-        handleScanSuccess(code.data);
+      // Method 1: Stop using ZXing controls (primary method)
+      if (controlsRef.current && typeof controlsRef.current.stop === 'function') {
+        try {
+          await controlsRef.current.stop();
+          console.log('ZXing controls stopped successfully');
+        } catch (stopError) {
+          console.error('Error stopping ZXing controls:', stopError);
+        }
+        controlsRef.current = null;
       }
-    } catch (scanError) {
-      console.error('Scan error:', scanError);
-      // Don't show error to user for individual scan failures, just log them
-    }
-  };
 
-  const stopCamera = () => {
-    
-    if (stream) {
-      stream.getTracks().forEach(track => {
-        track.stop();
-      });
-      setStream(null);
+      // Method 3: Stop MediaStream tracks directly (additional safety)
+      if (stream) {
+        stream.getTracks().forEach(track => {
+          if (track.readyState === 'live') {
+            track.stop();
+            console.log(`Stopped ${track.kind} track:`, track.label);
+          }
+        });
+        setStream(null);
+      }
+
+      // Method 4: Get and stop any active tracks from video element
+      if (videoRef.current && videoRef.current.srcObject) {
+        const videoStream = videoRef.current.srcObject as MediaStream;
+        if (videoStream && videoStream.getTracks) {
+          videoStream.getTracks().forEach(track => {
+            if (track.readyState === 'live') {
+              track.stop();
+              console.log(`Stopped video element track:`, track.label);
+            }
+          });
+        }
+        videoRef.current.srcObject = null;
+      }
+
+      // Method 5: Query all active media streams and stop them (nuclear option)
+      try {
+        if (navigator.mediaDevices) {
+          // We can't directly enumerate active streams, but we can ensure our video element is clear
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.srcObject = null;
+            videoRef.current.load();
+          }
+        }
+      } catch (enumerateError) {
+        console.error('Error during device enumeration cleanup:', enumerateError);
+      }
+
+      setIsScanning(false);
+      console.log('Camera stop sequence completed');
+      
+    } catch (error) {
+      console.error('Error in stopCamera:', error);
+      setIsScanning(false);
     }
-    
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
-    }
-    
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    
-    setIsScanning(false);
   };
 
   const handleScanSuccess = (scannedData: string) => {
-    // Stop scanning immediately when we find a code
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
+    // Prevent multiple scans while processing
+    if (isProcessingConfirmation || showConfirmModal) {
+      return;
     }
-    
+
     try {
       let parsedData;
       
@@ -388,8 +357,9 @@ const ScanQRCode = ({ transactionData, onBack }: {
           setError('Invalid QR code format. Please scan the correct QR code.');
           // Restart scanning after a delay
           setTimeout(() => {
+            setError(null);
             if (isScanning) {
-              startScanning();
+              startCamera();
             }
           }, 2000);
           return;
@@ -398,28 +368,23 @@ const ScanQRCode = ({ transactionData, onBack }: {
         parsedData = scannedData;
       }
       
-      console.log('Parsed QR data:', parsedData);
-      console.log('Expected transaction data:', {
-        transactionId: transactionData.transactionId,
-        sellerId: transactionData.sellerId,
-        verificationCode: transactionData.verificationCode
-      });
-      
       // Verify scanned data matches transaction data
       if (parsedData.transactionId === transactionData.transactionId &&
           parsedData.sellerId === transactionData.sellerId &&
           parsedData.verificationCode === transactionData.verificationCode) {
+        
+        // Stop scanning before showing modal
+        stopCamera();
         setScanResult(parsedData);
         setShowConfirmModal(true);
-        stopCamera();
+        
       } else {
-        console.log('QR code data does not match transaction');
         setError('QR code does not match this transaction. Please scan the correct code.');
         // Restart scanning after showing error
         setTimeout(() => {
           setError(null);
           if (isScanning) {
-            startScanning();
+            startCamera();
           }
         }, 3000);
       }
@@ -429,83 +394,52 @@ const ScanQRCode = ({ transactionData, onBack }: {
       setTimeout(() => {
         setError(null);
         if (isScanning) {
-          startScanning();
+          startCamera();
         }
       }, 2000);
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) return;
     
     setIsLoading(true);
     setError(null);
     
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const img = new Image();
+    try {
+      // Initialize ZXing code reader if not already done
+      if (!codeReaderRef.current) {
+        codeReaderRef.current = new BrowserQRCodeReader();
+      }
       
-      img.onload = () => {
-        if (!canvasRef.current) {
-          setError('Canvas not available');
-          setIsLoading(false);
-          return;
-        }
-        
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          setError('Canvas context not available');
-          setIsLoading(false);
-          return;
-        }
-        
-        try {
-          // Set canvas size to match image
-          canvas.width = img.width;
-          canvas.height = img.height;
-          
-          // Draw image to canvas
-          ctx.drawImage(img, 0, 0);
-          console.log('Canvas drawn - dimensions:', canvas.width, canvas.height);
-          
-          // Get image data
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          console.log('Image data:', imageData.data.length, imageData.data.constructor.name);
-          
-          // Use imported jsQR directly
-          const code = jsQR(imageData.data, canvas.width, canvas.height);
-          
-          if (code && code.data) {
-            handleScanSuccess(code.data);
-          } else {
-            setError('No QR code found in image. Please try a clearer image.');
-          }
-        } catch (scanError) {
-          console.error('File scan error:', scanError);
-          setError('Failed to scan QR code from image. Please try again.');
-        }
-        
-        setIsLoading(false);
-      };
+      const codeReader = codeReaderRef.current;
       
-      img.onerror = () => {
-        setError('Failed to load image. Please try a different file.');
-        setIsLoading(false);
-      };
+      // Create a temporary URL for the file and decode QR code from it
+      const imageUrl = URL.createObjectURL(file);
       
-      img.src = e.target?.result as string;
-    };
+      try {
+        const result = await codeReader.decodeFromImageUrl(imageUrl);
+        
+        if (result) {
+          handleScanSuccess(result.getText());
+        } else {
+          setError('No QR code found in image. Please try a clearer image.');
+        }
+      } finally {
+        // Clean up the temporary URL
+        URL.revokeObjectURL(imageUrl);
+      }
+    } catch (scanError: any) {
+      console.error('File scan error:', scanError);
+      if (scanError instanceof NotFoundException) {
+        setError('No QR code found in image. Please try a clearer image.');
+      } else {
+        setError('Failed to scan QR code from image. Please try again.');
+      }
+    }
     
-    reader.onerror = () => {
-      setError('Failed to read file. Please try again.');
-      setIsLoading(false);
-    };
-    
-    reader.readAsDataURL(file);
+    setIsLoading(false);
     
     // Reset file input
     event.target.value = '';
@@ -513,13 +447,22 @@ const ScanQRCode = ({ transactionData, onBack }: {
 
   const confirmReceipt = async () => {
     try {
-      // TODO: Implement backend call to confirm buyer received item
-      console.log('Confirming receipt for transaction:', transactionData.transactionId);
+      setTransactionProcessing(true)
+      setIsProcessingConfirmation(true);
       setShowConfirmModal(false);
-      // Navigate to success page or show success state
+      const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`)
+      if (response && response.data.success){
+        await stopCamera(); 
+        onComplete();
+      }
+
     } catch (error) {
       console.error('Error confirming receipt:', error);
       setError('Failed to confirm receipt. Please try again.');
+      setIsProcessingConfirmation(false);
+    } finally {
+      setTransactionProcessing(false);
+      setIsProcessingConfirmation(false);
     }
   };
 
@@ -531,20 +474,24 @@ const ScanQRCode = ({ transactionData, onBack }: {
     setShowConfirmModal(false);
     setScanAttempts(0);
     setLastScanTime(Date.now());
+    setIsProcessingConfirmation(false);
     stopCamera();
   };
 
-  // Cleanup on unmount
+  // Cleanup on unmount and when component changes
   useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      if (scanIntervalRef.current) {
-        clearInterval(scanIntervalRef.current);
-      }
+      console.log('ScanQRCode component unmounting, cleaning up camera...');
+      stopCamera();
     };
-  }, [stream]);
+  }, []);
+
+  // Additional cleanup when leaving the scanning state
+  useEffect(() => {
+    if (!isScanning && controlsRef.current) {
+      stopCamera();
+    }
+  }, [isScanning]);
 
   // Get seller's first name
   const getSellerFirstName = (fullName: string) => {
@@ -728,7 +675,7 @@ const ScanQRCode = ({ transactionData, onBack }: {
                       </h3>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                      Scanned {scanAttempts} frames • Keep QR code steady in frame
+                      Keep QR code steady in frame
                     </p>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                       {Date.now() - lastScanTime < 500 ? '📡 Signal detected' : '🔍 Searching for QR code'}
@@ -748,12 +695,6 @@ const ScanQRCode = ({ transactionData, onBack }: {
                   </div>
                 )}
               </div>
-              
-              <canvas
-                ref={canvasRef}
-                style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '320px', height: '240px' }}
-              />
-
             </div>
           )}
 
@@ -845,9 +786,10 @@ const ScanQRCode = ({ transactionData, onBack }: {
                 </button>
                 <button
                   onClick={confirmReceipt}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                  disabled={transactionProcessing}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Confirm Receipt
+                  {transactionProcessing?'Confirming.....': 'Confirm Receipt'}
                 </button>
               </div>
             </div>
@@ -858,37 +800,571 @@ const ScanQRCode = ({ transactionData, onBack }: {
   );
 };
 
-// Success Page Component
-const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType: 'seller' | 'buyer' }) => {
+const BuyerTransactionProcessing = ({ 
+  sellerName, 
+  transactionId,
+  onComplete 
+}: { 
+  sellerName: string; 
+  transactionId: string;
+  onComplete: () => void;
+}) => {
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [showPulse, setShowPulse] = useState(true);
+  const [particles, setParticles] = useState<Array<{id: number, x: number, y: number, delay: number}>>([]);
+
+  const processingSteps = [
+    { 
+      icon: Package, 
+      text: "Confirming item receipt", 
+      subtext: "Verifying handover completion",
+      duration: 2000,
+      color: "from-blue-500 to-cyan-500"
+    },
+    { 
+      icon: Shield, 
+      text: "Securing transaction", 
+      subtext: "Applying security protocols",
+      duration: 1800,
+      color: "from-green-500 to-emerald-500"
+    },
+    { 
+      icon: CreditCard, 
+      text: "Processing payment release", 
+      subtext: "Authorizing seller payout",
+      duration: 2500,
+      color: "from-purple-500 to-pink-500"
+    },
+    { 
+      icon: Trophy, 
+      text: "Finalizing transaction", 
+      subtext: "Completing all records",
+      duration: 1200,
+      color: "from-yellow-500 to-orange-500"
+    }
+  ];
+
+  // Initialize floating particles
+  useEffect(() => {
+    const newParticles = Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      delay: Math.random() * 2000
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  useEffect(() => {
+
+    const stepTimeouts: NodeJS.Timeout[] = [];
+
+    // Start progress animation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + 0.8; // Takes about 7.5 seconds to complete
+      });
+    }, 60);
+
+    // Step progression
+    let cumulativeDuration = 0;
+    processingSteps.forEach((step, index) => {
+      const timeout = setTimeout(() => {
+        setCurrentStep(index);
+        
+        // Add some visual feedback
+        if (index < processingSteps.length - 1) {
+          setShowPulse(false);
+          setTimeout(() => setShowPulse(true), 100);
+        }
+      }, cumulativeDuration);
+      
+      stepTimeouts.push(timeout);
+      cumulativeDuration += step.duration;
+    });
+
+    // Complete transaction after all steps
+    const completionTimeout = setTimeout(() => {
+      onComplete();
+    }, cumulativeDuration + 500);
+
+    return () => {
+      clearInterval(progressInterval);
+      stepTimeouts.forEach(timeout => clearTimeout(timeout));
+      clearTimeout(completionTimeout);
+    };
+  }, [onComplete]);
+
+  const currentStepData = processingSteps[currentStep];
+  const CurrentIcon = currentStepData?.icon || Package;
+  const getSellerFirstName = (fullName: string) => fullName.split(' ')[0];
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
+      
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Large floating orbs */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 dark:from-indigo-800/20 dark:to-purple-800/20 rounded-full animate-pulse blur-xl"></div>
+        <div className="absolute bottom-32 right-16 w-24 h-24 bg-gradient-to-br from-pink-200/40 to-red-200/40 dark:from-pink-800/20 dark:to-red-800/20 rounded-full animate-pulse delay-1000 blur-lg"></div>
+        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-gradient-to-br from-green-200/50 to-blue-200/50 dark:from-green-800/30 dark:to-blue-800/30 rounded-full animate-pulse delay-500 blur-md"></div>
+        
+        {/* Floating particles */}
+        {particles.map((particle) => (
+          <div
+            key={particle.id}
+            className="absolute w-2 h-2 bg-indigo-400/60 dark:bg-indigo-300/40 rounded-full animate-bounce"
+            style={{
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              animationDelay: `${particle.delay}ms`,
+              animationDuration: `${3000 + Math.random() * 2000}ms`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex items-center justify-center min-h-screen p-4 relative z-10">
+        <div className="max-w-md w-full">
+          
+          {/* Processing Card */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+            
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 text-white relative overflow-hidden">
+              <div className="absolute inset-0 bg-black/10"></div>
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20 animate-pulse"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-16 -translate-x-16 animate-pulse delay-1000"></div>
+              
+              <div className="relative z-10 text-center">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Heart className="w-5 h-5 text-pink-200 animate-pulse" />
+                  <h1 className="text-lg font-bold">Processing Your Purchase</h1>
+                  <Sparkles className="w-5 h-5 text-yellow-200 animate-pulse delay-300" />
+                </div>
+                <p className="text-indigo-100 text-sm">
+                  Completing transaction with {getSellerFirstName(sellerName)}
+                </p>
+                <div className="mt-3 text-xs text-indigo-200 bg-white/10 rounded-full px-3 py-1 inline-block">
+                  ID: #{transactionId.slice(-8)}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Section */}
+            <div className="p-8 text-center">
+              
+              {/* Main Progress Ring */}
+              <div className="relative w-40 h-40 mx-auto mb-8">
+                {/* Background ring */}
+                <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 160 160">
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    className="text-gray-200 dark:text-gray-700"
+                  />
+                  {/* Progress ring with gradient */}
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="url(#progressGradient)"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 70}`}
+                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 100)}`}
+                    className="transition-all duration-500 ease-out drop-shadow-sm"
+                  />
+                  <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#6366f1" />
+                      <stop offset="50%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#ec4899" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                
+                {/* Center Content */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    {/* Animated Icon */}
+                    <div className={`w-20 h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center shadow-xl transform transition-all duration-700 ${showPulse ? 'scale-110' : 'scale-100'}`}
+                         style={{
+                           background: `linear-gradient(135deg, ${currentStepData ? currentStepData.color.replace('from-', '').replace(' to-', ', ').replace('-500', '') : 'rgb(99, 102, 241), rgb(139, 92, 246)'})`,
+                           boxShadow: '0 10px 30px rgba(99, 102, 241, 0.3)'
+                         }}>
+                      <CurrentIcon className={`w-10 h-10 text-white transition-all duration-500 ${currentStep === processingSteps.length - 1 ? 'animate-bounce' : ''}`} />
+                    </div>
+                    
+                    {/* Progress Percentage */}
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                      {Math.round(progress)}%
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Complete
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating success indicators around the ring */}
+                {progress > 25 && (
+                  <div className="absolute top-2 right-8 animate-bounce delay-300">
+                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                )}
+                
+                {progress > 50 && (
+                  <div className="absolute bottom-2 left-8 animate-bounce delay-700">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                      <Shield className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                )}
+                
+                {progress > 75 && (
+                  <div className="absolute top-8 left-2 animate-bounce delay-1000">
+                    <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Current Step Display */}
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {currentStepData?.text || "Initializing..."}
+                  </h2>
+                  <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse delay-150"></div>
+                </div>
+                
+                <p className="text-gray-600 dark:text-gray-300 font-medium">
+                  {currentStepData?.subtext || "Please wait..."}
+                </p>
+
+                {/* Step Progress Indicators */}
+                <div className="flex justify-center space-x-2 mt-6">
+                  {processingSteps.map((step, index) => (
+                    <div
+                      key={index}
+                      className={`h-2 rounded-full transition-all duration-700 ${
+                        index <= currentStep 
+                          ? `bg-gradient-to-r ${step.color} w-10 shadow-md` 
+                          : 'bg-gray-200 dark:bg-gray-700 w-2'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Processing Details */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl p-5 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                        Estimated completion
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {Math.max(0, Math.round((100 - progress) * 0.08))} seconds remaining
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Security Notice */}
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-2xl p-4">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <p className="font-semibold text-green-800 dark:text-green-200 text-sm">
+                    Secure Transaction
+                  </p>
+                </div>
+                <p className="text-xs text-green-700 dark:text-green-300 leading-relaxed">
+                  Your payment is protected by our escrow system. Please don't close this page during processing.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Fun Loading Messages */}
+          <div className="mt-6 text-center">
+            <div className="inline-flex items-center space-x-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-100"></div>
+                <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce delay-200"></div>
+              </div>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                {progress < 30 ? "Hang tight, magic happening..." : 
+                 progress < 60 ? "Almost there, stay awesome!" :
+                 progress < 90 ? "Final touches, you're amazing!" :
+                 "Success incoming! 🎉"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// Enhanced Success Page Component
+const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType: 'seller' | 'buyer' }) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [animationStage, setAnimationStage] = useState(0);
+
+  useEffect(() => {
+    // Stage 0: Initial load
+    const timer1 = setTimeout(() => setAnimationStage(1), 300);
+    
+    // Stage 1: Confetti explosion
+    const timer2 = setTimeout(() => {
+      setShowConfetti(true);
+      setAnimationStage(2);
+    }, 800);
+    
+    // Stage 2: Content reveal
+    const timer3 = setTimeout(() => setAnimationStage(3), 1500);
+    
+    // Stage 3: Final state
+    const timer4 = setTimeout(() => {
+      setShowConfetti(false);
+      setAnimationStage(4);
+    }, 4000);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+    };
+  }, []);
+
+  const confettiPieces = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    color: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'][i % 6],
+    left: Math.random() * 100,
+    animationDelay: Math.random() * 2,
+    size: Math.random() * 6 + 4
+  }));
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
+      
+      {/* Confetti Animation */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-30">
+          {confettiPieces.map((piece) => (
+            <div
+              key={piece.id}
+              className="absolute animate-bounce"
+              style={{
+                left: `${piece.left}%`,
+                backgroundColor: piece.color,
+                width: `${piece.size}px`,
+                height: `${piece.size}px`,
+                borderRadius: piece.id % 3 === 0 ? '50%' : piece.id % 2 === 0 ? '0%' : '20%',
+                animationDelay: `${piece.animationDelay}s`,
+                animationDuration: '3s',
+                top: '-10px'
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-20 left-10 w-20 h-20 bg-green-200/30 dark:bg-green-800/30 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute top-40 right-16 w-12 h-12 bg-emerald-300/40 dark:bg-emerald-700/40 rounded-full animate-pulse delay-2000"></div>
+        <div className="absolute bottom-32 left-20 w-16 h-16 bg-green-100/50 dark:bg-green-900/50 rounded-full animate-pulse delay-500"></div>
+        <div className="absolute bottom-20 right-8 w-8 h-8 bg-emerald-200/60 dark:bg-emerald-800/60 rounded-full animate-pulse delay-1500"></div>
+      </div>
+
+      {/* Header */}
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md shadow-sm sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className={`p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-300 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:scale-110 transform ${
+                animationStage >= 3 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+              }`}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Transaction Complete</h1>
+            <div className={`transition-all duration-500 delay-300 ${
+              animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+            }`}>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Transaction Complete</h1>
+              <p className="text-xs text-green-600 dark:text-green-400 font-medium">✨ Successfully processed</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+      {/* Main Content */}
+      <div className="max-w-md mx-auto px-4 py-8 relative z-10">
+        
+        {/* Success Card */}
+        <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-1000 transform ${
+          animationStage >= 1 ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-8'
+        }`}>
+          
+          {/* Success Header with Gradient */}
+          <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 p-8 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+            
+            <div className={`relative z-10 text-center transition-all duration-800 delay-500 ${
+              animationStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              {/* Animated Success Icon */}
+              <div className="relative inline-block mb-4">
+                <div className={`w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transform transition-all duration-700 ${
+                  animationStage >= 2 ? 'scale-100 rotate-0' : 'scale-50 rotate-45'
+                }`}>
+                  <CheckCircle className={`w-10 h-10 text-white transition-all duration-500 delay-700 ${
+                    animationStage >= 2 ? 'scale-100' : 'scale-0'
+                  }`} />
+                </div>
+                
+                {/* Sparkle Effects */}
+                {animationStage >= 2 && (
+                  <>
+                    <Sparkles className="w-4 h-4 text-yellow-300 absolute -top-1 -right-1 animate-ping" />
+                    <Star className="w-3 h-3 text-yellow-200 absolute -bottom-1 -left-1 animate-pulse delay-300" />
+                    <Zap className="w-3 h-3 text-yellow-100 absolute top-2 -left-2 animate-bounce delay-500" />
+                  </>
+                )}
+              </div>
+              
+              <h2 className="text-2xl font-bold mb-2">🎉 Amazing!</h2>
+              <p className="text-green-100 text-sm font-medium">
+                Your transaction was successful
+              </p>
+            </div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">✅ Success!</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {userType === 'seller' 
-              ? 'Transaction confirmed! Payment will be processed shortly.'
-              : 'Item receipt confirmed! The transaction is complete.'
-            }
-          </p>
+
+          {/* Content Section */}
+          <div className="p-8 space-y-6">
+            
+            {/* Status Message */}
+            <div className={`text-center transition-all duration-600 delay-700 ${
+              animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                {userType === 'seller' ? '💰 Payment Processing' : '📦 Item Confirmed'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {userType === 'seller' 
+                  ? 'Great job! Your payment will be processed and transferred to your account within the next few minutes.' 
+                  : 'Perfect! You\'ve successfully confirmed receipt of your item. The transaction is now complete.'
+                }
+              </p>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className={`grid grid-cols-2 gap-4 transition-all duration-600 delay-900 ${
+              animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4 text-center">
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-800/50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  {userType === 'seller' ? (
+                    <CreditCard className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <Package className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  )}
+                </div>
+                <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                  {userType === 'seller' ? 'Secure Payment' : 'Item Verified'}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  {userType === 'seller' ? 'Protected transfer' : 'Quality confirmed'}
+                </p>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 text-center">
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800/50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">Transaction</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Complete</p>
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div className={`bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl p-5 transition-all duration-600 delay-1100 ${
+              animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">What's next?</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    {userType === 'seller' 
+                      ? 'You\'ll receive a notification once the payment hits your account. Check your transaction history for updates.'
+                      : 'You can rate your experience and the seller. Check your purchase history anytime in your account.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div className={`transition-all duration-600 delay-1300 ${
+              animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              <button
+                onClick={onBack}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+              >
+                <Heart className="w-5 h-5" />
+                <span>Continue Shopping</span>
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Floating Success Elements */}
+        {animationStage >= 2 && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-4 left-4 animate-bounce delay-1000">
+              <Star className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div className="absolute top-8 right-8 animate-pulse delay-1500">
+              <Sparkles className="w-5 h-5 text-green-400" />
+            </div>
+            <div className="absolute bottom-16 left-8 animate-bounce delay-2000">
+              <Trophy className="w-4 h-4 text-indigo-400" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -913,7 +1389,6 @@ const QRTransactionSystem = () => {
 
         const data = response.data.transaction
         if (!data) {
-          console.log("no data returned", response.data)
           setCurrentView('error');
           return;
         }
@@ -982,6 +1457,15 @@ const QRTransactionSystem = () => {
             userType={transactionData?.isSeller ? 'seller' : 'buyer'}
           />
         );
+
+      case 'buyerProcessing':
+        return (
+          <BuyerTransactionProcessing 
+            sellerName={transactionData?.sellerName || 'Seller'}
+            transactionId={transactionData?.transactionId || 'N/A'}
+            onComplete={() => setCurrentView('success')}
+          />
+        )
       
       case 'main':
       default:
@@ -997,6 +1481,7 @@ const QRTransactionSystem = () => {
           <ScanQRCode 
             transactionData={transactionData}
             onBack={() => setCurrentView('main')}
+            onComplete={() => setCurrentView('success')}
           />
         );
     }

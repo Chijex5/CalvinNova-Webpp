@@ -45,10 +45,17 @@ const Login = () => {
   // Handle auth context errors
   useEffect(() => {
     if (authError) {
-      toast.error(authError);
+      const msg = typeof authError === 'string'
+        ? authError
+        : authError?.response?.data?.message ||
+          authError?.message ||
+          "An unknown error occurred";
+
+      toast.error(msg);
       clearError && clearError();
     }
   }, [authError, clearError]);
+
 
   // Load remember me preference
   useEffect(() => {
