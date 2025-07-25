@@ -122,24 +122,39 @@ export const useChatStore = create<ChatState>()(
       getChatsForUser: async () => {
         try {
           set({ isLoadingChats: true, error: null });
-          
+
           const currentUser = client.userID;
+          const CHATBOT_ID = "novaplus-support-bot";
+          const SUPPORT_AGENT_ID = "support-agent-id";
+
           if (!currentUser) {
             throw new Error('User not authenticated');
           }
-          
+
           const filters = {
             type: 'messaging',
             members: { $in: [currentUser] },
           };
-          
+
           const sort = [{ last_message_at: -1 }];
           const options = { limit: 50, presence: true };
-          
+
           const channels = await client.queryChannels(filters, sort, options);
-          
-          set({ chats: channels });
-          
+
+          // Manually filter out channels that include the chatbot,
+          // except when current user is the support agent
+          const filteredChannels = channels.filter((channel) => {
+            const members = Object.values(channel.state.members ?? {});
+            const includesBot = members.some((m) => m.user?.id === CHATBOT_ID);
+
+            if (includesBot && currentUser !== SUPPORT_AGENT_ID) {
+              return false;
+            }
+
+            return true;
+          });
+
+          set({ chats: filteredChannels });
         } catch (error) {
           console.error('Error fetching user chats:', error);
           set({ error: error instanceof Error ? error.message : 'Failed to fetch chats' });

@@ -44,7 +44,7 @@ const adminService = {
             store.setLoading(true);
             const response = await api.get(`api/admin/get-total-listings/${userId}`);
             if (response.data.success) {
-                return response.data.total_listings;
+                return response.data.totalListings;
             } else {
                 throw new Error(response.data.message || 'Failed to fetch total listings');
             }

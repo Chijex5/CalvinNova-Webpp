@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StreamChat, Channel, Message as StreamMessage, User as StreamUser } from 'stream-chat';
-import { MessageCircle, X, Send, AlertCircle, User, Bot, Clock, CheckCircle, ArrowLeft, MoreVertical, Phone, Video, Paperclip, Smile, Mic, Image, Camera, Minimize2, Maximize2, Shield, UserCheck } from 'lucide-react';
+import { Channel } from 'stream-chat';
+import { RiCustomerService2Line  } from "react-icons/ri";
+import { MessageCircle, X, Send, Bot, Clock, CheckCircle, Zap, ArrowLeft, MoreVertical, Paperclip, Mic, Image, Camera, Shield, UserCheck } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { useAuth } from '../context/AuthContext';
@@ -560,19 +561,31 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
   if (!isOpen) {
     return (
-      <div className={`fixed ${isMobile ? 'bottom-6 right-6' : 'bottom-8 right-8'} z-50 ${className}`}>
-        <div className="relative">
+      <div className={`fixed ${isMobile ? 'bottom-20 right-6' : 'bottom-24 right-8'} z-50`}>
+        <div className="relative group">
+          {/* Attention-grabbing pulse ring */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-75 animate-ping"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-50 animate-pulse"></div>
+          
+          {/* Main button */}
           <button
-            onClick={() => setIsOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-3xl group"
+            onClick={() => {
+              setIsOpen(true);            }}
+            className="relative bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-purple-500/25 border-2 border-white/20"
           >
-            <MessageCircle size={16} className="group-hover:scale-110 transition-transform duration-200" />
+            <RiCustomerService2Line  size={24} className="group-hover:scale-110 transition-transform duration-200" />
           </button>
-          {currentChannel && currentChannel.countUnread() > 0 && (
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
-              {currentChannel.countUnread()}
+          
+
+          
+          {/* Floating help text */}
+          <div className="absolute bottom-full right-0 mb-2 bg-white text-gray-800 px-4 py-2 rounded-lg shadow-xl border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-yellow-500" />
+              <span className="font-semibold">Need help? We're online!</span>
             </div>
-          )}
+            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+          </div>
         </div>
       </div>
     );
@@ -676,7 +689,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowAttachments(!showAttachments)}
-                className={`rounded-full p-3 transition-all duration-200 ${
+                className={`hidden rounded-full p-3 transition-all duration-200 ${
                   showAttachments ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
@@ -716,7 +729,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                   onMouseLeave={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
-                  className={`rounded-full p-3 transition-all duration-200 shadow-lg ${
+                  className={`hidden rounded-full p-3 transition-all duration-200 shadow-lg ${
                     isRecording ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-100'
                   }`}
                 >
@@ -759,7 +772,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAttachments(!showAttachments)}
-              className={`rounded-lg p-2 transition-all duration-200 ${
+              className={`rounded-lg hidden p-2 transition-all duration-200 ${
                 showAttachments ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'
               }`}
             >
@@ -845,7 +858,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                     onMouseLeave={stopRecording}
                     onTouchStart={startRecording}
                     onTouchEnd={stopRecording}
-                    className={`rounded-full p-2 transition-all duration-200 shadow-lg ${
+                    className={`hidden rounded-full p-2 transition-all duration-200 shadow-lg ${
                       isRecording ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-100'
                     }`}
                   >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, CheckCircle, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ChevronLeft, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, CheckCircle, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ArrowLeft } from 'lucide-react';
 import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
 import axios from 'axios';
 import ContactWarningBanner from '../components/NoContacts';
@@ -363,7 +363,7 @@ interface ChatInboxProps {
 }
 
 const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isMobile, isAdminView }) => {
-  const { chats, isLoadingChats, getChatsForUser, getAllChats, markChatAsRead } = useChatStore();
+  const { chats, isLoadingChats, getChatsForUser, getAllChats } = useChatStore();
   const { user } = useUserStore();
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -400,22 +400,6 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
     return `${prefix}${lastMessage.text || 'Media message'}`;
   };
 
-  const getUnreadCount = (chat: Chat): number => {
-    if (!user?.userId) return 0;
-    
-    const messages = chat.state.messages || [];
-    const lastReadTimestamp = chat.state.last_read?.[user.userId];
-    
-    if (!lastReadTimestamp) {
-      return messages.filter(msg => msg.user?.id !== user.userId).length;
-    }
-    
-    const lastReadDate = new Date(lastReadTimestamp);
-    return messages.filter(msg => 
-      msg.user?.id !== user.userId && 
-      new Date(msg.created_at) > lastReadDate
-    ).length;
-  };
 
   const handleChatSelect = async (chat: Chat) => {
     onChatSelect(chat);
@@ -426,30 +410,30 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* Mobile-first header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {isAdminView ? 'All Chats' : 'Messages'}
           </h1>
           {isAdminView && (
             <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-blue-600" />
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">Admin</span>
+              <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full font-medium">Admin</span>
             </div>
           )}
         </div>
         
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
           <input
             type="text"
             placeholder="Search conversations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-base"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base"
           />
         </div>
       </div>
@@ -458,17 +442,17 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
       <div className="flex-1 overflow-y-auto">
         {isLoadingChats ? (
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
           </div>
         ) : filteredChats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500 px-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Send className="w-8 h-8 text-gray-400" />
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400 px-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+              <Send className="w-8 h-8 text-gray-400 dark:text-gray-500" />
             </div>
             <p className="text-sm text-center">No conversations found</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {filteredChats.map((chat: Chat) => {
               const isSelected = selectedChatId === chat.id;
               const unreadCount = chat.countUnread();
@@ -480,8 +464,8 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
                 <div
                   key={chat.id || `chat-${Math.random()}`}
                   onClick={() => handleChatSelect(chat)}
-                  className={`flex items-center space-x-3 p-4 sm:p-6 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation ${
-                    isSelected ? 'bg-blue-50' : ''
+                  className={`flex items-center space-x-3 p-4 sm:p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 transition-colors touch-manipulation ${
+                    isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                   }`}
                 >
                   <div className="relative flex-shrink-0">
@@ -493,24 +477,24 @@ const ChatInbox: React.FC<ChatInboxProps> = ({ onChatSelect, selectedChatId, isM
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className={`text-sm sm:text-base font-semibold truncate ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <h3 className={`text-sm sm:text-base font-semibold truncate ${unreadCount > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                         {otherUser?.id === we ? 'CalvinNova' : otherUser?.name || 'Unknown User'} 
                       </h3>
                       <div className="flex items-center space-x-2 flex-shrink-0">
                         {lastMessageTime && (
-                          <span className={`text-xs sm:text-sm ${unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                          <span className={`text-xs sm:text-sm ${unreadCount > 0 ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
                             {formatChatTime(lastMessageTime)}
                           </span>
                         )}
                         {unreadCount > 0 && (
-                          <span className="bg-green-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center text-center font-medium">
+                          <span className="bg-green-500 dark:bg-green-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center text-center font-medium">
                             {unreadCount > 99 ? '99+' : unreadCount}
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    <p className={`text-sm sm:text-base truncate ${unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-600'}`}>
+                    <p className={`text-sm sm:text-base truncate ${unreadCount > 0 ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
                       {lastMessage}
                     </p>
                   </div>
@@ -536,11 +520,11 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
   const { user } = useUserStore();
   const [showAdminMenu, setShowAdminMenu] = useState<boolean>(false);
   
-  if (!chat) return null;
-
-  const members = chat.state.members || {};
+  const members = chat?.state.members || {};
   const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
   const isOtherUserOnline = useUserOnlineStatus(otherUser?.id || '');
+  
+  if (!chat) return null;
 
   const handleFlagChat = async (): Promise<void> => {
     if (chat?.id) {
@@ -551,20 +535,20 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
 
   const handleSendWarning = async (): Promise<void> => {
     if (chat?.id) {
-      await sendSystemMessage(chat.id, '⚠️ This chat is being monitored for policy violations.');
+      await sendSystemMessage(chat.id, 'This chat is being monitored for policy violations.');
       setShowAdminMenu(false);
     }
   };
 
   return (
-    <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-sm">
+    <div className={`sticky top-0 ${showBackButton ? 'z-50' : 'z-20'} bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-sm`}>
       <div className="flex items-center space-x-3 flex-1 min-w-0">
         {showBackButton && (
           <button
             onClick={onBack}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         )}
         
@@ -576,9 +560,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
         </div>
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg truncate">
             {otherUser?.id === we ? 'CalvinNova' : otherUser?.name || 'Unknown User'}
-            <p className="text-sm text-gray-500 truncate">
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               {isOtherUserOnline ? 'Online' : otherUser?.id === we ? 'CalvinNova Support' : 'CalvinNova Student'}
             </p>
           </h3>
@@ -586,44 +570,44 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
       </div>
 
       <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation">
-          <Phone className="w-5 h-5 text-gray-600" />
+        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation">
+          <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation">
-          <Video className="w-5 h-5 text-gray-600" />
+        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation">
+          <Video className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation">
-          <Info className="w-5 h-5 text-gray-600" />
+        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation">
+          <Info className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>
         
         {isAdminView && (
           <div className="relative">
             <button
               onClick={() => setShowAdminMenu(!showAdminMenu)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation"
             >
-              <MoreVertical className="w-5 h-5 text-gray-600" />
+              <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             
             {showAdminMenu && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-30">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30">
                 <button
                   onClick={handleFlagChat}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 text-yellow-600 touch-manipulation"
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 text-yellow-600 dark:text-yellow-400 touch-manipulation"
                 >
                   <Flag className="w-4 h-4" />
                   <span>Flag as Spam</span>
                 </button>
                 <button
                   onClick={handleSendWarning}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 text-orange-600 touch-manipulation"
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 text-orange-600 dark:text-orange-400 touch-manipulation"
                 >
                   <AlertTriangle className="w-4 h-4" />
                   <span>Send Warning</span>
                 </button>
                 <button
                   onClick={() => {/* Handle ban user */}}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 text-red-600 touch-manipulation"
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 text-red-600 dark:text-red-400 touch-manipulation"
                 >
                   <Ban className="w-4 h-4" />
                   <span>Ban User</span>
@@ -724,23 +708,23 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-4 m-4 w-full max-w-xs">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-60 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 m-4 w-full max-w-xs">
         <div className="space-y-2">
           {isCurrentUser ? (
             // Actions for current user's messages
             <>
               <button 
                 onClick={() => handleAction('edit')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
               >
-                <Edit className="w-4 h-4 text-gray-600" />
-                <span>Edit Message</span>
+                <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-900 dark:text-white">Edit Message</span>
               </button>
               
               <button 
                 onClick={() => handleAction('delete')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 text-red-600 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 text-red-600 dark:text-red-400 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete Message</span>
@@ -748,18 +732,18 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
               
               <button 
                 onClick={() => handleAction('reply')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
               >
-                <Reply className="w-4 h-4 text-gray-600" />
-                <span>Reply</span>
+                <Reply className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-900 dark:text-white">Reply</span>
               </button>
               
               <button 
                 onClick={() => handleAction('copy')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
               >
-                <Copy className="w-4 h-4 text-gray-600" />
-                <span>Copy Message</span>
+                <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-900 dark:text-white">Copy Message</span>
               </button>
             </>
           ) : (
@@ -767,7 +751,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
             <>
               <button 
                 onClick={() => handleAction('report')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 text-orange-600 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 text-orange-600 dark:text-orange-400 transition-colors"
               >
                 <Flag className="w-4 h-4" />
                 <span>Report Message</span>
@@ -775,26 +759,26 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
               
               <button 
                 onClick={() => handleAction('copy')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
               >
-                <Copy className="w-4 h-4 text-gray-600" />
-                <span>Copy Message</span>
+                <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-900 dark:text-white">Copy Message</span>
               </button>
               
               <button 
                 onClick={() => handleAction('reply')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
               >
-                <Reply className="w-4 h-4 text-gray-600" />
-                <span>Reply</span>
+                <Reply className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-900 dark:text-white">Reply</span>
               </button>
               
               <button 
                 onClick={() => handleAction('react')} 
-                className="w-full text-left p-3 hover:bg-gray-50 flex items-center space-x-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
               >
-                <Heart className="w-4 h-4 text-gray-600" />
-                <span>React</span>
+                <Heart className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-900 dark:text-white">React</span>
               </button>
             </>
           )}
@@ -802,7 +786,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         
         <button 
           onClick={onClose} 
-          className="w-full mt-4 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          className="w-full mt-4 p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-900 dark:text-white"
         >
           Cancel
         </button>
@@ -921,13 +905,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f0f0f0" fill-opacity="0.3"%3E%3Cpath d="M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}>
+    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f0f0f0" fill-opacity="0.3"%3E%3Cpath d="M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}>
       <div className="p-4 sm:p-6 space-y-4 max-w-4xl mx-auto">
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
             {/* Date separator */}
             <div className="flex items-center justify-center my-6">
-              <div className="bg-white text-gray-700 text-sm px-4 py-2 rounded-full shadow-sm border border-gray-200">
+              <div className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm px-4 py-2 rounded-full shadow-sm border border-gray-200 dark:border-gray-600">
                 {formatDateSeparator(date)}
               </div>
             </div>
@@ -947,7 +931,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
               if (isSystem) {
                 return (
                   <div key={message.id} className="flex justify-center my-3">
-                    <div className="bg-amber-100 text-amber-800 text-sm px-4 py-2 rounded-full shadow-sm border border-amber-200 max-w-xs">
+                    <div className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-sm px-4 py-2 rounded-full shadow-sm border border-amber-200 dark:border-amber-700 max-w-xs">
                       {message.text}
                     </div>
                   </div>
@@ -988,10 +972,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                     
                     <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'} relative`}>
                       {showName && !isCurrentUser && (
-                        <span className="text-xs text-gray-600 mb-1 px-2 font-medium">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-2 font-medium">
                           {message.user?.name || 'Unknown User'}
                           {isAdminView && (
-                            <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                            <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
                               ID: {message.user?.id}
                             </span>
                           )}
@@ -1001,8 +985,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                       <div
                         className={`px-4 py-2 rounded-2xl select-none shadow-sm break-words relative ${
                           isCurrentUser
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-900 border border-gray-200'
+                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
                         } ${isGrouped ? 'rounded-t-lg' : ''}`}
                         {...( isMobile && {
                           onTouchStart: () => handleTouchStart(message),
@@ -1019,7 +1003,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                             {message.latest_reactions?.map((reaction, i) => (
                               <div
                                 key={i}
-                                className="bg-white border border-gray-200 rounded-full px-1 py-1 shadow-md flex items-center gap-1 min-w-fit"
+                                className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-1 py-1 shadow-md flex items-center gap-1 min-w-fit"
                                 style={{
                                   fontSize: '12px',
                                   lineHeight: '1',
@@ -1030,7 +1014,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                                   {renderReactionIcon(reaction.type)}
                                 </span>
                                 {reaction.count && reaction.count > 1 && (
-                                  <span className="text-xs font-medium text-gray-600 leading-none">
+                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300 leading-none">
                                     {reaction.count}
                                   </span>
                                 )}
@@ -1041,17 +1025,17 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, isAd
                       </div>
                       
                       <div className="flex items-center space-x-1 mt-1 px-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatTime(message.created_at)}
                         </span>
                         {isAdminView && message.read_by && message.read_by.length > 0 && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
                             Read by {message.read_by.length} user{message.read_by.length > 1 ? 's' : ''}
                           </span>
                         )}
                         {/* Show "You reacted" indicator for current user */}
                         {hasReactions && message.latest_reactions.some(r => r.user?.id === currentUserId) && (
-                          <span className="text-xs text-blue-500 font-medium">
+                          <span className="text-xs text-blue-500 dark:text-blue-400 font-medium">
                             You reacted
                           </span>
                         )}
@@ -1168,16 +1152,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 sm:p-6">
+    <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6">
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
         <div className="flex-1 relative min-w-0">
-          <div className="flex items-center space-x-2 bg-gray-50 rounded-full px-4 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+          <div className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-800 rounded-full px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
             <button
               type="button"
-              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation flex-shrink-0"
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors touch-manipulation flex-shrink-0"
               disabled={disabled}
             >
-              <Paperclip className="w-5 h-5 text-gray-500" />
+              <Paperclip className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
             
             <textarea
@@ -1187,7 +1171,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="flex-1 bg-transparent border-none outline-none resize-none text-base placeholder-gray-500 max-h-[120px] min-h-[24px] leading-6 min-w-0 break-words"
+              className="flex-1 bg-transparent border-none outline-none resize-none text-base placeholder-gray-500 dark:placeholder-gray-400 dark:text-white max-h-[120px] min-h-[24px] leading-6 min-w-0 break-words"
               style={{
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
@@ -1199,10 +1183,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
             
             <button
               type="button"
-              className="p-1 hover:bg-gray-200 rounded-full transition-colors touch-manipulation flex-shrink-0"
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors touch-manipulation flex-shrink-0"
               disabled={disabled}
             >
-              <Smile className="w-5 h-5 text-gray-500" />
+              <Smile className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
         </div>
@@ -1210,7 +1194,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         <button
           type="submit"
           disabled={!message.trim() || disabled}
-          className="flex-shrink-0 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation shadow-lg"
+          className="flex-shrink-0 p-3 bg-blue-600 dark:bg-blue-700 text-white rounded-full hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation shadow-lg"
         >
           <Send className="w-5 h-5" />
         </button>
@@ -1347,7 +1331,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {showWarning && (
         <ContactWarningBanner type={type} />
       )}
@@ -1471,15 +1455,15 @@ const ChatInterface: React.FC = () => {
             showBackButton={false}
           />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
-              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Send className="w-16 h-16 text-gray-400" />
+              <div className="w-32 h-32 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Send className="w-16 h-16 text-gray-400 dark:text-gray-500" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
                 Welcome to CalvinNova Chat
               </h2>
-              <p className="text-gray-500 max-w-md">
+              <p className="text-gray-500 dark:text-gray-400 max-w-md">
                 Select a conversation from the sidebar to start messaging. 
                 Connect with students and staff securely.
               </p>

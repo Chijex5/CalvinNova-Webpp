@@ -322,8 +322,8 @@ const ModernItemListingForm = () => {
           onClick={() => onChange(category)}
           className={`p-3 rounded-lg border-2 transition-all ${
             selected === category
-              ? 'border-blue-500 bg-blue-50 text-blue-700'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white'
           }`}
         >
           <div className="text-sm font-medium">{category}</div>
@@ -334,9 +334,9 @@ const ModernItemListingForm = () => {
 
   const InfoBox = ({ title, children, type = 'info' }: { title: string; children: React.ReactNode; type?: 'info' | 'warning' | 'success' }) => {
     const styles = {
-      info: 'bg-blue-50 border-blue-200 text-blue-800',
-      warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      success: 'bg-green-50 border-green-200 text-green-800'
+      info: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300',
+      warning: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300',
+      success: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
     };
     
     const icons = {
@@ -366,12 +366,12 @@ const ModernItemListingForm = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <Camera className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Add Photos</h3>
-              <p className="text-sm text-gray-500">Upload high-quality photos of your item</p>
+              <Camera className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Add Photos</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Upload high-quality photos of your item</p>
             </div>
             
-            <InfoBox title="📸 Photo Tips" type="info">
+            <InfoBox title="Photo Tips" type="info">
               <ul className="space-y-1">
                 <li>• The more photos, the better (up to 4 images)</li>
                 <li>• Use good lighting and clear angles</li>
@@ -383,12 +383,12 @@ const ModernItemListingForm = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {/* Existing images */}
               {formData.images.map((image, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                   <img src={image.url} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 bg-red-500 dark:bg-red-600 text-white rounded-full p-1 shadow-md hover:bg-red-600 dark:hover:bg-red-700 transition-colors"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -397,15 +397,15 @@ const ModernItemListingForm = () => {
               
               {/* Uploading images */}
               {uploadingImages.map((uploadState, index) => (
-                <div key={`uploading-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
+                <div key={`uploading-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600">
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     {uploadState.status === 'uploading' && (
                       <>
-                        <Spinner className="h-6 w-6 text-blue-500 mb-2" />
-                        <div className="text-xs text-gray-600 mb-1">Uploading...</div>
-                        <div className="w-3/4 bg-gray-200 rounded-full h-1">
+                        <Spinner className="h-6 w-6 text-blue-500 dark:text-blue-400 mb-2" />
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Uploading...</div>
+                        <div className="w-3/4 bg-gray-200 dark:bg-gray-700 rounded-full h-1">
                           <div 
-                            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                            className="bg-blue-500 dark:bg-blue-400 h-1 rounded-full transition-all duration-300"
                             style={{ width: `${uploadState.progress}%` }}
                           />
                         </div>
@@ -413,17 +413,17 @@ const ModernItemListingForm = () => {
                     )}
                     {uploadState.status === 'success' && (
                       <>
-                        <CheckCircle2 className="h-6 w-6 text-green-500 mb-2" />
-                        <div className="text-xs text-green-600">Uploaded!</div>
+                        <CheckCircle2 className="h-6 w-6 text-green-500 dark:text-green-400 mb-2" />
+                        <div className="text-xs text-green-600 dark:text-green-400">Uploaded!</div>
                       </>
                     )}
                     {uploadState.status === 'error' && (
                       <>
-                        <AlertCircle className="h-6 w-6 text-red-500 mb-2" />
-                        <div className="text-xs text-red-600 mb-1">Upload failed</div>
+                        <AlertCircle className="h-6 w-6 text-red-500 dark:text-red-400 mb-2" />
+                        <div className="text-xs text-red-600 dark:text-red-400 mb-1">Upload failed</div>
                         <button
                           onClick={() => removeUploadingImage(uploadState.file)}
-                          className="text-xs text-red-500 underline"
+                          className="text-xs text-red-500 dark:text-red-400 underline"
                         >
                           Remove
                         </button>
@@ -435,10 +435,10 @@ const ModernItemListingForm = () => {
               
               {/* Upload button */}
               {(formData.images.length + uploadingImages.length) < 4 && (
-                <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
-                  <Upload className="h-8 w-8 text-gray-400" />
-                  <span className="text-sm text-gray-500 mt-2">Add Photos</span>
-                  <span className="text-xs text-gray-400 mt-1">Select multiple</span>
+                <label className="aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                  <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">Add Photos</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">Select multiple</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -451,11 +451,11 @@ const ModernItemListingForm = () => {
               )}
             </div>
             
-            <div className="text-center text-sm text-gray-500">
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
               {formData.images.length + uploadingImages.filter(s => s.status === 'success').length} / 4 photos uploaded
             </div>
             
-            {errors.images && <p className="text-red-500 text-sm">{errors.images}</p>}
+            {errors.images && <p className="text-red-500 dark:text-red-400 text-sm">{errors.images}</p>}
           </div>
         );
 
@@ -463,9 +463,9 @@ const ModernItemListingForm = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Item Details</h3>
-              <p className="text-sm text-gray-500">Tell buyers about your item</p>
+              <FileText className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Item Details</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Tell buyers about your item</p>
             </div>
             
             <InfoBox title="✍️ Writing Tips" type="info">
@@ -479,37 +479,37 @@ const ModernItemListingForm = () => {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="e.g., iPhone 13 Pro Max 128GB - Excellent condition"
                 />
-                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+                {errors.title && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.title}</p>}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="Describe your item in detail... Include brand, model, condition, any accessories, etc."
                 />
-                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                {errors.description && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.description}</p>}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Category</label>
                 <CategoryGrid
                   categories={categories}
                   selected={formData.category}
                   onChange={(category) => handleInputChange('category', category)}
                 />
-                {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+                {errors.category && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.category}</p>}
               </div>
               
               <ToggleButton
@@ -539,25 +539,25 @@ const ModernItemListingForm = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Set Your Price</h3>
-              <p className="text-sm text-gray-500">What's your item worth?</p>
+              <DollarSign className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Set Your Price</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">What's your item worth?</p>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price (₦)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price (₦)</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₦</span>
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">₦</span>
                   <input
                     type="number"
                     value={formData.price}
                     onChange={(e) => handleInputChange('price', e.target.value)}
-                    className="w-full pl-8 pr-4 py-4 text-lg rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="0"
                   />
                 </div>
-                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+                {errors.price && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.price}</p>}
               </div>
               
               {formData.price && Number(formData.price) > 0 && (
@@ -571,7 +571,7 @@ const ModernItemListingForm = () => {
                       <span>Agent Fee (8%):</span>
                       <span>-₦{(Number(formData.price) * 0.08).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between font-semibold text-green-700 border-t pt-2">
+                    <div className="flex justify-between font-semibold text-green-700 dark:text-green-400 border-t dark:border-gray-600 pt-2">
                       <span>You'll receive:</span>
                       <span>₦{calculatePayout(formData.price).toLocaleString()}</span>
                     </div>
@@ -595,16 +595,16 @@ const ModernItemListingForm = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <Check className="mx-auto h-12 w-12 text-green-500" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Review & Publish</h3>
-              <p className="text-sm text-gray-500">Double-check everything looks good</p>
+              <Check className="mx-auto h-12 w-12 text-green-500 dark:text-green-400" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Review & Publish</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Double-check everything looks good</p>
             </div>
             
             <InfoBox title="🚀 Ready to publish?" type="success">
               Once published, your item will be visible to buyers on your campus. You'll receive notifications when someone shows interest.
             </InfoBox>
             
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {formData.images.slice(0, 2).map((image, index) => (
                   <img
@@ -618,25 +618,25 @@ const ModernItemListingForm = () => {
               
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-medium text-gray-900">{formData.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{formData.description}</p>
+                  <h4 className="font-medium text-gray-900 dark:text-white">{formData.title}</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{formData.description}</p>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded-full">
                     {formData.category}
                   </span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
                     {formData.condition}
                   </span>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 text-xs rounded-full">
                     {formData.school}
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <div className="text-lg font-semibold text-gray-900">₦{formData.price}</div>
-                  <div className="text-sm text-green-600">
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">₦{formData.price}</div>
+                  <div className="text-sm text-green-600 dark:text-green-400">
                     You'll earn: ₦{calculatePayout(formData.price).toLocaleString()}
                   </div>
                 </div>
@@ -648,23 +648,25 @@ const ModernItemListingForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Desktop wrapper */}
-      <div className="max-w-md mx-auto bg-white min-h-screen lg:max-w-2xl lg:my-8 lg:rounded-lg lg:shadow-xl lg:min-h-0">
+      <div className="max-w-md mx-auto bg-white dark:bg-gray-800 min-h-screen lg:max-w-2xl lg:my-8 lg:rounded-lg lg:shadow-xl dark:lg:shadow-2xl lg:min-h-0">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10 lg:rounded-t-lg">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 z-10 lg:rounded-t-lg">
           <div className="flex items-center justify-between">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
               className={`p-2 rounded-full ${
-                currentStep === 1 ? 'text-gray-400' : 'text-gray-600 hover:bg-gray-100'
+                currentStep === 1 
+                  ? 'text-gray-400 dark:text-gray-600' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
             
-            <h1 className="text-lg font-semibold">List Item</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">List Item</h1>
             
             <div className="w-10" />
           </div>
@@ -679,21 +681,21 @@ const ModernItemListingForm = () => {
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         currentStep >= step.id
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-500'
+                          ? 'bg-blue-500 dark:bg-blue-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
                     </div>
-                    <span className="text-xs mt-1 text-gray-600">{step.title}</span>
+                    <span className="text-xs mt-1 text-gray-600 dark:text-gray-400">{step.title}</span>
                   </div>
                 );
               })}
             </div>
             
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-500 dark:bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(currentStep / 4) * 100}%` }}
               />
             </div>
@@ -706,7 +708,7 @@ const ModernItemListingForm = () => {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 lg:rounded-b-lg">
+        <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 lg:rounded-b-lg">
           <div className="max-w-md mx-auto lg:max-w-none">
             {currentStep < 4 ? (
               <button
@@ -714,8 +716,8 @@ const ModernItemListingForm = () => {
                 disabled={uploadingImages.some(state => state.status === 'uploading')}
                 className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
                   uploadingImages.some(state => state.status === 'uploading')
-                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                    ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                    : 'bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700'
                 }`}
               >
                 {uploadingImages.some(state => state.status === 'uploading') ? (
@@ -735,7 +737,10 @@ const ModernItemListingForm = () => {
                 onClick={handleSubmit}
                 disabled={loading}
                 className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center
-                  ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white'}
+                  ${loading 
+                    ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' 
+                    : 'bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700 text-white'
+                  }
                 `}
                 aria-busy={loading}
               >

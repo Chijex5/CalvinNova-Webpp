@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, X, Mail, Lock, ArrowRight, ShoppingBag, Users, Star, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,7 @@ const Login = () => {
   
   const { login, user, isAuthenticated, resetPassword, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -34,28 +35,32 @@ const Login = () => {
     forgotEmail: ''
   });
 
+  // Get redirect path from URL parameters
+  const redirectFrom = searchParams.get('redirectedfrom');
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
       toast.success(`Welcome back, ${user.name || user.email}!`);
-      navigate('/');
+      // Redirect to the original path or default to home
+      const redirectPath = redirectFrom ? decodeURIComponent(redirectFrom) : '/';
+      navigate(redirectPath);
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, redirectFrom]);
 
   // Handle auth context errors
   useEffect(() => {
     if (authError) {
       const msg = typeof authError === 'string'
         ? authError
-        : authError?.response?.data?.message ||
-          authError?.message ||
+        : (authError as any)?.response?.data?.message ||
+          (authError as any)?.message ||
           "An unknown error occurred";
 
       toast.error(msg);
       clearError && clearError();
     }
   }, [authError, clearError]);
-
 
   // Load remember me preference
   useEffect(() => {
@@ -123,12 +128,6 @@ const Login = () => {
     }
   };
 
-  interface BlurEvent {
-    target: {
-      name: string;
-    };
-  }
-
   const handleInputBlur = (field: keyof FormErrors) => {
     setTouched(prev => ({
       ...prev,
@@ -192,9 +191,10 @@ const Login = () => {
           icon: <CheckCircle className="text-green-500" size={16} />
         });
         
-        // Small delay for better UX
+        // Small delay for better UX, then redirect to original path or home
         setTimeout(() => {
-          navigate('/');
+          const redirectPath = redirectFrom ? decodeURIComponent(redirectFrom) : '/';
+          navigate(redirectPath);
         }, 1000);
       } else {
         // Handle specific error responses
@@ -248,10 +248,6 @@ const Login = () => {
       status: number;
     };
     message?: string;
-  }
-
-  interface FormEvent {
-    preventDefault(): void;
   }
 
   const handleForgotPassword = async (e: FormEvent) => {
@@ -324,9 +320,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex">
       {/* Left Side - Branding & Features */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-indigo-800 dark:via-indigo-900 dark:to-purple-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80')] opacity-10 bg-cover bg-center"></div>
         
         <div className="relative z-10 flex flex-col justify-center px-12 text-white">
@@ -337,7 +333,7 @@ const Login = () => {
                 CalvinNova
               </span>
             </h1>
-            <p className="text-xl text-indigo-100 leading-relaxed">
+            <p className="text-xl text-indigo-100 dark:text-indigo-200 leading-relaxed">
               The trusted marketplace for college students to buy and sell items directly on campus.
             </p>
           </div>
@@ -349,7 +345,7 @@ const Login = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Easy Trading</h3>
-                <p className="text-indigo-200">Buy and sell with fellow students</p>
+                <p className="text-indigo-200 dark:text-indigo-300">Buy and sell with fellow students</p>
               </div>
             </div>
 
@@ -359,7 +355,7 @@ const Login = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Safe & Secure</h3>
-                <p className="text-indigo-200">Verified university students only</p>
+                <p className="text-indigo-200 dark:text-indigo-300">Verified university students only</p>
               </div>
             </div>
 
@@ -369,7 +365,7 @@ const Login = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Campus Community</h3>
-                <p className="text-indigo-200">Connect with students nearby</p>
+                <p className="text-indigo-200 dark:text-indigo-300">Connect with students nearby</p>
               </div>
             </div>
           </div>
@@ -380,9 +376,9 @@ const Login = () => {
                 <Star className="text-yellow-300" size={20} />
                 <span className="font-semibold">4.8/5 Rating</span>
               </div>
-              <span className="text-sm text-indigo-200">5000+ Active Users</span>
+              <span className="text-sm text-indigo-200 dark:text-indigo-300">5000+ Active Users</span>
             </div>
-            <p className="text-sm text-indigo-200">
+            <p className="text-sm text-indigo-200 dark:text-indigo-300">
               "CalvinNova made selling my textbooks so easy! Found buyers within hours." - Sarah M.
             </p>
           </div>
@@ -394,13 +390,13 @@ const Login = () => {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
               CalvinNova
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-2">Campus Marketplace</p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back!</h2>
               <p className="text-gray-600 dark:text-gray-300">Sign in to your account to continue</p>
@@ -408,11 +404,11 @@ const Login = () => {
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
                   <input
                     type="email"
                     id="email"
@@ -421,8 +417,8 @@ const Login = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleInputBlur('email')}
                     onKeyPress={handleKeyPress}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 focus:bg-white ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 dark:text-white ${
+                      errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Enter your email"
                     required
@@ -440,7 +436,7 @@ const Login = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -453,8 +449,8 @@ const Login = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleInputBlur('password')}
                     onKeyPress={handleKeyPress}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 focus:bg-white ${
-                      errors.password ? 'border-red-500' : 'border-gray-300 dark:text-gray-600'
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 dark:text-white ${
+                      errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Enter your password"
                     required
@@ -462,7 +458,7 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -482,16 +478,16 @@ const Login = () => {
                     id="remember"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
                   />
-                  <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                  <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                     Remember me
                   </label>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -523,19 +519,19 @@ const Login = () => {
                 Don't have an account?{' '}
                 <a
                   href="/signup"
-                  className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold transition-colors"
                 >
                   Sign up here
                 </a>
               </p>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 By signing in, you agree to our{' '}
-                <a href="https://calvinnova.com/terms" className="text-indigo-600 hover:underline">Terms of Service</a>{' '}
+                <a href="https://calvinnova.com/terms" className="text-indigo-600 dark:text-indigo-400 hover:underline">Terms of Service</a>{' '}
                 and{' '}
-                <a href="https://calvinnova.com/privacy" className="text-indigo-600 hover:underline">Privacy Policy</a>
+                <a href="https://calvinnova.com/privacy" className="text-indigo-600 dark:text-indigo-400 hover:underline">Privacy Policy</a>
               </p>
             </div>
           </div>
@@ -552,14 +548,14 @@ const Login = () => {
                 setErrors(prev => ({ ...prev, forgotEmail: '' }));
                 setFormData(prev => ({ ...prev, forgotEmail: '' }));
               }}
-              className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 transition-colors"
+              className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <X size={24} />
             </button>
             
             <div className="text-center mb-6">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="text-white dark:text-gray-900" size={24} />
+                <Mail className="text-white" size={24} />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Forgot Password?</h3>
               <p className="text-gray-600 dark:text-gray-300">
@@ -569,7 +565,7 @@ const Login = () => {
 
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div>
-                <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
@@ -580,8 +576,8 @@ const Login = () => {
                     value={formData.forgotEmail}
                     onChange={handleInputChange}
                     onKeyPress={handleForgotModalKeyPress}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ${
-                      errors.forgotEmail ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 dark:text-white ${
+                      errors.forgotEmail ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Enter your email"
                     required
@@ -606,7 +602,7 @@ const Login = () => {
                     setErrors(prev => ({ ...prev, forgotEmail: '' }));
                     setFormData(prev => ({ ...prev, forgotEmail: '' }));
                   }}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>

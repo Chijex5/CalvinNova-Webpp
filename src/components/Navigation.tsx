@@ -104,7 +104,7 @@ const Navigation = () => {
   }
 
   return (
-    <header className={`sticky top-0 left-0 right-0 z-50 mb-50 transition-all duration-500 ${
+    <header className={`sticky top-0 left-0 right-0 z-40 mb-50 transition-all duration-500 ${
       isScrolled 
         ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-700/50' 
         : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md'
