@@ -91,9 +91,9 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_STREAM_API_KEY = stream_public-key
 VITE_API_BASE_URL =  backend-base-url
 VITE_PAYSTACK_LIVE_PUBLIC_KEY = paystack-live-key
-VITE_PAYSTACK_LIVE_SECRET_KEY
-VITE_PAYSTACK_TEST_PUBLIC_KEY
-VITE_PAYSTACK_TEST_SECRET_KEY
+VITE_PAYSTACK_LIVE_SECRET_KEY = paystack-live-secret
+VITE_PAYSTACK_TEST_PUBLIC_KEY = paystack-test-key
+VITE_PAYSTACK_TEST_SECRET_KEY = paystack-test-secret
 
 # Development
 VITE_DEV_MODE=true
@@ -241,7 +241,7 @@ This project is licensed under the MIT License. See the [LICENSE](./LICENSE) fil
 
 This project is maintained by:
 - **Chijioke Uzodinma** ([@Chijex5](https://github.com/Chijex5)) - Lead Developer & Product Vision
-- **Ogechi Iyiegbu** ([@Goldy042])(https://github.com/Goldy042)
+- **Ogechi Iyiegbu** ([@Goldy042](https://github.com/Goldy042))
 
 ## 🎯 Roadmap
 
