@@ -271,6 +271,14 @@ export const useChatStore = create<ChatState>()(
         try {
           set({ isLoadingChats: true, error: null });
           
+          const currentUser = client.userID;
+          const CHATBOT_ID = "novaplus-support-bot";
+          const SUPPORT_AGENT_ID = "support-agent-id";
+
+          if (!currentUser) {
+            throw new Error('User not authenticated');
+          }
+          
           const filters = {
             type: 'messaging',
           };
@@ -280,7 +288,18 @@ export const useChatStore = create<ChatState>()(
           
           const channels = await client.queryChannels(filters, sort, options);
           
-          set({ chats: channels });
+          const filteredChannels = channels.filter((channel) => {
+            const members = Object.values(channel.state.members ?? {});
+            const includesBot = members.some((m) => m.user?.id === CHATBOT_ID);
+
+            if (includesBot && currentUser !== SUPPORT_AGENT_ID) {
+              return false;
+            }
+
+            return true;
+          });
+
+          set({ chats: filteredChannels });
           
         } catch (error) {
           console.error('Error fetching all chats (admin):', error);

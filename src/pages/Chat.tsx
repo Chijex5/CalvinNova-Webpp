@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, MoreVertical, Phone, Video, CheckCircle, Info, Shield, AlertTriangle, Copy, Reply, Heart, Edit, Trash2, Ban, Flag, Smile, Paperclip, ArrowLeft } from 'lucide-react';
 import { useChatStore, useUserOnlineStatus } from '../store/chatStore';
 import axios from 'axios';
+import { getLastActive } from '../functions/lastActive';
 import ContactWarningBanner from '../components/NoContacts';
+import { CheckResult } from '../functions/noContact';
 import { useUserStore } from '../store/userStore';
 import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { checkMessage } from '../functions/noContact';
@@ -10,6 +12,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Channel } from 'stream-chat';
 import { client } from '../lib/stream-chat';
 import verifiedbadge from '../assets/icons/verified-badge.svg'
+import { set } from 'date-fns';
+import api from '../utils/apiService';
 
 const agent_id = "support-agent-id";
 const we = 'calvinnova_support_team'
@@ -523,7 +527,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
   const members = chat?.state.members || {};
   const otherUser = Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
   const isOtherUserOnline = useUserOnlineStatus(otherUser?.id || '');
-  
+  const lastActive = getLastActive({
+    chat,
+    userId: otherUser?.id || '',
+    humanReadable: true,
+  });
+
   if (!chat) return null;
 
   const handleFlagChat = async (): Promise<void> => {
@@ -562,23 +571,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onBack, showBackButton })
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg truncate">
             {otherUser?.id === we ? 'CalvinNova' : otherUser?.name || 'Unknown User'}
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {isOtherUserOnline ? 'Online' : otherUser?.id === we ? 'CalvinNova Support' : 'CalvinNova Student'}
+            <p className="md:text-sm text-xs text-gray-500 dark:text-gray-400 truncate">
+              {isOtherUserOnline ? 'Online' : otherUser?.id === we ? 'CalvinNova Support' : lastActive ? `Last seen: ${String(lastActive)}` : 'CalvinNova Student'}
             </p>
           </h3>
         </div>
       </div>
 
       <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation">
-          <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        </button>
-        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation">
-          <Video className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        </button>
-        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors touch-manipulation">
-          <Info className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        </button>
         
         {isAdminView && (
           <div className="relative">
@@ -1216,7 +1216,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isWindowVisible, setIsWindowVisible] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
-  const [type, setType] = useState<string>('');
+  const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
   const [messages, setMessages] = useState<Message[]>(chat.state.messages || []);
   const currentUserId = user?.userId || '';
   const CHATBOT_ID = "novaplus-support-bot";
@@ -1227,15 +1227,33 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
     setMessages(chat.state.messages || []);
   }, [chat.state.messages]);
 
+  const isSupportChat =
+  !!chat.state.members &&
+  Object.values(chat.state.members).some(
+    (member) => member.user?.id === CHATBOT_ID
+  );
+
+
+
   useEffect(() => {
     const handleNewMessage = (event: any) => {
       if (event.message) {
-        const result = checkMessage(event.message.text);
-        if (result.hasViolation) {
-          setType(result.type);
-          setShowWarning(true);
+        if (!isSupportChat) {
+          const result = checkMessage(event.message.text);
+          if (result.hasViolation) {
+            setCheckResult(result);
+            setShowWarning(true);
+            if (event.message.user.id === currentUserId) {
+              api.post('/api/report', {
+                chatId: chat.id,
+                message: result.message,
+                type: result.violations[0].type,
+                riskLevel: result.riskLevel,
+                match: result.violations[0].match,
+              });
+            }
+          }
         }
-
         setMessages(prev => {
           const existingIndex = prev.findIndex(msg => msg.id === event.message.id);
           if (existingIndex >= 0) {
@@ -1331,40 +1349,42 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
-      {showWarning && (
-        <ContactWarningBanner type={type} />
+    <>
+      {showWarning && checkResult && (
+          <ContactWarningBanner checkResult={checkResult} onDismiss={() => {setShowWarning(false); setCheckResult(null);}} />
       )}
-      <ChatHeader 
-        chat={chat} 
-        onBack={onBack} 
-        showBackButton={showBackButton} 
-      />
-      
-      <MessageList
-        messages={messages}
-        currentUserId={currentUserId}
-        isAdminView={isAdminView}
-        chatId={chat?.id || ''}
-        chat={chat}
-        isLoading={isLoading} 
-      />
-      
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        disabled={isLoading}
-        placeholder={isLoading ? "Sending..." : "Type a message..."}
-        channel={chat}
-      />
-
-      {user?.userId === agent_id && otherUser?.user?.id && (
-        <MarkAsResolvedButton
-          userId={otherUser?.user?.id || ''}
-          isResolved={false}
-          chatId={chat.id || ''}
+      <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+        <ChatHeader 
+          chat={chat} 
+          onBack={onBack} 
+          showBackButton={showBackButton} 
         />
-      )}
-    </div>
+        
+        <MessageList
+          messages={messages}
+          currentUserId={currentUserId}
+          isAdminView={isAdminView}
+          chatId={chat?.id || ''}
+          chat={chat}
+          isLoading={isLoading} 
+        />
+        
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          disabled={isLoading}
+          placeholder={isLoading ? "Sending..." : "Type a message..."}
+          channel={chat}
+        />
+
+        {user?.userId === agent_id && otherUser?.user?.id && (
+          <MarkAsResolvedButton
+            userId={otherUser?.user?.id || ''}
+            isResolved={false}
+            chatId={chat.id || ''}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

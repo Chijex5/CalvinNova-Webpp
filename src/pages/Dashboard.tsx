@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { FadeIn } from '../utils/animations';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
+import { client } from '../lib/stream-chat';
 import { useChatStore } from '../store/chatStore';
 import { productService } from '../services/productService';
 import { useProductStore } from '../store/productStore';
@@ -94,12 +95,58 @@ const Dashboard = () => {
     return Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
   };
 
-  const getChatName = (chat: Chat): string => {
-    if (!chat || !chat.state || !chat.state.members) return 'Unknown Chat';
-    const otherUser = getOtherUser(chat);
-    const chatName = otherUser?.name || 'Unknown User';
-    return chatName.length > 20 ? `${chatName.slice(0, 20)}...` : chatName;
-  };
+  function useTotalUnreadCount(client: any | null) {
+    const [totalUnread, setTotalUnread] = useState(0);
+
+    useEffect(() => {
+      if (!client || !client.user) return;
+
+      let isMounted = true;
+
+      const calculateUnreadCount = async () => {
+        try {
+          const channels = await client.queryChannels(
+            { members: { $in: [client.user.id] } },
+            {}, // sort
+            { watch: false, state: true } // only fetch channel state
+          );
+
+          let total = 0;
+          for (const channel of channels) {
+            total += channel.countUnread();
+          }
+
+          if (isMounted) setTotalUnread(total);
+        } catch (err) {
+          console.error("Failed to fetch unread counts:", err);
+        }
+      };
+
+      // Fetch on mount
+      calculateUnreadCount();
+
+      // Listener for real-time new messages
+      const handleNewMessage = async (event: any) => {
+        const senderId = event.user?.id;
+        const isMine = senderId === client.user?.id;
+        if (!isMine) {
+          await calculateUnreadCount();
+        }
+      };
+
+      client.on('message.new', handleNewMessage);
+      client.on('notification.message_new', handleNewMessage);
+
+      return () => {
+        isMounted = false;
+        client.off('message.new', handleNewMessage);
+        client.off('notification.message_new', handleNewMessage);
+      };
+    }, [client]);
+
+    return totalUnread;
+  }
+  const totalUnreadMessages = useTotalUnreadCount(client);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -142,7 +189,7 @@ const Dashboard = () => {
   }, []);
   // Mock user activity data
   const userActivity = {
-    newMessages: 3,
+    newMessages: totalUnreadMessages,
     itemsSoldThisWeek: 2,
     viewsOnListings: 15,
     savedItems: 4
@@ -264,7 +311,7 @@ const Dashboard = () => {
                 {isLoadingChats ? <RecentConversationsSkeleton count={3} /> : (
                   <div className="divide-y divide-gray-200 dark:divide-gray-700">
                     {
-                    chats.slice(0, 3).map(convo => <div key={getOtherUser(convo)?.userId || ''} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
+                    chats.slice(0, 3).map((convo, index) => <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
                         <div className="flex items-center space-x-3">
                           <div className="relative">
                             <UserAvatar user={getOtherUser(convo)} size="md" className="flex-shrink-0" />

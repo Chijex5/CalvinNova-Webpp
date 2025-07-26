@@ -204,18 +204,18 @@ const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productT
 };
 
 // Enhanced Product Card Component
-const ProductCard = ({ product, onEdit, currentUserId = null }: {
+const ProductCard = ({ product, onEdit, onDelete, currentUserId = null }: {
   product: Product;
   onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
   currentUserId?: string | null;
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const navigate = useNavigate();
-  const [isLiked, setIsLiked] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
   const user = useUserStore(state => state.user);
   const { startMessaging, chats } = useChatStore();
   const [imageError, setImageError] = useState<{ [key: number]: boolean }>({});
@@ -230,19 +230,6 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
     }).format(price);
   };
 
-
-  const handleDeleteProduct = async (productId: string): Promise<void> => {
-    setDeleteLoading(true);
-    try {
-      await productService.deleteProduct(productId);
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      setError('Failed to delete product. Please try again.');
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
@@ -463,15 +450,12 @@ const ProductCard = ({ product, onEdit, currentUserId = null }: {
                   <Edit className="w-4 h-4" />
                   <span>Edit</span>
                 </button>
+
                 <button 
-                onClick={handleDeleteProduct.bind(null, product.id)}
-                className="px-4 py-2.5 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-sm font-medium transition-colors duration-200">
-                  
-                  {deleteLoading ? (
-                    <Loader className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
+                  onClick={() => onDelete(product)} // Change this line
+                  className="px-4 py-2.5 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-sm font-medium transition-colors duration-200"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </>
             ) : (
@@ -620,6 +604,8 @@ const MarketplaceUI = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [schools, setSchools] = useState<string[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<Product | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Get state from stores
@@ -639,6 +625,29 @@ const MarketplaceUI = () => {
 
     loadProducts();
   }, []);
+
+  const handleDeleteRequest = (product: Product) => {
+    setDeleteConfirmProduct(product);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmProduct) return;
+    
+    setDeleteLoading(true);
+    try {
+      await productService.deleteProduct(deleteConfirmProduct.id);
+      setDeleteConfirmProduct(null); // Close modal on success
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      // Handle error (you might want to add error state here too)
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmProduct(null);
+  };
 
   // Extract unique categories and schools from products
   useEffect(() => {
@@ -832,6 +841,7 @@ const MarketplaceUI = () => {
             <FadeIn key={product.id} delay={index * 100}>
               <ProductCard 
                 product={product} 
+                onDelete={handleDeleteRequest}
                 currentUserId={currentUserId}
                 onEdit={(product) => {
                   setSelectedProduct(product);
@@ -872,6 +882,57 @@ const MarketplaceUI = () => {
         categories={categories}
         schools={schools}
       />
+      {deleteConfirmProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+            onClick={handleDeleteCancel}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4">
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+              Delete Item
+            </h3>
+            
+            {/* Message */}
+            <p className="text-sm text-gray-600 dark:text-gray-300 text-center mb-6">
+              Are you sure you want to delete <span className="font-medium text-gray-900 dark:text-white">"{deleteConfirmProduct.title}"</span>? This action cannot be undone.
+            </p>
+            
+            {/* Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl font-medium transition-colors duration-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-600 hover:bg-red-700 dark:hover:bg-red-700 text-white rounded-xl font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center"
+              >
+                {deleteLoading ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Yes, Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

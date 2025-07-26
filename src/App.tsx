@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import AdminReportsPage from './pages/admin/Reports';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import PaymentSuccessPage from './pages/SuccessPage';
@@ -210,7 +211,14 @@ export function App() {
                           <AdminUsersPage />
                         </AdminRoute>
                       </ProtectedRoute>
-                    } />               
+                    } />   
+                    <Route path="/admin/reports" element={
+                      <ProtectedRoute>
+                        <AdminRoute>
+                          <AdminReportsPage />
+                        </AdminRoute>
+                      </ProtectedRoute>
+                    } />            
                 </Routes>
               </Layout>
             </div>

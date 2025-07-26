@@ -34,7 +34,7 @@ interface AuthContextType {
   setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void
   setIsCheckingAuth: (checking: boolean) => void;
   updateUser: (updates: Partial<User>) => Promise<{success: boolean, message?: string}>;
-  login: (email: string, userId: string) => Promise<Response>;
+  login: (email: string, userId: string) => Promise<{success: boolean, message: string, requires_support?: boolean}>;
   verifcation: (token: string) => Promise<{status: boolean, user?: User, message?: string}>;
   error: string | null;
   clearError: () => void;
@@ -271,7 +271,7 @@ export const AuthProvider: React.FC<{
     }
   }
 
-  const login = async (email: string, password: string): Promise<Response> => {
+  const login = async (email: string, password: string): Promise<{success: boolean, message: string, requires_support?: boolean}> => {
     try {
       setLoading(true);
 
@@ -295,7 +295,7 @@ export const AuthProvider: React.FC<{
     } catch (error: any) {
       setError(error.response?.data.error || 'Login failed');
       console.error(error)
-      return {success: false, message: error.response?.data.error || 'Login failed'};
+      return {success: false, message: error.response?.data.error || 'Login failed', requires_support: error.response?.data.requires_support || false};
     } finally {
       setIsMiddleOfAuthFlow(false);
       setLoading(false);

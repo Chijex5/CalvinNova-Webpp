@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Eye, EyeOff, X, Mail, Lock, ArrowRight, ShoppingBag, Users, Star, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, X, Mail, Lock, ArrowRight, ShoppingBag, Users, Star, Shield, AlertCircle, CheckCircle, Ban, Clock, UserX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface FormErrors {
@@ -16,9 +16,20 @@ interface TouchedFields {
   forgotEmail?: boolean;
 }
 
+interface AccountStatusModal {
+  show: boolean;
+  type: 'suspended' | 'banned' | 'incomplete' | 'verification' | null;
+  message: string;
+}
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [accountStatusModal, setAccountStatusModal] = useState<AccountStatusModal>({
+    show: false,
+    type: null,
+    message: ''
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -146,11 +157,21 @@ const Login = () => {
     success: boolean;
     error?: string;
     message?: string;
+    requires_verification?: boolean;
+    requires_support?: boolean;
+    requires_completion?: boolean;
   }
 
   interface LoginError {
     response?: {
       status: number;
+      data?: {
+        error?: string;
+        message?: string;
+        requires_verification?: boolean;
+        requires_support?: boolean;
+        requires_completion?: boolean;
+      };
     };
     message?: string;
   }
@@ -162,8 +183,9 @@ const Login = () => {
   const handleLogin = async (e: FormEvent) => {
     e?.preventDefault();
     
-    // Clear previous errors
+    // Clear previous errors and modals
     setErrors({});
+    setAccountStatusModal({ show: false, type: null, message: '' });
     
     // Validate form
     const formErrors = validateForm();
@@ -197,9 +219,39 @@ const Login = () => {
           navigate(redirectPath);
         }, 1000);
       } else {
-        // Handle specific error responses
+        // Handle specific error responses based on backend flags
         const errorMessage: string = response?.error || response?.message || 'Login failed. Please try again.';
         
+        if (response?.requires_verification) {
+          setAccountStatusModal({
+            show: true,
+            type: 'verification',
+            message: errorMessage
+          });
+          return;
+        }
+        
+        if (response?.requires_support) {
+          // Determine if suspended or banned based on error message
+          const isSuspended = errorMessage.toLowerCase().includes('suspended');
+          setAccountStatusModal({
+            show: true,
+            type: isSuspended ? 'suspended' : 'banned',
+            message: errorMessage
+          });
+          return;
+        }
+        
+        if (response?.requires_completion) {
+          setAccountStatusModal({
+            show: true,
+            type: 'incomplete',
+            message: errorMessage
+          });
+          return;
+        }
+        
+        // Handle regular login errors
         if (errorMessage.toLowerCase().includes('email')) {
           setErrors(prev => ({ ...prev, email: 'Invalid email address' }));
         } else if (errorMessage.toLowerCase().includes('password')) {
@@ -215,9 +267,45 @@ const Login = () => {
       
       const loginError = error as LoginError;
       
-      // Handle different types of errors
+      // Handle different types of errors from backend
       let errorMessage = 'An unexpected error occurred. Please try again.';
       
+      if (loginError.response?.data) {
+        const data = loginError.response.data;
+        
+        // Check for special response flags first
+        if (data.requires_verification) {
+          setAccountStatusModal({
+            show: true,
+            type: 'verification',
+            message: data.error || data.message || 'Please verify your email address before logging in'
+          });
+          return;
+        }
+        
+        if (data.requires_support) {
+          const isSuspended = (data.error || data.message || '').toLowerCase().includes('suspended');
+          setAccountStatusModal({
+            show: true,
+            type: isSuspended ? 'suspended' : 'banned',
+            message: data.error || data.message || 'Account access restricted'
+          });
+          return;
+        }
+        
+        if (data.requires_completion) {
+          setAccountStatusModal({
+            show: true,
+            type: 'incomplete',
+            message: data.error || data.message || 'Please complete your profile setup'
+          });
+          return;
+        }
+        
+        errorMessage = data.error || data.message || errorMessage;
+      }
+      
+      // Handle HTTP status codes
       if (loginError.response?.status === 401) {
         errorMessage = 'Invalid email or password';
         setErrors({ email: 'Invalid credentials', password: 'Invalid credentials' });
@@ -316,6 +404,123 @@ const Login = () => {
   const handleForgotModalKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleForgotPassword(e);
+    }
+  };
+
+  const closeAccountStatusModal = () => {
+    setAccountStatusModal({ show: false, type: null, message: '' });
+  };
+
+  const handleCompleteProfile = () => {
+    closeAccountStatusModal();
+    navigate('/complete-profile');
+  };
+
+  const handleContactSupport = () => {
+    closeAccountStatusModal();
+    // You can navigate to support page or open email client
+    window.location.href = 'mailto:support@calvinnova.com?subject=Account Access Issue';
+  };
+
+  const handleResendVerification = () => {
+    closeAccountStatusModal();
+    // Navigate to verification page or trigger resend
+    navigate('/verify-email');
+  };
+
+  const getModalIcon = () => {
+    switch (accountStatusModal.type) {
+      case 'suspended':
+        return <Clock className="text-orange-500" size={32} />;
+      case 'banned':
+        return <Ban className="text-red-500" size={32} />;
+      case 'incomplete':
+        return <UserX className="text-blue-500" size={32} />;
+      case 'verification':
+        return <Mail className="text-purple-500" size={32} />;
+      default:
+        return <AlertCircle className="text-gray-500" size={32} />;
+    }
+  };
+
+  const getModalTitle = () => {
+    switch (accountStatusModal.type) {
+      case 'suspended':
+        return 'Account Suspended';
+      case 'banned':
+        return 'Account Restricted';
+      case 'incomplete':
+        return 'Profile Incomplete';
+      case 'verification':
+        return 'Email Verification Required';
+      default:
+        return 'Account Issue';
+    }
+  };
+
+  const getModalActions = () => {
+    switch (accountStatusModal.type) {
+      case 'suspended':
+      case 'banned':
+        return (
+          <div className="flex space-x-3">
+            <button
+              onClick={closeAccountStatusModal}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Understood
+            </button>
+            <button
+              onClick={handleContactSupport}
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+            >
+              Contact Support
+            </button>
+          </div>
+        );
+      case 'incomplete':
+        return (
+          <div className="flex space-x-3">
+            <button
+              onClick={closeAccountStatusModal}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Later
+            </button>
+            <button
+              onClick={handleCompleteProfile}
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+            >
+              Complete Profile
+            </button>
+          </div>
+        );
+      case 'verification':
+        return (
+          <div className="flex space-x-3">
+            <button
+              onClick={closeAccountStatusModal}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleResendVerification}
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+            >
+              Verify Email
+            </button>
+          </div>
+        );
+      default:
+        return (
+          <button
+            onClick={closeAccountStatusModal}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+          >
+            Close
+          </button>
+        );
     }
   };
 
@@ -537,6 +742,67 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      {/* Account Status Modal */}
+      {accountStatusModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md relative">
+            <button
+              onClick={closeAccountStatusModal}
+              className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex justify-center mb-4">
+                {getModalIcon()}
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                {getModalTitle()}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {accountStatusModal.message}
+              </p>
+              
+              {/* Additional context based on modal type */}
+              {accountStatusModal.type === 'suspended' && (
+                <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <p className="text-sm text-orange-800 dark:text-orange-200">
+                    Your account access has been temporarily restricted. If you believe this is an error, please contact our support team to appeal this decision.
+                  </p>
+                </div>
+              )}
+              
+              {accountStatusModal.type === 'banned' && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    Your account has been permanently restricted due to policy violations. You may appeal this decision by contacting our support team.
+                  </p>
+                </div>
+              )}
+              
+              {accountStatusModal.type === 'incomplete' && (
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Complete your profile to access all CalvinNova features and start trading with fellow students.
+                  </p>
+                </div>
+              )}
+              
+              {accountStatusModal.type === 'verification' && (
+                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <p className="text-sm text-purple-800 dark:text-purple-200">
+                    Please check your email and click the verification link to activate your account.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {getModalActions()}
+          </div>
+        </div>
+      )}
 
       {/* Forgot Password Modal */}
       {showForgotModal && (

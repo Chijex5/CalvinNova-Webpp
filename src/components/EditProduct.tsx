@@ -244,8 +244,8 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
 
   const ToggleButton = ({ options, selected, onChange, label }: {options: {value: string, label: string}[], selected: string, onChange: (option: string) => void, label: string}) => (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <div className="flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+      <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800">
         {options.map((option) => (
           <button
             key={option.value}
@@ -254,7 +254,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               selected === option.value
                 ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
             {option.label}
@@ -273,8 +273,8 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
           onClick={() => onChange(category)}
           className={`p-3 rounded-lg border-2 transition-all ${
             selected === category
-              ? 'border-blue-500 bg-blue-50 text-blue-700'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-900 dark:text-white'
           }`}
         >
           <div className="text-sm font-medium">{category}</div>
@@ -289,14 +289,14 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <Camera className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Edit Photos</h3>
-              <p className="text-sm text-gray-500">Update your item photos</p>
+              <Camera className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Edit Photos</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Update your item photos</p>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {formData.images.map((image, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                   <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
@@ -309,9 +309,9 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
               ))}
               
               {formData.images.length < 5 && (
-                <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
-                  <Upload className="h-8 w-8 text-gray-400" />
-                  <span className="text-sm text-gray-500 mt-2">Add Photo</span>
+                <label className="aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                  <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">Add Photo</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -332,38 +332,38 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Edit Details</h3>
-              <p className="text-sm text-gray-500">Update your item information</p>
+              <FileText className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Edit Details</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Update your item information</p>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="What are you selling?"
                 />
                 {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="Describe your item in detail..."
                 />
                 {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Category</label>
                 <CategoryGrid
                   categories={categories}
                   selected={formData.category}
@@ -399,30 +399,30 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Update Price</h3>
-              <p className="text-sm text-gray-500">Adjust your item price</p>
+              <DollarSign className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Update Price</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Adjust your item price</p>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price (₦)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price (₦)</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₦</span>
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">₦</span>
                   <input
                     type="number"
                     value={formData.price}
                     onChange={(e) => handleInputChange('price', e.target.value)}
-                    className="w-full pl-8 pr-4 py-4 text-lg rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="0"
                   />
                 </div>
                 {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
               </div>
               
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">💡 Pricing Tips</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">💡 Pricing Tips</h4>
+                <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                   <li>• Research similar items to price competitively</li>
                   <li>• Consider the condition and age of your item</li>
                   <li>• Leave room for negotiation</li>
@@ -437,11 +437,11 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
           <div className="space-y-6">
             <div className="text-center">
               <Check className="mx-auto h-12 w-12 text-green-500" />
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Review Changes</h3>
-              <p className="text-sm text-gray-500">Confirm your updates</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-2">Review Changes</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Confirm your updates</p>
             </div>
             
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {formData.images.slice(0, 2).map((image, index) => (
                   <img
@@ -455,29 +455,29 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
               
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-medium text-gray-900">{formData.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{formData.description}</p>
+                  <h4 className="font-medium text-gray-900 dark:text-white">{formData.title}</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{formData.description}</p>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded-full">
                     {formData.category}
                   </span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
                     {formData.condition}
                   </span>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 text-xs rounded-full">
                     {formData.school}
                   </span>
                 </div>
                 
-                <div className="text-lg font-semibold text-gray-900">₦{formData.price}</div>
+                <div className="text-lg font-semibold text-gray-900 dark:text-white">₦{formData.price}</div>
               </div>
             </div>
             
             {hasChanges && (
-              <div className="bg-yellow-50 p-3 rounded-lg">
-                <p className="text-sm text-yellow-800">
+              <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
                   <span className="font-medium">Changes detected:</span> Your updates will be saved when you continue.
                 </p>
               </div>
@@ -488,22 +488,22 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
+    <div className="max-w-md mx-auto bg-white dark:bg-gray-900 min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10">
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 z-10">
         <div className="flex items-center justify-between">
           <button
             onClick={currentStep === 1 ? handleCancel : prevStep}
-            className="p-2 rounded-full text-gray-600 hover:bg-gray-100"
+            className="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           
-          <h1 className="text-lg font-semibold">Edit Item</h1>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Item</h1>
           
           <button
             onClick={handleCancel}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           >
             Cancel
           </button>
@@ -520,18 +520,18 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       currentStep >= step.id
                         ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 text-gray-500'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="text-xs mt-1 text-gray-600">{step.title}</span>
+                  <span className="text-xs mt-1 text-gray-600 dark:text-gray-400">{step.title}</span>
                 </div>
               );
             })}
           </div>
           
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 4) * 100}%` }}
@@ -546,7 +546,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="max-w-md mx-auto">
           {currentStep < 4 ? (
             <button
@@ -562,7 +562,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
               disabled={loading || !hasChanges}
               className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center
                 ${loading || !hasChanges 
-                  ? 'bg-gray-400 cursor-not-allowed' 
+                  ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-gray-200' 
                   : 'bg-green-500 hover:bg-green-600 text-white'
                 }
               `}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, SettingsIcon, BarChart3Icon } from 'lucide-react';
+import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, BarChart3Icon } from 'lucide-react';
+import { MdReportGmailerrorred } from "react-icons/md";
 import { useAuth } from '../context/AuthContext';
 import logo from './logo.svg'
 
@@ -51,7 +52,7 @@ const Navigation = () => {
         name: 'Chat',
         path: '/chat',
         icon: <MessageSquareIcon size={20} />,
-        roles: ['buyer', 'seller', 'admin', 'both']
+        roles: ['buyer', 'seller', 'admin', 'both', 'agent']
       }
     ];
 
@@ -80,9 +81,9 @@ const Navigation = () => {
         roles: ['admin']
       },
       {
-        name: 'Settings',
-        path: '/admin/settings',
-        icon: <SettingsIcon size={20} />,
+        name: 'Reports',
+        path: '/admin/reports',
+        icon: <MdReportGmailerrorred size={20} />,
         roles: ['admin']
       }
     ];

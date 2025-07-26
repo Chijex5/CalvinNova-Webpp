@@ -5,7 +5,7 @@ interface ContactViolation {
   category: string;
 }
 
-interface CheckResult {
+export interface CheckResult {
   hasViolation: boolean;
   violations: ContactViolation[];
   message: string;
