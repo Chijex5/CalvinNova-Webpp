@@ -426,7 +426,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
     if (isSystem) {
       return (
         <div className="flex justify-center my-6">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 text-blue-700 px-6 py-3 rounded-full text-sm font-medium flex items-center gap-2 shadow-sm">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-6 py-3 rounded-full text-sm font-medium flex items-center gap-2 shadow-sm dark:shadow-lg">
             <CheckCircle size={16} />
             {message.text}
           </div>
@@ -439,8 +439,8 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
         <div className={`flex items-start gap-3 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
           {/* Avatar */}
           {!isUser && (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${
-              isAgent ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg dark:shadow-xl ${
+              isAgent ? 'bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700' : 'bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700'
             }`}>
               {isAgent ? (
                 agentInfo?.avatar ? (
@@ -458,18 +458,18 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
           <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
             {/* Agent name */}
             {isAgent && agentInfo && (
-              <div className="text-xs text-gray-500 mb-1 px-2 flex items-center gap-1">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 px-2 flex items-center gap-1">
                 <Shield size={12} />
                 {agentInfo.name}
               </div>
             )}
             
-            <div className={`relative px-5 py-3 rounded-2xl max-w-full shadow-sm ${
+            <div className={`relative px-5 py-3 rounded-2xl max-w-full shadow-sm dark:shadow-lg ${
               isUser 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md' 
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-br-md' 
                 : isAgent
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-gray-800 rounded-bl-md border border-green-200'
-                  : 'bg-white text-gray-800 rounded-bl-md border border-gray-200'
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-gray-800 dark:text-gray-200 rounded-bl-md border border-green-200 dark:border-green-700'
+                  : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-md border border-gray-200 dark:border-gray-700'
             }`}>
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                 {message.text}
@@ -482,13 +482,13 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                     {message.status === 'sending' && '◐'}
                     {message.status === 'sent' && '✓'}
                     {message.status === 'delivered' && '✓✓'}
-                    {message.status === 'read' && <span className="text-blue-200">✓✓</span>}
+                    {message.status === 'read' && <span className="text-blue-200 dark:text-blue-300">✓✓</span>}
                   </span>
                 </div>
               )}
             </div>
             
-            <div className="text-xs text-gray-500 mt-1 px-2">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 px-2">
               {formatTimestamp(message.timestamp)}
             </div>
           </div>
@@ -500,19 +500,19 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   const TypingIndicator: React.FC = () => (
     <div className="flex justify-start mb-4">
       <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
-          isEscalated ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg dark:shadow-xl ${
+          isEscalated ? 'bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700' : 'bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700'
         }`}>
           {isEscalated ? <UserCheck size={18} className="text-white" /> : <Bot size={18} className="text-white" />}
         </div>
-        <div className="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-bl-md border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-5 py-3 rounded-2xl rounded-bl-md border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-lg">
           <div className="flex items-center gap-2">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
-            <span className="text-sm text-gray-600">typing...</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">typing...</span>
           </div>
         </div>
       </div>
@@ -520,37 +520,37 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   );
 
   const AttachmentPanel: React.FC = () => (
-    <div className="absolute bottom-full left-0 right-0 bg-white border border-gray-200 rounded-t-xl shadow-lg p-6 mb-2">
+    <div className="absolute bottom-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-t-xl shadow-lg dark:shadow-xl p-6 mb-2">
       <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
-        <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 hover:bg-purple-100 transition-all duration-200 hover:scale-105">
-          <Camera size={24} className="text-purple-500" />
-          <span className="text-xs text-gray-600 font-medium">Camera</span>
+        <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-all duration-200 hover:scale-105">
+          <Camera size={24} className="text-purple-500 dark:text-purple-400" />
+          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Camera</span>
         </button>
-        <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all duration-200 hover:scale-105">
-          <Image size={24} className="text-blue-500" />
-          <span className="text-xs text-gray-600 font-medium">Photos</span>
+        <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all duration-200 hover:scale-105">
+          <Image size={24} className="text-blue-500 dark:text-blue-400" />
+          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Photos</span>
         </button>
-        <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-all duration-200 hover:scale-105">
-          <Paperclip size={24} className="text-green-500" />
-          <span className="text-xs text-gray-600 font-medium">File</span>
+        <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 transition-all duration-200 hover:scale-105">
+          <Paperclip size={24} className="text-green-500 dark:text-green-400" />
+          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">File</span>
         </button>
       </div>
     </div>
   );
 
   const EscalationBanner: React.FC = () => (
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 p-4">
+    <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-b border-green-200 dark:border-green-700 p-4">
       <div className="flex items-center justify-center gap-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 rounded-full flex items-center justify-center">
           <UserCheck size={16} className="text-white" />
         </div>
         <div className="text-center">
-          <div className="text-green-800 font-semibold text-sm">Connected to Human Support</div>
-          <div className="text-green-600 text-xs">
+          <div className="text-green-800 dark:text-green-200 font-semibold text-sm">Connected to Human Support</div>
+          <div className="text-green-600 dark:text-green-300 text-xs">
             {agentInfo?.name || 'Support Agent'} is here to help
           </div>
         </div>
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
       </div>
     </div>
   );
@@ -564,27 +564,25 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       <div className={`fixed ${isMobile ? 'bottom-20 right-6' : 'bottom-24 right-8'} z-50`}>
         <div className="relative group">
           {/* Attention-grabbing pulse ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-75 animate-ping"></div>
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-50 animate-pulse"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600 opacity-75 animate-ping"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600 opacity-50 animate-pulse"></div>
           
           {/* Main button */}
           <button
             onClick={() => {
               setIsOpen(true);            }}
-            className="relative bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-purple-500/25 border-2 border-white/20"
+            className="relative bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800 hover:from-blue-700 hover:to-purple-800 dark:hover:from-blue-800 dark:hover:to-purple-900 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-purple-500/25 dark:hover:shadow-purple-400/30 border-2 border-white/20 dark:border-white/10"
           >
             <RiCustomerService2Line  size={24} className="group-hover:scale-110 transition-transform duration-200" />
           </button>
           
-
-          
           {/* Floating help text */}
-          <div className="absolute bottom-full right-0 mb-2 bg-white text-gray-800 px-4 py-2 rounded-lg shadow-xl border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+          <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
             <div className="flex items-center gap-2">
-              <Zap size={16} className="text-yellow-500" />
+              <Zap size={16} className="text-yellow-500 dark:text-yellow-400" />
               <span className="font-semibold">Need help? We're online!</span>
             </div>
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white dark:border-t-gray-800"></div>
           </div>
         </div>
       </div>
@@ -594,39 +592,39 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   // Mobile fullscreen layout
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-black bg-opacity-50 backdrop-blur-sm">
-        <div className="bg-white h-full flex flex-col">
+      <div className="fixed inset-0 z-50 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 backdrop-blur-sm">
+        <div className="bg-white dark:bg-gray-900 h-full flex flex-col">
           {/* Header */}
           <div className={`text-white p-6 shadow-lg ${
             isEscalated 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-              : 'bg-gradient-to-r from-blue-500 to-purple-600'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700' 
+              : 'bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700'
           }`}>
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200"
+                className="text-white hover:bg-white hover:bg-opacity-20 dark:hover:bg-white dark:hover:bg-opacity-10 rounded-full p-2 transition-all duration-200"
               >
                 <ArrowLeft size={24} />
               </button>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <div className="w-12 h-12 bg-white bg-opacity-20 dark:bg-white dark:bg-opacity-10 rounded-full flex items-center justify-center backdrop-blur-sm">
                     {isEscalated ? <UserCheck size={24} className="text-white" /> : <Bot size={24} className="text-white" />}
                   </div>
                   <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                    supportAgentStatus === 'online' ? 'bg-green-500' : 
-                    supportAgentStatus === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                    supportAgentStatus === 'online' ? 'bg-green-500 dark:bg-green-400' : 
+                    supportAgentStatus === 'away' ? 'bg-yellow-500 dark:bg-yellow-400' : 'bg-gray-500 dark:bg-gray-400'
                   }`} />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white text-lg">CalvinNova Support</h3>
-                  <p className="text-sm text-blue-100">
+                  <p className="text-sm text-blue-100 dark:text-blue-200">
                     {isEscalated ? `${agentInfo?.name || 'Human agent'} • Online` : 'AI Assistant • Always available'}
                   </p>
                 </div>
               </div>
-              <button className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200">
+              <button className="text-white hover:bg-white hover:bg-opacity-20 dark:hover:bg-white dark:hover:bg-opacity-10 rounded-full p-2 transition-all duration-200">
                 <MoreVertical size={24} />
               </button>
             </div>
@@ -637,8 +635,8 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
           {/* Connection Status */}
           {connectionStatus !== 'connected' && (
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-200 p-4">
-              <div className="flex items-center justify-center gap-2 text-yellow-700">
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-b border-yellow-200 dark:border-yellow-700 p-4">
+              <div className="flex items-center justify-center gap-2 text-yellow-700 dark:text-yellow-300">
                 <Clock size={18} />
                 <span className="text-sm font-medium">
                   {connectionStatus === 'connecting' ? 'Connecting...' : 'Connection Error'}
@@ -648,7 +646,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
           )}
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white relative">
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 relative">
             <div className="p-6 space-y-2 min-h-full">
               {Array.from(
                 new Map(messages.map(msg => [msg.id, msg])).values()
@@ -664,16 +662,16 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
           {/* Voice Recording UI */}
           {isRecording && (
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 border-t border-red-200 p-4">
+            <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border-t border-red-200 dark:border-red-700 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-red-700 font-medium">Recording...</span>
-                  <span className="text-red-600 text-sm font-mono">{formatTime(recordingTime)}</span>
+                  <div className="w-4 h-4 bg-red-500 dark:bg-red-400 rounded-full animate-pulse" />
+                  <span className="text-red-700 dark:text-red-300 font-medium">Recording...</span>
+                  <span className="text-red-600 dark:text-red-400 text-sm font-mono">{formatTime(recordingTime)}</span>
                 </div>
                 <button
                   onClick={stopRecording}
-                  className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                  className="bg-red-500 dark:bg-red-600 text-white rounded-full p-2 hover:bg-red-600 dark:hover:bg-red-700 transition-colors shadow-lg"
                 >
                   <X size={18} />
                 </button>
@@ -685,12 +683,12 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
           {showAttachments && <AttachmentPanel />}
 
           {/* Input */}
-          <div className="p-6 bg-white border-t border-gray-200 relative">
+          <div className="p-6 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 relative">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowAttachments(!showAttachments)}
                 className={`hidden rounded-full p-3 transition-all duration-200 ${
-                  showAttachments ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'
+                  showAttachments ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-lg' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
               >
                 <Paperclip size={20} />
@@ -710,7 +708,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                       handleSendMessage(e);
                     }
                   }}
-                  className="w-full px-6 py-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white disabled:opacity-50 transition-all text-base"
+                  className="w-full px-6 py-4 bg-gray-100 dark:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:bg-white dark:focus:bg-gray-700 disabled:opacity-50 transition-all text-base text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               
@@ -718,7 +716,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim() || !isConnected || isSendingMessage}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white rounded-full p-3 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 hover:from-blue-600 hover:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 disabled:opacity-50 text-white rounded-full p-3 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <Send size={20} />
                 </button>
@@ -730,7 +728,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
                   className={`hidden rounded-full p-3 transition-all duration-200 shadow-lg ${
-                    isRecording ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+                    isRecording ? 'bg-red-500 dark:bg-red-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
                   <Mic size={20} />
@@ -746,22 +744,22 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
   // Desktop layout
   return (
     <div className={`fixed bottom-8 right-8 z-50 ${className}`}>
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200 w-[800px] h-[500px] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 w-[800px] h-[500px] flex flex-col">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-semibold">C</span>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-800">Chat Assistant</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200">Chat Assistant</h3>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  connectionStatus === 'connected' ? 'bg-green-500' : 
-                  connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+                  connectionStatus === 'connected' ? 'bg-green-500 dark:bg-green-400' : 
+                  connectionStatus === 'connecting' ? 'bg-yellow-500 dark:bg-yellow-400 animate-pulse' : 'bg-red-500 dark:bg-red-400'
                 }`} />
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-600 dark:text-gray-400">
                   {connectionStatus === 'connected' ? 'Online' : 
                    connectionStatus === 'connecting' ? 'Connecting...' : 'Offline'}
                 </span>
@@ -773,12 +771,12 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
             <button
               onClick={() => setShowAttachments(!showAttachments)}
               className={`rounded-lg hidden p-2 transition-all duration-200 ${
-                showAttachments ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+                showAttachments ? 'bg-blue-500 dark:bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
               <Paperclip size={16} />
             </button>
-            <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg p-2 transition-colors">
+            <button onClick={() => setIsOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition-colors">
               <X size={16} />
             </button>
           </div>
@@ -789,7 +787,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
           
           {/* Messages Area */}
           <div className="flex-1 flex flex-col">
-            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white">
+            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
               <div className="p-6 space-y-2">
                 {Array.from(
                     new Map(messages.map(msg => [msg.id, msg])).values()
@@ -805,16 +803,16 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
             {/* Voice Recording UI */}
             {isRecording && (
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 border-t border-red-200 p-4">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border-t border-red-200 dark:border-red-700 p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                    <span className="text-red-700 font-medium">Recording...</span>
-                    <span className="text-red-600 text-sm font-mono">{formatTime(recordingTime)}</span>
+                    <div className="w-3 h-3 bg-red-500 dark:bg-red-400 rounded-full animate-pulse" />
+                    <span className="text-red-700 dark:text-red-300 font-medium">Recording...</span>
+                    <span className="text-red-600 dark:text-red-400 text-sm font-mono">{formatTime(recordingTime)}</span>
                   </div>
                   <button
                     onClick={stopRecording}
-                    className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                    className="bg-red-500 dark:bg-red-600 text-white rounded-full p-2 hover:bg-red-600 dark:hover:bg-red-700 transition-colors shadow-lg"
                   >
                     <X size={16} />
                   </button>
@@ -823,7 +821,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
             )}
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-gray-200">
+            <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <div className="flex-1 relative">
                   <input
@@ -839,7 +837,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                         handleSendMessage(e);
                       }
                     }}
-                    className="w-full px-4 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white disabled:opacity-50 transition-all"
+                    className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:bg-white dark:focus:bg-gray-700 disabled:opacity-50 transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
                 
@@ -847,7 +845,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputText.trim() || !isConnected || isSendingMessage}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white rounded-full p-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 hover:from-blue-600 hover:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 disabled:opacity-50 text-white rounded-full p-2 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <Send size={18} />
                   </button>
@@ -859,7 +857,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
                     onTouchStart={startRecording}
                     onTouchEnd={stopRecording}
                     className={`hidden rounded-full p-2 transition-all duration-200 shadow-lg ${
-                      isRecording ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+                      isRecording ? 'bg-red-500 dark:bg-red-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
                     <Mic size={18} />
@@ -871,7 +869,7 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
 
           {/* Attachment Panel - Side Panel */}
           {showAttachments && (
-            <div className="w-80 bg-gray-50 border-l border-gray-200 flex flex-col">
+            <div className="w-80 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
               <AttachmentPanel />
             </div>
           )}
@@ -879,6 +877,5 @@ const SupportChat: React.FC<SupportChatProps> = ({ className = '' }) => {
       </div>
     </div>
   );
-};
-
+}
 export default SupportChat;

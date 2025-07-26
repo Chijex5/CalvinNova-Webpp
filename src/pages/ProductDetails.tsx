@@ -231,24 +231,24 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 dark:bg-gray-900">
       {/* Breadcrumb navigation */}
-      <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-        <Link to="/marketplace" className="hover:text-blue-600">
+      <nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
+        <Link to="/marketplace" className="hover:text-blue-600 dark:hover:text-blue-400">
           Marketplace
         </Link>
         <span>›</span>
-        <Link to={`/marketplace?category=${product.category}`} className="hover:text-blue-600">
+        <Link to={`/marketplace?category=${product.category}`} className="hover:text-blue-600 dark:hover:text-blue-400">
           {product.category}
         </Link>
         <span>›</span>
-        <span className="text-gray-900">{product.title}</span>
+        <span className="text-gray-900 dark:text-gray-100">{product.title}</span>
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Product Images */}
         <div className="relative">
-          <div className="bg-gray-50 rounded-lg overflow-hidden aspect-square">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden aspect-square">
             <img 
               src={product.images[currentImageIndex]} 
               alt={product.title}
@@ -263,21 +263,21 @@ const ProductDetails = () => {
             <>
               <button
                 onClick={prevImage}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
                 aria-label="Previous image"
               >
-                <ChevronLeftIcon size={20} />
+                <ChevronLeftIcon size={20} className="text-gray-700 dark:text-gray-300" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
                 aria-label="Next image"
               >
-                <ChevronRightIcon size={20} />
+                <ChevronRightIcon size={20} className="text-gray-700 dark:text-gray-300" />
               </button>
               
               {/* Image counter */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 dark:bg-black/70 text-white px-3 py-1 rounded-full text-sm">
                 {currentImageIndex + 1} / {product.images.length}
               </div>
             </>
@@ -292,8 +292,8 @@ const ProductDetails = () => {
                   onClick={() => setCurrentImageIndex(index)}
                   className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
                     index === currentImageIndex 
-                      ? 'border-blue-600 ring-2 ring-blue-600/20' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-600 dark:border-blue-400 ring-2 ring-blue-600/20 dark:ring-blue-400/20' 
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
                   <img 
@@ -312,7 +312,7 @@ const ProductDetails = () => {
           {/* Header */}
           <div>
             <div className="flex justify-between items-start mb-3">
-              <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
                 {product.title}
               </h1>
               <div className="flex space-x-1 ml-4">
@@ -320,8 +320,8 @@ const ProductDetails = () => {
                   onClick={handleToggleFavorite}
                   className={`p-2 rounded-full transition-colors ${
                     isFavorited 
-                      ? 'text-red-500 bg-red-50 hover:bg-red-100' 
-                      : 'text-gray-500 hover:text-red-500 hover:bg-gray-100'
+                      ? 'text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30' 
+                      : 'text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                   aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                 >
@@ -329,14 +329,14 @@ const ProductDetails = () => {
                 </button>
                 <button 
                   onClick={handleShare}
-                  className="p-2 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                   aria-label="Share product"
                 >
                   <ShareIcon size={20} />
                 </button>
                 <button 
                   onClick={handleReport}
-                  className="p-2 text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                   aria-label="Report product"
                 >
                   <FlagIcon size={20} />
@@ -344,21 +344,21 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            <p className="text-3xl font-bold text-blue-600">
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
               {formatPrice(product.price)}
             </p>
           </div>
 
           {/* Metadata */}
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">
               {product.category}
             </span>
-            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+            <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-sm font-medium">
               {product.condition}
             </span>
             {product.school && (
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center gap-1">
+              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm flex items-center gap-1">
                 <MapPinIcon size={14} />
                 {product.school}
               </span>
@@ -367,16 +367,16 @@ const ProductDetails = () => {
 
           {/* Description */}
           <div>
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">Description</h2>
-            <div className="prose prose-sm max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+            <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">Description</h2>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
             </div>
           </div>
 
           {/* Product Stats */}
-          <div className="flex items-center space-x-6 text-sm text-gray-500 py-3 border-y border-gray-200">
+          <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400 py-3 border-y border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-1">
               <CalendarIcon size={16} />
               <span>Listed {new Date(product.createdAt).toLocaleDateString()}</span>
@@ -388,22 +388,22 @@ const ProductDetails = () => {
           </div>
 
           {/* Seller Info */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 text-gray-900">Seller Information</h3>
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Seller Information</h3>
             <div className="flex items-center">
               <img 
                 src={product.sellerAvatar || '/default-avatar.png'} 
                 alt={product.sellerName}
-                className="w-12 h-12 rounded-full mr-3 ring-2 ring-white shadow-sm"
+                className="w-12 h-12 rounded-full mr-3 ring-2 ring-white dark:ring-gray-700 shadow-sm"
                 onError={(e) => {
                   e.target.src = '/default-avatar.png';
                 }}
               />
               <div>
-                <p className="font-medium text-gray-900">{product.sellerName}</p>
-                <p className="text-sm text-gray-600">{product.school}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{product.sellerName}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{product.school}</p>
                 {product.sellerRating && (
-                  <p className="text-sm text-yellow-600">
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
                     ⭐ {product.sellerRating.toFixed(1)} ({product.sellerRating || 0} reviews)
                   </p>
                 )}
@@ -439,7 +439,6 @@ const ProductDetails = () => {
                 <Button 
                   variant="primary" 
                   fullWidth 
-
                   icon={<MessageSquareIcon size={18} />}
                   onClick={handleContactSeller}
                   disabled={isContactingSeller}
@@ -452,7 +451,7 @@ const ProductDetails = () => {
                   fullWidth 
                   icon={<ShoppingBagIcon size={18} />}
                   onClick={() => navigate(`/buy/${product.id}`)}
-                  className={`py-4 ${isFavorited ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-700'}`}
+                  className={`py-4 ${isFavorited ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
                 >
                   Buy Now
                 </Button>
@@ -462,7 +461,7 @@ const ProductDetails = () => {
 
           {/* Error Message */}
           {chatError && (
-            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg">
               <p className="font-medium">Error</p>
               <p className="text-sm">{chatError}</p>
             </div>
@@ -472,7 +471,7 @@ const ProductDetails = () => {
 
       {/* Related Products Section */}
       <div className="mt-16">
-        <h2 className="text-2xl font-bold mb-6">Similar Products</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Similar Products</h2>
         {/* You can add a RelatedProducts component here */}
       </div>
     </div>
