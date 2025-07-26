@@ -6,7 +6,7 @@ import ContactWarningBanner from '../components/NoContacts';
 import { useUserStore } from '../store/userStore';
 import { getUserDisplayName } from '../utils/getUserDisplayName';
 import { checkMessage } from '../functions/noContact';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Channel } from 'stream-chat';
 import { client } from '../lib/stream-chat';
 import verifiedbadge from '../assets/icons/verified-badge.svg'
@@ -1374,6 +1374,7 @@ const ChatInterface: React.FC = () => {
   const [showChatView, setShowChatView] = useState<boolean>(false);
   const { isAdminView } = useChatStore();
   const { width } = useWindowSize();
+  const navigate = useNavigate();
   const { chatId } = useParams<{ chatId: string }>();
   const chats = useChatStore(state => state.chats);
 
@@ -1384,6 +1385,9 @@ const ChatInterface: React.FC = () => {
         setSelectedChat(chat);
         chat.markRead();
         setShowChatView(true);
+
+        // 👇 Clean up the URL right after setting state
+        navigate('/chat', { replace: true });
       }
     }
   }, [chatId, chats]);

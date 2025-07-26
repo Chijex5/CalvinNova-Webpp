@@ -49,7 +49,6 @@ interface ImageGalleryModalProps {
   productTitle: string;
 }
 
-// Image Gallery Modal Component
 const ImageGalleryModal = ({ isOpen, onClose, images, initialIndex = 0, productTitle }: ImageGalleryModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isZoomed, setIsZoomed] = useState(false);
