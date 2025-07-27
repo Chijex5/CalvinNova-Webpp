@@ -33,29 +33,29 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, productTitle }: {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Confirm Purchase</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Confirm Purchase</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         
         <div className="mb-6">
-          <p className="text-gray-700 mb-4">
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
             Before proceeding with your purchase of <strong>{productTitle}</strong>, please confirm:
           </p>
           
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-4">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm text-amber-800 font-medium mb-1">Important</p>
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Important</p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">
                   Have you confirmed with the seller that the item is available and agreed on a public pickup location?
                 </p>
               </div>
@@ -66,13 +66,13 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, productTitle }: {
         <div className="flex space-x-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex-1 px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
           >
             Yes, Proceed to Payment
           </button>
@@ -218,6 +218,9 @@ const BuyPage = () => {
       const result = await selfService.checkout({
         productId: product.id,
         sellerId: product.sellerId,
+        sellerName: product.sellerName || `User ${product.sellerId.slice(0, 8)}`,
+        buyerName: user.name,
+        title: product.title,
         transactionId: transactionId,
         buyerEmail: user.email,
         buyerId: user.userId,
@@ -228,7 +231,7 @@ const BuyPage = () => {
       }
 
       
-      // Redirect to success page
+      productService.refreshProducts();
       navigate(`/payment/success/${product.id}`, {
         state: {
           productTitle: product.title,
@@ -275,10 +278,10 @@ const BuyPage = () => {
   // Loading and error states
   if (productsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading product details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading product details...</p>
         </div>
       </div>
     );
@@ -286,18 +289,18 @@ const BuyPage = () => {
 
   if (localError || productError || !product) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <AlertCircle className="w-16 h-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {localError || productError || 'Product not found'}
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             The product you're trying to purchase could not be loaded.
           </p>
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
           >
             Back to Marketplace
           </button>
@@ -318,18 +321,18 @@ const BuyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-40">
+      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={handleBackClick}
-              className="p-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 rounded-lg hover:bg-gray-100"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">Review & Complete Your Purchase</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Review & Complete Your Purchase</h1>
           </div>
         </div>
       </div>
@@ -340,8 +343,8 @@ const BuyPage = () => {
           {/* Left Column - Product Summary */}
           <div className="space-y-6">
             {/* Product Summary Component */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                 <Package className="w-5 h-5 mr-2" />
                 Product Summary
               </h2>
@@ -357,27 +360,27 @@ const BuyPage = () => {
                 />
                 
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">{product.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{product.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
                     {product.description.substring(0, 100)}{product.description.length > 100 ? '...' : ''}
                   </p>
-                  <p className="text-2xl font-bold text-indigo-600 mb-1">
+                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">
                     {formatPrice(product.price)}
                   </p>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center text-sm text-gray-500">
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                       <User className="w-4 h-4 mr-1" />
                       <span>Seller: {product.sellerName || `User ${product.sellerId.slice(0, 8)}`}</span>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-400 dark:text-gray-500">
                       {product.school}
                     </div>
                   </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    <span className="inline-block bg-gray-100 px-2 py-1 rounded">
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="inline-block bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                       {product.condition}
                     </span>
-                    <span className="ml-2 inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    <span className="ml-2 inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                       {product.category}
                     </span>
                   </div>
@@ -386,12 +389,12 @@ const BuyPage = () => {
             </div>
 
             {/* Escrow Information */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
               <div className="flex items-start space-x-3">
-                <Shield className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+                <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-medium text-blue-900 mb-2">Secure Escrow Protection</h3>
-                  <p className="text-sm text-blue-800">
+                  <h3 className="font-medium text-blue-900 dark:text-blue-200 mb-2">Secure Escrow Protection</h3>
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     Your payment will be held securely in CalvinNova's escrow wallet until you confirm 
                     receipt of the item. This protects both you and the seller.
                   </p>
@@ -404,114 +407,114 @@ const BuyPage = () => {
           <div className="space-y-6">
             
             {/* Payment Summary */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Summary</h2>
               
               <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-gray-700">
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
                   <span>Product Price</span>
                   <span>{formatPrice(product.price)}</span>
                 </div>
-                <div className="flex justify-between text-gray-700">
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
                   <span>Platform Fee (2.5%)</span>
                   <span>{formatPrice(platformFee)}</span>
                 </div>
-                <div className="border-t pt-3">
+                <div className="border-t dark:border-gray-600 pt-3">
                   <div className="flex justify-between font-semibold text-lg">
-                    <span>Total Amount</span>
-                    <span className="text-indigo-600">{formatPrice(totalAmount)}</span>
+                    <span className="dark:text-white">Total Amount</span>
+                    <span className="text-indigo-600 dark:text-indigo-400">{formatPrice(totalAmount)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>Recipient:</strong> CalvinNova Escrow Wallet
                 </p>
               </div>
             </div>
 
             {/* Payment Form */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                 <CreditCard className="w-5 h-5 mr-2" />
                 Payment Details
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Cardholder Name
                   </label>
                   <input
                     type="text"
                     value={cardDetails.cardholderName}
                     onChange={(e) => setCardDetails({...cardDetails, cardholderName: e.target.value})}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                      errors.cardholderName ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      errors.cardholderName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="John Doe"
                   />
                   {errors.cardholderName && (
-                    <p className="text-red-600 text-sm mt-1">{errors.cardholderName}</p>
+                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cardholderName}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Card Number
                   </label>
                   <input
                     type="text"
                     value={cardDetails.cardNumber}
                     onChange={(e) => setCardDetails({...cardDetails, cardNumber: formatCardNumber(e.target.value)})}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                      errors.cardNumber ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      errors.cardNumber ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="1234 5678 9012 3456"
                     maxLength={19}
                   />
                   {errors.cardNumber && (
-                    <p className="text-red-600 text-sm mt-1">{errors.cardNumber}</p>
+                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cardNumber}</p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Expiry Date
                     </label>
                     <input
                       type="text"
                       value={cardDetails.expiryDate}
                       onChange={(e) => setCardDetails({...cardDetails, expiryDate: formatExpiryDate(e.target.value)})}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        errors.expiryDate ? 'border-red-300' : 'border-gray-300'
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.expiryDate ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                       }`}
                       placeholder="MM/YY"
                       maxLength={5}
                     />
                     {errors.expiryDate && (
-                      <p className="text-red-600 text-sm mt-1">{errors.expiryDate}</p>
+                      <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.expiryDate}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       CVV
                     </label>
                     <input
                       type="text"
                       value={cardDetails.cvv}
                       onChange={(e) => setCardDetails({...cardDetails, cvv: e.target.value.replace(/\D/g, '')})}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        errors.cvv ? 'border-red-300' : 'border-gray-300'
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.cvv ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                       }`}
                       placeholder="123"
                       maxLength={4}
                     />
                     {errors.cvv && (
-                      <p className="text-red-600 text-sm mt-1">{errors.cvv}</p>
+                      <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cvv}</p>
                     )}
                   </div>
                 </div>
@@ -522,7 +525,7 @@ const BuyPage = () => {
             <button
               onClick={handlePayment}
               disabled={isProcessing}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-2"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-2"
             >
               {isProcessing ? (
                 <>
@@ -538,8 +541,8 @@ const BuyPage = () => {
             </button>
 
             {/* Legal Notice */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-600">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 By completing this purchase, you agree to CalvinNova's Terms of Service and Privacy Policy. 
                 Your payment is protected by our escrow service. Funds will only be released to the seller 
                 after you confirm receipt of the item in good condition.

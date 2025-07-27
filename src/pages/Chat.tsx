@@ -296,14 +296,11 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
   const { user } = useUserStore();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  
-
   useEffect(() => {
     if (typingUsers.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [typingUsers]);
-
 
   useEffect(() => {
     const handleTypingStart = (event: any) => {
@@ -312,8 +309,6 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
         setTypingUsers(prev => [...prev.filter(id => id !== userId), userId]);
       }
     };
-
-    
 
     const handleTypingStop = (event: any) => {
       const userId = event.user?.id;
@@ -333,26 +328,64 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ chat }) => {
 
   if (typingUsers.length === 0) return null;
 
-  
-
   const name = (id: string) => { 
     if (id === we) return 'CalvinNova';
     return getUserDisplayName(id, chat);
   }
+
+  const getOtherUser = (chat: Channel, userId: string): User | undefined => {
+    const members = chat.state.members || {};
+    return Object.values(members).find(m => m.user?.id === userId)?.user;
+  };
   
   return (
-    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50">
-      <div className="flex space-x-1">
-        <span className="animate-ping w-2 h-2 rounded-full bg-green-500" />
-        <span className="animate-ping w-2 h-2 rounded-full bg-green-500 delay-150" />
-        <span className="animate-ping w-2 h-2 rounded-full bg-green-500 delay-300" />
+    <div className="flex items-start space-x-3 p-4 sm:p-6 bg-white dark:bg-gray-900 ">
+      {/* Avatar(s) */}
+      <div className="flex-shrink-0 flex">
+        {typingUsers.length === 1 ? (
+          <UserAvatar user={getOtherUser(chat, typingUsers[0])} size="sm" className="mt-1" />
+        ) : (
+          <div className="flex -space-x-2">
+            {typingUsers.slice(0, 3).map((userId, index) => (
+              <UserAvatar
+                key={userId}
+                user={getOtherUser(chat, userId)}
+                size="sm"
+                className="mt-1 ring-2 ring-white dark:ring-gray-900"
+              />
+            ))}
+            {typingUsers.length > 3 && (
+              <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300 mt-1 ring-2 ring-white dark:ring-gray-900">
+                +{typingUsers.length - 3}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      <span className="text-sm text-green-600 font-medium">
-        {typingUsers.length === 1 
-          ? `${name(typingUsers[0])} is typing...` 
-          : `${typingUsers.map(id => name(id)).join(', ')} are typing...`}
-      </span>
+      
+      {/* Typing bubble */}
+      <div className="flex flex-col space-y-1 max-w-xs">
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+          <div className="flex items-center space-x-1">
+            {/* Modern dot animation */}
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}></div>
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms', animationDuration: '1.4s' }}></div>
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms', animationDuration: '1.4s' }}></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Typing text */}
+        <div className="px-2">
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+            {typingUsers.length === 1 
+              ? `${name(typingUsers[0])} is typing...` 
+              : `${typingUsers.map(id => name(id)).join(', ')} are typing...`}
+          </span>
+        </div>
+      </div>
+      
       <div ref={messagesEndRef} className="flex-shrink-0" />
     </div>
   );

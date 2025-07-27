@@ -3,23 +3,18 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   CheckCircle, 
   MessageCircle, 
-  MapPin, 
-  Clock, 
-  QrCode, 
-  Shield, 
-  HelpCircle, 
+  Mail, 
   ArrowRight,
-  Sparkles,
-  Heart,
   Home,
-  User,
-  AlertCircle
+  HelpCircle,
+  Package,
+  Shield
 } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';
 import { productService } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 
-// Product interface (matching your existing structure)
+// Product interface
 interface ProductData extends Product {
   sellerName?: string;
   sellerAvatar?: string;
@@ -27,95 +22,61 @@ interface ProductData extends Product {
   sellerRating?: number;
 }
 
-// Confetti component
-const Confetti = () => {
-  const [particles, setParticles] = useState([]);
+// Smooth success animation component
+const SuccessAnimation = () => {
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
-    const newParticles = [];
-    
-    for (let i = 0; i < 50; i++) {
-      newParticles.push({
-        id: i,
-        x: Math.random() * 100,
-        y: -10,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 10 + 5,
-        speedX: (Math.random() - 0.5) * 4,
-        speedY: Math.random() * 3 + 2,
-        rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 10,
-      });
-    }
-    setParticles(newParticles);
-
-    const interval = setInterval(() => {
-      setParticles(prev => prev.map(particle => ({
-        ...particle,
-        x: particle.x + particle.speedX,
-        y: particle.y + particle.speedY,
-        rotation: particle.rotation + particle.rotationSpeed,
-      })).filter(particle => particle.y < 110));
-    }, 50);
-
-    // Clear after animation completes
-    setTimeout(() => {
-      clearInterval(interval);
-      setParticles([]);
-    }, 4000);
-
-    return () => clearInterval(interval);
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {particles.map(particle => (
-        <div
-          key={particle.id}
-          className="absolute transition-all duration-75 ease-linear"
-          style={{
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            backgroundColor: particle.color,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            transform: `rotate(${particle.rotation}deg)`,
-            borderRadius: Math.random() > 0.5 ? '50%' : '0%',
-          }}
-        />
-      ))}
+    <div className={`relative transition-all duration-700 ease-out transform ${
+      isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+    }`}>
+      <div className="relative">
+        {/* Animated background circle */}
+        <div className="absolute inset-0 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full animate-pulse"></div>
+        
+        {/* Success icon */}
+        <div className="relative bg-white dark:bg-gray-900 rounded-full p-4 shadow-lg">
+          <CheckCircle className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 animate-bounce" 
+                      style={{ animationDuration: '1s', animationIterationCount: '3' }} />
+        </div>
+        
+        {/* Floating particles */}
+        <div className="absolute -top-2 -right-2 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-emerald-400 rounded-full animate-ping" 
+             style={{ animationDelay: '0.5s' }}></div>
+      </div>
     </div>
   );
 };
 
-// Step component
-const StepCard = ({ number, icon: Icon, title, description, highlight = false }) => (
-  <div className={`rounded-2xl p-6 transition-all duration-300 hover:scale-105 ${
-    highlight ? 'bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200' : 'bg-white border border-gray-200'
-  } shadow-lg hover:shadow-xl`}>
-    <div className="flex items-start space-x-4">
-      <div className={`rounded-full p-3 ${
-        highlight ? 'bg-gradient-to-r from-indigo-500 to-purple-500' : 'bg-gray-100'
-      }`}>
-        <span className={`text-lg font-bold ${highlight ? 'text-white' : 'text-gray-700'}`}>
-          {number}
-        </span>
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center space-x-2 mb-2">
-          <Icon className={`w-5 h-5 ${highlight ? 'text-indigo-600' : 'text-gray-600'}`} />
-          <h3 className={`font-semibold ${highlight ? 'text-indigo-900' : 'text-gray-900'}`}>
-            {title}
-          </h3>
-        </div>
-        <p className={`text-sm ${highlight ? 'text-indigo-700' : 'text-gray-600'} leading-relaxed`}>
-          {description}
-        </p>
-      </div>
+
+interface AnimatedCardProps {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}
+
+const AnimatedCard = ({ children, delay = 0, className = "" }: AnimatedCardProps) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  return (
+    <div className={`transition-all duration-700 ease-out transform ${
+      isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+    } ${className}`}>
+      {children}
     </div>
-  </div>
-);
+  );
+};
 
 const PaymentSuccessPage = () => {
   const { productId } = useParams();
@@ -123,37 +84,17 @@ const PaymentSuccessPage = () => {
   const location = useLocation();
   const { user } = useAuth();
   
-  const [showConfetti, setShowConfetti] = useState(true);
-  const [currentStep, setCurrentStep] = useState(1);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   
-  // Get data from location state (passed from buy page)
+  // Get data from location state
   const { productTitle, amount, sellerId } = location.state || {};
   
   // Store hooks
   const { products, loading: productsLoading, error: productError } = useProductStore();
 
-  useEffect(() => {
-    // Hide confetti after 4 seconds
-    const timer = setTimeout(() => {
-      setShowConfetti(false);
-    }, 4000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // Simulate step progression for demo
-    const stepTimer = setInterval(() => {
-      setCurrentStep(prev => prev < 5 ? prev + 1 : 1);
-    }, 3000);
-
-    return () => clearInterval(stepTimer);
-  }, []);
-
   // Format price function
-  const formatPrice = (price) => {
+  const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
@@ -187,236 +128,210 @@ const PaymentSuccessPage = () => {
     }
   }, [productId, products, productsLoading]);
 
-  const steps = [
-    {
-      number: '1',
-      icon: MessageCircle,
-      title: 'Wait for the Seller to Confirm Meetup Location',
-      description: 'The seller has been notified about your payment and will share a safe public campus location to meet. You\'ll get a notification in chat as soon as they do.',
-      highlight: currentStep === 1
-    },
-    {
-      number: '2',
-      icon: Clock,
-      title: 'Agree on a Meetup Time',
-      description: 'Once the seller shares a location, use the chat to agree on a specific time to meet. Remember, all meetups must happen on campus.',
-      highlight: currentStep === 2
-    },
-    {
-      number: '3',
-      icon: QrCode,
-      title: 'Collect the Item & Scan the Seller\'s QR Code',
-      description: 'At the meetup: The seller will show you a special QR code. Scan it using the app to confirm that you\'ve received the item. This automatically releases the money to the seller.',
-      highlight: currentStep === 3
-    },
-    {
-      number: '4',
-      icon: Shield,
-      title: 'Have an Issue? Don\'t Scan Just Yet',
-      description: 'Only scan the QR if you received the correct item and it\'s in good condition ✅. If there\'s any issue, you can pause and report it before confirming delivery.',
-      highlight: currentStep === 4
-    },
-    {
-      number: '5',
-      icon: HelpCircle,
-      title: 'Need Help?',
-      description: 'We\'re here for you! You can message the seller directly via chat or reach out to NovaPlus Support anytime.',
-      highlight: currentStep === 5
-    }
-  ];
-
   // Use product data from store or location state
   const displayProductTitle = product?.title || productTitle || 'Product';
   const displayAmount = amount || (product ? product.price + Math.round(product.price * 0) : 0);
   const displaySellerId = sellerId || product?.sellerId || '';
 
-  // Loading and error states
+  // Loading state
   if (productsLoading && !product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading product details...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (localError || productError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {localError || productError}
-          </h2>
-          <p className="text-gray-600 mb-4">
-            There was an issue loading the product details.
-          </p>
-          <button
-            onClick={() => navigate('/marketplace')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Back to Marketplace
-          </button>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <AnimatedCard className="text-center max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HelpCircle className="w-6 h-6 text-red-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Something went wrong
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+              {localError || productError}
+            </p>
+            <button
+              onClick={() => navigate('/marketplace')}
+              className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+            >
+              Back to Marketplace
+            </button>
+          </div>
+        </AnimatedCard>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {showConfetti && <Confetti />}
-      
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40 border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm sticky top-0 z-40 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Payment Successful! 🎉</h1>
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Payment Successful
+            </h1>
             <button
               onClick={() => navigate('/marketplace')}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200 text-sm"
             >
               <Home className="w-4 h-4" />
-              <span>Back to Marketplace</span>
+              <span className="hidden sm:inline">Marketplace</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
         
-        {/* Success Header */}
-        <div className="text-center mb-12">
-          <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
-            <div className="relative bg-white rounded-full p-4">
-              <CheckCircle className="w-16 h-16 text-green-500 animate-bounce" />
-            </div>
-            <div className="absolute -top-2 -right-2">
-              <Sparkles className="w-8 h-8 text-yellow-400 animate-spin" />
-            </div>
+        {/* Success Section */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <SuccessAnimation />
           </div>
           
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Payment Successful! 🎊
-          </h2>
-          
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-200 max-w-lg mx-auto mb-6">
-            <p className="text-lg text-gray-700 mb-2">
-              <span className="font-semibold">Amount Paid:</span> {formatPrice(displayAmount)}
+          <AnimatedCard delay={300}>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Payment Successful!
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Your order has been confirmed and payment secured
             </p>
-            <p className="text-lg text-gray-700 mb-4">
-              <span className="font-semibold">Product:</span> {displayProductTitle}
-            </p>
-            {product && (
-              <div className="flex items-center space-x-3 mb-4">
+          </AnimatedCard>
+        </div>
+
+        {/* Order Summary */}
+        <AnimatedCard delay={500} className="mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-start space-x-4">
+              {product && (
                 <img
                   src={product.images?.[0] || '/api/placeholder/60/60'}
                   alt={product.title}
-                  className="w-12 h-12 object-cover rounded-lg"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl flex-shrink-0"
                   onError={(e) => {
                     e.currentTarget.src = '/api/placeholder/60/60';
                   }}
                 />
-                <div className="text-sm text-gray-600">
-                  <p>{product.condition} • {product.category}</p>
-                  <p>{product.school}</p>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base truncate">
+                  {displayProductTitle}
+                </h3>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  {formatPrice(displayAmount)}
+                </p>
+                {product && (
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span>{product.condition}</span>
+                    <span>•</span>
+                    <span>{product.category}</span>
+                    <span>•</span>
+                    <span>{product.school}</span>
+                  </div>
+                )}
+                <div className="flex items-center mt-3 text-green-600 dark:text-green-400">
+                  <Shield className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">Payment secured in escrow</span>
                 </div>
               </div>
-            )}
-            <div className="flex items-center justify-center space-x-2 text-indigo-600">
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">Securely held in escrow</span>
             </div>
           </div>
+        </AnimatedCard>
 
-          <p className="text-xl text-gray-700 mb-2">
-            Hey there 👋, your payment was successful and we've securely held the money for you.
-          </p>
-          <p className="text-lg text-indigo-600 font-medium">
-            Now here's what you should do next:
-          </p>
-        </div>
-
-        {/* What's Next Section */}
-        <div className="mb-12">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-            Here's What Happens Next 🚀
-          </h3>
-          
-          <div className="space-y-6">
-            {steps.map((step, index) => (
-              <StepCard key={index} {...step} />
-            ))}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <button
-            onClick={() => navigate(`/chat/${displaySellerId}`)}
-            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            <MessageCircle className="w-5 h-5" />
-            <span>Message Seller</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => navigate('/support')}
-            className="flex items-center justify-center space-x-2 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-indigo-300 font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
-          >
-            <HelpCircle className="w-5 h-5" />
-            <span>Get Support</span>
-          </button>
-        </div>
-
-        {/* Thank You Message */}
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-400 rounded-r-2xl p-8 mb-8">
-          <div className="flex items-start space-x-4">
-            <Heart className="w-8 h-8 text-orange-500 mt-1 animate-pulse" />
-            <div>
-              <h3 className="text-xl font-bold text-orange-900 mb-2">
-                Thank You for Using NovaPlus! 🧡
-              </h3>
-              <p className="text-orange-800 leading-relaxed mb-4">
-                You're supporting a student-powered community where <strong>trust, speed, and safety</strong> come first. 
-                Keep things friendly, and enjoy your new item! 
-              </p>
-              <div className="flex items-center space-x-2 text-orange-700">
-                <Sparkles className="w-4 h-4" />
-                <span className="font-medium">Happy shopping! 🚀</span>
+        {/* Next Steps */}
+        <AnimatedCard delay={700} className="mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <Package className="w-5 h-5 mr-2 text-indigo-500" />
+              What's Next?
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-indigo-600 dark:text-indigo-400 text-xs font-bold">1</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Check your email for receipt and collection instructions
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    We've sent detailed pickup information to your registered email
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-indigo-600 dark:text-indigo-400 text-xs font-bold">2</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Coordinate with the seller for pickup
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Use the chat to arrange a safe campus meetup location
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </AnimatedCard>
 
-        {/* Quick Tips */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Sparkles className="w-5 h-5 mr-2 text-indigo-500" />
-            Quick Reminders
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <span>Only meet on campus for safety</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span>Your money is safely held in escrow</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-              <span>Scan QR only when satisfied with item</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-              <span>Report issues before confirming delivery</span>
+        {/* Action Buttons */}
+        <AnimatedCard delay={900}>
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate(`/chat/${displaySellerId}`)}
+              className="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>Message Seller</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => window.open('mailto:support@novaplus.com')}
+                className="flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 text-sm"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Check Email</span>
+              </button>
+              
+              <button
+                onClick={() => navigate('/support')}
+                className="flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 text-sm"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>Support</span>
+              </button>
             </div>
           </div>
-        </div>
+        </AnimatedCard>
+
+        {/* Footer Note */}
+        <AnimatedCard delay={1100}>
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Questions? We're here to help at{' '}
+              <a href="mailto:support@novaplus.com" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                support@novaplus.com
+              </a>
+            </p>
+          </div>
+        </AnimatedCard>
       </div>
     </div>
   );

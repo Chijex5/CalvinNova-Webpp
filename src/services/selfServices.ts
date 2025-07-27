@@ -3,6 +3,9 @@ export interface CheckoutData {
     productId: number;
     sellerId: string;
     transactionId: string;
+    title: string;
+    sellerName: string;
+    buyerName: string;
     buyerEmail: string;
     buyerId: string;
     amount: number;
