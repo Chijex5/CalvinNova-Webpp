@@ -1246,7 +1246,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onBack, showBackButton }) => 
             if (event.message.user.id === currentUserId) {
               api.post('/api/report', {
                 chatId: chat.id,
-                message: result.message,
+                message: event.message.text,
                 type: result.violations[0].type,
                 riskLevel: result.riskLevel,
                 match: result.violations[0].match,

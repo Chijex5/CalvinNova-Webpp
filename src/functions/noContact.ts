@@ -52,6 +52,7 @@ class NoContactChecker {
     /\btransfer\s+to\b/gi,  // "transfer to"
     /\bmy\s+account\s+is\b/gi,  // "my account is"
     /\baccount\s+number\b/gi,  // "account number"
+    /\baccount\s+details\b/gi,  // "account details"
     /\bbank\s*:\s*\w+/gi,  // "bank: GTB" etc.
     /\bgtb\b|\bfirst\s+bank\b|\baccess\s+bank\b|\bzenith\b|\buba\b/gi,  // Nigerian banks
     /\bopay\b|\bpalmpay\b|\bkuda\b|\bmonnify\b/gi,  // Digital payment platforms

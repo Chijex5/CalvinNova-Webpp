@@ -324,10 +324,10 @@ const AdminReportsPage = () => {
                     className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                   >
                     <option value="all">All Types</option>
-                    <option value="payment">Payment Issues</option>
-                    <option value="harassment">Harassment</option>
-                    <option value="spam">Spam Content</option>
-                    <option value="privacy">Privacy Violations</option>
+                    <option value="phone">Phone Number Content</option>
+                    <option value="social">Social Media Content</option>
+                    <option value="payment">Payment Content</option>
+                    <option value="email">Email Content</option>
                   </select>
                 </div>
                 <div>
