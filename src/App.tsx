@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import AdminReportsPage from './pages/admin/Reports';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
+import TransactionPages from './pages/TransactionPage';
 import PaymentSuccessPage from './pages/SuccessPage';
 import SupportChat from './pages/ChatBot';
 import CameraCanvasApp from './pages/Test';
@@ -197,6 +198,12 @@ export function App() {
                       </ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute>
                         <Profile />
+                      </ProtectedRoute>} />
+                  <Route path="/account/transactions" element={<ProtectedRoute>
+                        <TransactionPages />
+                      </ProtectedRoute>} />
+                  <Route path="/account/transaction/:transactionId" element={<ProtectedRoute>
+                        <TransactionPages />
                       </ProtectedRoute>} />
                   <Route path="/sell" element={
                     <ProtectedRoute>

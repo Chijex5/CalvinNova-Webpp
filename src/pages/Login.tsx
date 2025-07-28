@@ -209,10 +209,6 @@ const Login = () => {
       const response: LoginResponse = await login(formData.email, formData.password);
       
       if (response?.success) {
-        toast.success('Login successful! Redirecting...', {
-          icon: <CheckCircle className="text-green-500" size={16} />
-        });
-        
         // Small delay for better UX, then redirect to original path or home
         setTimeout(() => {
           const redirectPath = redirectFrom ? decodeURIComponent(redirectFrom) : '/';
