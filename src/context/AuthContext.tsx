@@ -167,7 +167,6 @@ export const AuthProvider: React.FC<{
       if (response.data && response.data.success) {
         setIsAuthenticated(true);
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
-        console.log('User data fetched successfully:', response.data.user);
         // Connect to StreamChat
         await connectToStreamChat(response.data.user);
 

@@ -10,16 +10,15 @@ import SupportChat from './pages/ChatBot';
 import CameraCanvasApp from './pages/Test';
 import EmailVerification from './pages/VerificationPage';
 import Dashboard from './pages/Dashboard';
-const MarketplaceUI = React.lazy(() => import('./pages/Marketplace'));
-const AdminUsersPage = React.lazy(() => import('./pages/admin/Users'));
-const ProductDetails = React.lazy(() => import('./pages/ProductDetails'));
-const Chat = React.lazy(() => import('./pages/Chat'));
-const Profile = React.lazy(() => import('./pages/Profile'));
-const Sell = React.lazy(() => import('./pages/Sell'));
+import MarketplaceUI from './pages/Marketplace';
+import AdminUsersPage from './pages/admin/Users';
+import ProductDetails from './pages/ProductDetails';
+import Chat from './pages/Chat';
+import Profile from './pages/Profile';
+import Sell from './pages/Sell';
+import Login from './pages/Login';
 import BuyPage from './pages/BuyNow';
-const Login = React.lazy(() => import('./pages/Login'));
-const Signup = React.lazy(() => import('./pages/Signup'));
-
+import Signup from './pages/Signup';
 import QRTransactionSystem from './pages/QRCodeGenerator';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
@@ -32,19 +31,19 @@ interface ProtectedRouteProps {
 
 const ModernLoader: React.FC = () => {
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex items-center justify-center overflow-hidden">
       {/* Brand-aligned background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-40 left-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-400 dark:bg-teal-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 dark:bg-indigo-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-purple-400 dark:bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
       
       {/* Main loader container */}
       <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
         {/* CalvinNova brand logo placeholder */}
         <div className="relative mb-4">
-          <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 animate-pulse">
+          <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 dark:from-teal-400 dark:to-cyan-400 animate-pulse">
             CalvinNova
           </div>
         </div>
@@ -52,40 +51,40 @@ const ModernLoader: React.FC = () => {
         {/* Campus-themed spinner */}
         <div className="relative">
           {/* Outer ring */}
-          <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
+          <div className="w-20 h-20 rounded-full border-4 border-white/10 dark:border-gray-300/10"></div>
           
           {/* Animated rings with brand colors */}
-          <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-indigo-400 border-r-purple-400 animate-spin"></div>
-          <div className="absolute inset-2 w-16 h-16 rounded-full border-4 border-transparent border-t-teal-400 border-l-indigo-400 animate-spin" style={{animationDirection: 'reverse', animationDelay: '0.3s'}}></div>
-          <div className="absolute inset-4 w-12 h-12 rounded-full border-4 border-transparent border-t-purple-400 border-b-teal-400 animate-spin" style={{animationDelay: '0.6s'}}></div>
+          <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-indigo-400 border-r-purple-400 dark:border-t-indigo-300 dark:border-r-purple-300 animate-spin"></div>
+          <div className="absolute inset-2 w-16 h-16 rounded-full border-4 border-transparent border-t-teal-400 border-l-indigo-400 dark:border-t-teal-300 dark:border-l-indigo-300 animate-spin" style={{animationDirection: 'reverse', animationDelay: '0.3s'}}></div>
+          <div className="absolute inset-4 w-12 h-12 rounded-full border-4 border-transparent border-t-purple-400 border-b-teal-400 dark:border-t-purple-300 dark:border-b-teal-300 animate-spin" style={{animationDelay: '0.6s'}}></div>
           
           {/* Center shield icon for trust */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center">
-              <div className="w-3 h-3 bg-indigo-600 rounded-sm animate-pulse"></div>
+            <div className="w-6 h-6 bg-white/90 dark:bg-gray-200/90 rounded-full flex items-center justify-center">
+              <div className="w-3 h-3 bg-indigo-600 dark:bg-indigo-400 rounded-sm animate-pulse"></div>
             </div>
           </div>
         </div>
         
         {/* Campus marketplace messaging */}
         <div className="text-center space-y-4">
-          <div className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 bg-clip-text text-transparent animate-pulse">
+          <div className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 dark:from-teal-400 dark:to-cyan-400 bg-clip-text text-transparent animate-pulse">
             Connecting Campus
           </div>
-          <div className="text-indigo-100 text-sm">
+          <div className="text-indigo-100 dark:text-gray-300 text-sm">
             Verifying your student access...
           </div>
           
           {/* Animated dots with brand colors */}
           <div className="flex justify-center space-x-2">
-            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
-            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+            <div className="w-2 h-2 bg-indigo-400 dark:bg-indigo-300 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-purple-400 dark:bg-purple-300 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
+            <div className="w-2 h-2 bg-teal-400 dark:bg-teal-300 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
           </div>
           
           {/* Progress bar */}
-          <div className="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-indigo-400 via-purple-400 to-teal-400 rounded-full animate-pulse"></div>
+          <div className="w-64 h-1 bg-white/10 dark:bg-gray-300/10 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-indigo-400 via-purple-400 to-teal-400 dark:from-indigo-300 dark:via-purple-300 dark:to-teal-300 rounded-full animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -95,7 +94,7 @@ const ModernLoader: React.FC = () => {
         {[...Array(8)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-white/20 rounded-full animate-ping"
+            className="absolute w-2 h-2 bg-white/20 dark:bg-gray-300/20 rounded-full animate-ping"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
