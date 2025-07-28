@@ -274,15 +274,21 @@ const NotificationsPage = () => {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-                <div className="flex items-center justify-between space-x-3">
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-                        <Bell className="w-8 h-8 mr-3 text-indigo-600 dark:text-indigo-400" />
-                        Notifications
-                    </h1>
-                    <RefreshCw className={`w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer`} onClick={refreshNotifications} />
-                </div>
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
+                <h1 className="flex items-center text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                    <Bell className="w-7 h-7 mr-2 text-indigo-600 dark:text-indigo-400" />
+                    Notifications
+                </h1>
+
+                {/* Right: Refresh Button */}
+                <button
+                    onClick={refreshNotifications}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Refresh
+                </button>
+
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Stay updated with your latest activities
                 {unreadCount > 0 && (
@@ -291,7 +297,7 @@ const NotificationsPage = () => {
                   </span>
                 )}
               </p>
-            </div>
+
             
             {/* Action Buttons */}
             <div className="flex items-center space-x-2">

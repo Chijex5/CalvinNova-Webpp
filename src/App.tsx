@@ -5,7 +5,6 @@ import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import NotificationsPage from './pages/Notifications';
 import TransactionPages from './pages/TransactionPage';
-import PaymentSuccessPage from './pages/SuccessPage';
 import SupportChat from './pages/ChatBot';
 import CameraCanvasApp from './pages/Test';
 import EmailVerification from './pages/VerificationPage';
@@ -185,7 +184,6 @@ export function App() {
                   <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
                   <Route path="/notifications" element={<ProtectedRoute> <NotificationsPage /> </ProtectedRoute>} />
                   <Route path="/transaction/verify/:transactionId" element={<ProtectedRoute> <QRTransactionSystem /> </ProtectedRoute>} />
-                  <Route path="/payment/success/:productId" element={<ProtectedRoute> <PaymentSuccessPage /> </ProtectedRoute>} />
                   <Route path="/buy/:productId" element={<ProtectedRoute> <BuyPage /> </ProtectedRoute>} />
                   <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
                   <Route path="/product/:slug" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />

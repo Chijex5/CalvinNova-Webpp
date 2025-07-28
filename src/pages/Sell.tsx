@@ -119,36 +119,33 @@ const ModernItemListingForm = () => {
       file,
       status: 'uploading',
       progress: 0,
-      uploadId: Date.now() + index // Add unique ID for tracking
+      uploadId: Date.now() + index
     }));
     
     setUploadingImages(prev => [...prev, ...initialUploadStates]);
     
-    // Sequential upload instead of concurrent to avoid race conditions
-    const uploadResults: Array<{success: boolean, id?: string, url?: string, error?: string}> = [];
-    
-    for (let i = 0; i < filesToUpload.length; i++) {
-      const file = filesToUpload[i];
-      const uploadId = initialUploadStates[i].uploadId;
+    // Process uploads concurrently with real progress tracking
+    const uploadPromises = filesToUpload.map(async (file, index) => {
+      const uploadId = initialUploadStates[index].uploadId;
       
       try {
         const uploadData = new FormData();
         uploadData.append('file', file);
         
-        // Simulate progress for better UX
-        const progressInterval = setInterval(() => {
-          setUploadingImages(prev => 
-            prev.map((state) => 
-              state.uploadId === uploadId && state.progress < 90
-                ? { ...state, progress: Math.min(state.progress + 10, 90) }
-                : state
-            )
-          );
-        }, 200);
-        
-        const response = await imageApi.post('/api/seller/upload', uploadData);
-        
-        clearInterval(progressInterval);
+        const response = await imageApi.post('/api/seller/upload', uploadData, {
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadingImages(prev => 
+                prev.map((state) => 
+                  state.uploadId === uploadId 
+                    ? { ...state, progress: percentCompleted }
+                    : state
+                )
+              );
+            }
+          }
+        });
         
         if (response.data.success) {
           // Update upload state to success
@@ -160,14 +157,7 @@ const ModernItemListingForm = () => {
             )
           );
           
-          // Immediately add to formData to avoid state loss
-          const newImage = { id: response.data.id, url: response.data.url };
-          setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, newImage]
-          }));
-          
-          uploadResults.push({ success: true, id: response.data.id, url: response.data.url });
+          return { success: true, id: response.data.id, url: response.data.url };
         } else {
           throw new Error(response.data.message || 'Upload failed');
         }
@@ -183,8 +173,23 @@ const ModernItemListingForm = () => {
           )
         );
         
-        uploadResults.push({ success: false, error: error.message || 'Upload failed' });
+        return { success: false, error: error.message || 'Upload failed' };
       }
+    });
+    
+    // Wait for all uploads to complete
+    const uploadResults = await Promise.all(uploadPromises);
+    
+    // Add successful uploads to formData AFTER all uploads are done
+    const successfulUploads = uploadResults
+      .filter(result => result.success)
+      .map(result => ({ id: result.id!, url: result.url! }));
+    
+    if (successfulUploads.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...successfulUploads]
+      }));
     }
     
     // Clean up uploading states after a delay
@@ -206,6 +211,7 @@ const ModernItemListingForm = () => {
       toast.error(`${errorCount} image${errorCount > 1 ? 's' : ''} failed to upload`);
     }
   };
+
 
   const removeImage = (index: number) => {
     setFormData(prev => ({
@@ -293,8 +299,8 @@ const ModernItemListingForm = () => {
 
   const ToggleButton = ({ options, selected, onChange, label }: {options: {value: string, label: string}[], selected: string, onChange: (option: string) => void, label: string}) => (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <div className="flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+      <label className="text-sm font-medium dark:text-gray-300 text-gray-700">{label}</label>
+      <div className="flex rounded-lg border border-gray-200 p-1 dark:bg-gray-900 bg-gray-50">
         {options.map((option) => (
           <button
             key={option.value}
@@ -302,8 +308,8 @@ const ModernItemListingForm = () => {
             onClick={() => onChange(option.value)}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               selected === option.value
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-blue-500 dark:bg-blue-400 text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 dark:hover:text-gray-600 hover:text-gray-800'
             }`}
           >
             {option.label}
@@ -434,7 +440,7 @@ const ModernItemListingForm = () => {
               ))}
               
               {/* Upload button */}
-              {(formData.images.length + uploadingImages.length) < 4 && (
+              {(formData.images.length + uploadingImages.filter(s => s.status === 'uploading').length) < 4 && (
                 <label className="aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
                   <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500" />
                   <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">Add Photos</span>
@@ -452,7 +458,12 @@ const ModernItemListingForm = () => {
             </div>
             
             <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              {formData.images.length + uploadingImages.filter(s => s.status === 'success').length} / 4 photos uploaded
+              {formData.images.length} / 4 photos uploaded
+              {uploadingImages.length > 0 && (
+                <span className="ml-2 text-blue-500 dark:text-blue-400">
+                  ({uploadingImages.filter(s => s.status === 'uploading').length} uploading...)
+                </span>
+              )}
             </div>
             
             {errors.images && <p className="text-red-500 dark:text-red-400 text-sm">{errors.images}</p>}
@@ -746,7 +757,7 @@ const ModernItemListingForm = () => {
               >
                 {loading ? (
                   <>
-                    <Spinner className="h-5 w-5 mr-2" />
+                    <Spinner className="h-5 w-5 mr-2 animate-spin" />
                     <span className="text-white">Publishing...</span>
                   </>
                 ) : (

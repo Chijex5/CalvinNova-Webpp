@@ -45,6 +45,7 @@ interface UserStore {
   markAllNotificationsAsRead: () => void;
   deleteNotification: (notificationId: number) => void;
   setNotifications: (notifications: Notification[]) => void;
+  thereIsUnreadNotifications: () => boolean;
   setLoading: (loading: boolean) => void;
   setIsAuthenticated: (authenticated: boolean) => void;
   clearUser: () => void;
@@ -74,6 +75,10 @@ export const useUserStore = create<UserStore>()(
           
           set({ user: { ...currentUser, notifications: updatedNotifications } });
         }
+      },
+      thereIsUnreadNotifications: () => {
+        const currentUser = get().user;
+        return currentUser?.notifications?.some(notification => notification.is_read === 0) || false;
       },
       markAllNotificationsAsRead: () => {
         const currentUser = get().user;

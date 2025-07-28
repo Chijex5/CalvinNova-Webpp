@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';
+import PaymentSuccessPage from './SuccessPage';
 import { productService } from '../services/productService';
 import selfService from '../services/selfServices';
 import { useAuth } from '../context/AuthContext';
@@ -90,6 +91,7 @@ const BuyPage = () => {
   
   // State management
   const [showModal, setShowModal] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [product, setProduct] = useState<ProductData | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState({
@@ -229,24 +231,12 @@ const BuyPage = () => {
       if (!result.success) {
         throw new Error(result.message || 'Payment processing failed');
       }
-
-      
       productService.refreshProducts();
-      navigate(`/payment/success/${product.id}`, {
-        state: {
-          productTitle: product.title,
-          amount: totalAmount,
-          sellerId: product.sellerId
-        }
-      });
+      setShowSuccessModal(true);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment failed:', error);
-      navigate(`/payment/error/${product.id}`, {
-        state: {
-          error: 'Payment processing failed. Please try again.'
-        }
-      });
+      setLocalError(error?.response?.data?.message || 'Payment processing failed');
     } finally {
       setIsProcessing(false);
     }
@@ -318,6 +308,12 @@ const BuyPage = () => {
         productTitle={product.title}
       />
     );
+  }
+
+  if (showSuccessModal) {
+    return(
+      <PaymentSuccessPage product={product} />
+    )
   }
 
   return (

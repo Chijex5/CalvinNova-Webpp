@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   CheckCircle, 
   MessageCircle, 
@@ -10,19 +10,8 @@ import {
   Package,
   Shield
 } from 'lucide-react';
-import { useProductStore, Product } from '../store/productStore';
-import { productService } from '../services/productService';
-import { useAuth } from '../context/AuthContext';
+import { Product } from '../store/productStore';
 
-// Product interface
-interface ProductData extends Product {
-  sellerName?: string;
-  sellerAvatar?: string;
-  sellerCampus?: string;
-  sellerRating?: number;
-}
-
-// Smooth success animation component
 const SuccessAnimation = () => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -78,20 +67,15 @@ const AnimatedCard = ({ children, delay = 0, className = "" }: AnimatedCardProps
   );
 };
 
-const PaymentSuccessPage = () => {
-  const { productId } = useParams();
+
+
+const PaymentSuccessPage = ({product} : {product: Product}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   
-  const [product, setProduct] = useState<ProductData | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
   
   // Get data from location state
   const { productTitle, amount, sellerId } = location.state || {};
-  
-  // Store hooks
-  const { products, loading: productsLoading, error: productError } = useProductStore();
 
   // Format price function
   const formatPrice = (price: number): string => {
@@ -101,76 +85,12 @@ const PaymentSuccessPage = () => {
     }).format(price);
   };
 
-  // Load product data
-  useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        setLocalError(null);
-        if (!products.length && !productsLoading) {
-          await productService.fetchProducts();
-        }
-
-        const foundProduct = products.find(p => p.id === parseInt(productId || '0', 10));
-        
-        if (!foundProduct && products.length > 0) {
-          setLocalError('Product not found');
-        } else if (foundProduct) {
-          setProduct(foundProduct);
-        }
-      } catch (error) {
-        console.error('Failed to load product:', error);
-        setLocalError('Failed to load product');
-      }
-    };
-
-    if (productId) {
-      loadProduct();
-    }
-  }, [productId, products, productsLoading]);
 
   // Use product data from store or location state
   const displayProductTitle = product?.title || productTitle || 'Product';
   const displayAmount = amount || (product ? product.price + Math.round(product.price * 0) : 0);
   const displaySellerId = sellerId || product?.sellerId || '';
 
-  // Loading state
-  if (productsLoading && !product) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (localError || productError) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-        <AnimatedCard className="text-center max-w-md">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
-            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <HelpCircle className="w-6 h-6 text-red-500" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Something went wrong
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-              {localError || productError}
-            </p>
-            <button
-              onClick={() => navigate('/marketplace')}
-              className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-            >
-              Back to Marketplace
-            </button>
-          </div>
-        </AnimatedCard>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

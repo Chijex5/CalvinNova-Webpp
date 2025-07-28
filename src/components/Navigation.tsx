@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useUserStore } from '../store/userStore';
 import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, BarChart3Icon } from 'lucide-react';
 import { MdReportGmailerrorred } from "react-icons/md";
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +15,8 @@ const Navigation = () => {
     isAuthenticated,
     isLoading
   } = useAuth();
+  const store = useUserStore.getState();
+  const thereIsUnreadNotifications = store.thereIsUnreadNotifications();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -153,8 +156,12 @@ const Navigation = () => {
             <Link to="/notifications" className="relative">
               <button className="relative p-2 lg:p-3 ml-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 group">
                 <BellIcon size={20} className="group-hover:scale-110 transition-transform duration-300" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full animate-ping"></span>
+                {thereIsUnreadNotifications && (
+                  <>
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full animate-ping"></span>
+                  </>
+                )}
               </button>
             </Link>
 
@@ -179,7 +186,9 @@ const Navigation = () => {
             <Link to="/notifications" className="relative">
               <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300">
                 <BellIcon size={20} />
-                <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                {thereIsUnreadNotifications && (
+                  <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                )}
               </button>
             </Link>
 
