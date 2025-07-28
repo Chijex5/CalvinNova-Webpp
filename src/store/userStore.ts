@@ -7,9 +7,23 @@ export interface BankDetails {
   bankName: string;
 }
 
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  is_read: number;
+  action_url?: string;
+  priority: 'low' | 'normal' | 'high';
+  created_at: string;
+  updated_at: string;
+  transaction_id?: string;
+}
+
 export interface User {
   userId: string;
   bankDetails?: BankDetails;
+  notifications?: Notification[];
   name: string;
   email: string;
   userToken: string;
@@ -27,6 +41,10 @@ interface UserStore {
   
   // Actions
   setUser: (user: User | null) => void;
+  markNotificationAsRead: (notificationId: number) => void;
+  markAllNotificationsAsRead: () => void;
+  deleteNotification: (notificationId: number) => void;
+  setNotifications: (notifications: Notification[]) => void;
   setLoading: (loading: boolean) => void;
   setIsAuthenticated: (authenticated: boolean) => void;
   clearUser: () => void;
@@ -47,6 +65,41 @@ export const useUserStore = create<UserStore>()(
       
       // Actions
       setUser: (user) => set({ user }),
+      markNotificationAsRead: (notificationId) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          const updatedNotifications = currentUser.notifications?.map((notification) =>
+            notification.id === notificationId ? { ...notification, is_read: 1 } : notification
+          );
+          
+          set({ user: { ...currentUser, notifications: updatedNotifications } });
+        }
+      },
+      markAllNotificationsAsRead: () => {
+        const currentUser = get().user;
+        if (currentUser) {
+          const updatedNotifications = currentUser.notifications?.map((notification) => ({
+            ...notification,
+            is_read: 1
+          }));
+          set({ user: { ...currentUser, notifications: updatedNotifications } });
+        }
+      },
+      deleteNotification: (notificationId) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          const updatedNotifications = currentUser.notifications?.filter(
+            (notification) => notification.id !== notificationId
+          );
+          set({ user: { ...currentUser, notifications: updatedNotifications } });
+        }
+      },
+      setNotifications: (notifications) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, notifications } });
+        }
+      },
       setIsAuthenticated: (authenticated) => set({isAuthenticated: authenticated}),
       setLoading: (loading) => set({ isLoading: loading }),
       clearUser: () => set({ user: null }),
