@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../utils/apiService';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { CheckCircle, XCircleIcon, Loader, AlertCircle, CheckCircleIcon, ChevronDown } from 'lucide-react';
+import { useUserStore } from '../store/userStore';
+import { CheckCircle, XCircleIcon, Loader, AlertCircle, CheckCircleIcon, ChevronDown, Phone } from 'lucide-react';
 import Button from '../components/Button';
 
 // Skeleton Components
@@ -78,10 +79,16 @@ const EmailVerification = () => {
   // Verification states
   const [verificationStatus, setVerificationStatus] = useState('verifying'); // 'verifying', 'success', 'error'
   const [verificationMessage, setVerificationMessage] = useState('');
+  const store = useUserStore.getState();
+  
+  // Phone number states
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
   
   // Bank verification states
   const [showBankVerification, setShowBankVerification] = useState(false);
   const [accountNumber, setAccountNumber] = useState('');
+  const { setBankDetails, user, updateUser } = useUserStore.getState();
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [userData, setUserData] = useState<any>(null);
@@ -122,10 +129,10 @@ const EmailVerification = () => {
         setVerificationStatus('success');
         setVerificationMessage('Email verified successfully!');
         
-        // Check if user is a seller and needs bank verification
+        // Check if user is a seller and needs additional verification
         if (response.user?.role === 'seller' || response.user?.role === 'both') {
           setTimeout(() => {
-            setShowBankVerification(true);
+            setShowPhoneInput(true);
           }, 2000);
         } else {
           // For buyers, complete verification after a short delay
@@ -141,6 +148,13 @@ const EmailVerification = () => {
       console.error('Verification error:', error);
       setVerificationStatus('error');
       setVerificationMessage('An error occurred during verification. Please try again.');
+    }
+  };
+
+  const handlePhoneSubmit = () => {
+    if (phoneNumber.trim()) {
+      setShowPhoneInput(false);
+      setShowBankVerification(true);
     }
   };
 
@@ -260,11 +274,18 @@ const EmailVerification = () => {
     try {
       setIsLoading(true);
       await api.post('/api/users/additional-info', {
+        phoneNumber,
         accountNumber,
         bankCode: selectedBank?.code,
         accountName,
         bankName: selectedBank?.name,
       });
+      setBankDetails({
+        accountName,
+        accountNumber,
+        bankName: selectedBank?.name || '',
+      });
+      updateUser({phoneNumber: phoneNumber})
       setVerificationComplete(true);
     } catch (error) {
       console.error('Error completing verification:', error);
@@ -379,6 +400,59 @@ const EmailVerification = () => {
                 {nameMatchWarning ? 'Proceed Anyway' : 'Confirm & Complete'}
               </Button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showPhoneInput) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Phone className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Phone Number Required
+            </h1>
+            <p className="text-gray-600">
+              Please provide your phone number so buyers can easily contact you when they purchase your products
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Tip:</strong> WhatsApp numbers work best for quick communication with buyers!
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g., +234 801 234 5678"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="mt-2 text-sm text-gray-500">
+                Include country code (e.g., +234 for Nigeria). This helps buyers reach you quickly after purchase.
+              </p>
+            </div>
+
+            <Button 
+              variant="primary" 
+              fullWidth 
+              onClick={handlePhoneSubmit}
+              disabled={!phoneNumber.trim()}
+            >
+              Continue to Bank Verification
+            </Button>
           </div>
         </div>
       </div>
@@ -501,8 +575,8 @@ const EmailVerification = () => {
                   Email Verified Successfully!
                 </h1>
                 <p className="text-gray-600 mb-8">
-                  {userData?.role === 'seller' 
-                    ? 'As a seller, we need to verify your bank account details...'
+                  {userData?.role === 'seller' || userData?.role === 'both'
+                    ? 'As a seller, we need a few more details to complete your verification...'
                     : 'Your account is now fully verified and ready to use!'
                   }
                 </p>
@@ -545,4 +619,4 @@ const EmailVerification = () => {
   );
 };
 
-export default EmailVerification; 
+export default EmailVerification;

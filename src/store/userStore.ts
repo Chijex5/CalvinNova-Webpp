@@ -26,6 +26,7 @@ export interface User {
   notifications?: Notification[];
   name: string;
   email: string;
+  phoneNumber?: string;
   userToken: string;
   avatarUrl: string;
   campus: string;
@@ -43,6 +44,7 @@ interface UserStore {
   setUser: (user: User | null) => void;
   markNotificationAsRead: (notificationId: number) => void;
   markAllNotificationsAsRead: () => void;
+  setBankDetails: (bankDetails: BankDetails) => void;
   deleteNotification: (notificationId: number) => void;
   setNotifications: (notifications: Notification[]) => void;
   thereIsUnreadNotifications: () => boolean;
@@ -103,6 +105,12 @@ export const useUserStore = create<UserStore>()(
         const currentUser = get().user;
         if (currentUser) {
           set({ user: { ...currentUser, notifications } });
+        }
+      },
+      setBankDetails: (bankDetails) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, bankDetails } });
         }
       },
       setIsAuthenticated: (authenticated) => set({isAuthenticated: authenticated}),

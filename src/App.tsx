@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useUserStore } from './store/userStore';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AdminReportsPage from './pages/admin/Reports';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import NotificationsPage from './pages/Notifications';
+import PhoneNumberModal from './components/AddPhoneNumber';
 import TransactionPages from './pages/TransactionPage';
 import SupportChat from './pages/ChatBot';
 import CameraCanvasApp from './pages/Test';
@@ -171,6 +173,17 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 
 export function App() {
+  const user = useUserStore((state) => state.user);
+  const isLoading = useUserStore((state) => state.isLoading);
+  const isASeller = user?.role === 'seller' || user?.role === 'both';
+  const [showPhoneNumberModal, setShowPhoneNumberModal] = React.useState(false);
+  useEffect(() => {
+    if (isLoading) return
+    if (user && isASeller && !user.phoneNumber) {
+      setShowPhoneNumberModal(true);
+    }
+  }, [user, isASeller, isLoading]);
+
   return <Router>
       <Toaster position="top-right" richColors />
       <AuthProvider>
@@ -178,6 +191,12 @@ export function App() {
           <ChatProvider>
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
+                <PhoneNumberModal
+                  isOpen={showPhoneNumberModal}
+                  onClose={() => setShowPhoneNumberModal(false)}
+                  onSuccess={() => setShowPhoneNumberModal(false)}
+                  userRole={user?.role || 'buyer'}
+                />
                 <SupportChat />
                 <Routes>
                   <Route path="/test" element={<CameraCanvasApp />} />

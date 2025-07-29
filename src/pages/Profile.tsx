@@ -24,6 +24,7 @@ const ProfilePage = () => {
   const [selectedAvatar, setSelectedAvatar] = useState<string>(user?.avatarUrl || 'https://api.dicebear.com/7.x/adventurer/svg?seed=random');
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const avatarContainerRef = useRef<HTMLDivElement | null>(null);
+  const isASeller = user?.role === 'seller' || user?.role === 'both';
 
   // Generate random seeds for avatars
   const generateRandomSeeds = (count = 20) => {
@@ -367,6 +368,7 @@ const ProfilePage = () => {
                     <div className="mt-4 text-center lg:text-left">
                       <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">{user.name}</h2>
                       <p className="text-gray-600 dark:text-gray-300 mt-1">{user.email}</p>
+                      <p className='text-gray-600 dark:text-gray-300 mt-1'>{user.phoneNumber}</p>
                       <div className="mt-3">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(user.role)}`}>
                           {getRoleLabel(user.role)}
@@ -427,7 +429,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Bank Details Card */}
-        {user.role === 'seller' || user.role === 'both' && (
+        {isASeller && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
             <div className="p-6 lg:p-8">
               <div className="flex items-center space-x-3 mb-6">

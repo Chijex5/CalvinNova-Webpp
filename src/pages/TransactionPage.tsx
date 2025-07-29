@@ -17,7 +17,27 @@ import {
   ExternalLinkIcon
 } from 'lucide-react';
 
-// Mock data - replace with actual API calls
+export interface Transaction {
+  id: number;
+  buyerId: string;
+  sellerId: string;
+  transactionId: string;
+  productTitle: string;
+  productImage: string;
+  amount: number;
+  sellerAmount: number;
+  agentFee: number;
+  status: string;
+  sellerPaidout: boolean;
+  createdAt: string;
+  completedAt?: string;
+  collectedOn?: string;
+  buyerName: string;
+  sellerName: string;
+  buyerAvatar: string;
+  sellerAvatar: string;
+}
+
 const mockTransactions = [
   {
     id: 1,
@@ -80,19 +100,19 @@ const mockTransactions = [
 const currentUserId = 'user123'; // Mock current user
 
 const TransactionList = () => {
-  const [transactions, setTransactions] = useState(mockTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [filter, setFilter] = useState('all'); // all, buying, selling
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const formatPrice = (price) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
     }).format(price);
   };
 
-  const getStatusColor = (status, isSeller, sellerPaidout) => {
+  const getStatusColor = (status: string, isSeller: boolean, sellerPaidout: boolean) => {
     if (status === 'completed') {
       if (isSeller && sellerPaidout) return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
       if (isSeller && !sellerPaidout) return 'text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400';
@@ -102,7 +122,7 @@ const TransactionList = () => {
     return 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400';
   };
 
-  const getStatusText = (status, isSeller, sellerPaidout) => {
+  const getStatusText = (status: string, isSeller: boolean, sellerPaidout: boolean) => {
     if (status === 'completed') {
       if (isSeller && sellerPaidout) return 'Paid Out';
       if (isSeller && !sellerPaidout) return 'Awaiting Payout';
@@ -112,7 +132,7 @@ const TransactionList = () => {
     return 'Pending Payment';
   };
 
-  const getStatusIcon = (status, isSeller, sellerPaidout) => {
+  const getStatusIcon = (status: string, isSeller: boolean, sellerPaidout: boolean) => {
     if (status === 'completed') {
       if (isSeller && sellerPaidout) return <CheckCircle size={16} />;
       if (isSeller && !sellerPaidout) return <Clock size={16} />;
@@ -287,7 +307,7 @@ const TransactionList = () => {
 const TransactionDetail = () => {
   const { transactionId } = useParams();
   const navigate = useNavigate();
-  const [transaction, setTransaction] = useState(null);
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -298,14 +318,14 @@ const TransactionDetail = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const found = mockTransactions.find(t => t.transactionId === transactionId);
-      setTransaction(found);
+      setTransaction(found || null);
       setLoading(false);
     };
 
     fetchTransaction();
   }, [transactionId]);
 
-  const formatPrice = (price) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
@@ -369,7 +389,7 @@ const TransactionDetail = () => {
       steps.push({
         label: 'Payment Received',
         completed: transaction.sellerPaidout,
-        date: transaction.sellerPaidout ? transaction.completedAt : null
+        date: transaction.sellerPaidout ? transaction.completedAt : undefined
       });
     }
 
