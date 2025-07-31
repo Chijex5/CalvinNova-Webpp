@@ -493,34 +493,11 @@ const SupportChat: React.FC<SupportChatProps> = ({
   if (isLoading || !isReady) {
     return null;
   }
-  if ( isOpen) {
+
+  if (!isOpen) {
     return <RatingModal onClose={() => setIsOpen(false)} onSubmit={ () => setIsOpen(false)}/>;
   }
-  if (!isOpen) {
-    return <div className={`fixed ${isMobile ? 'bottom-20 right-6' : 'bottom-24 right-8'} z-50`}>
-        <div className="relative group">
-          {/* Attention-grabbing pulse ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600 opacity-75 animate-ping"></div>
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600 opacity-50 animate-pulse"></div>
-          
-          {/* Main button */}
-          <button onClick={() => {
-          setIsOpen(true);
-        }} className="relative bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800 hover:from-blue-700 hover:to-purple-800 dark:hover:from-blue-800 dark:hover:to-purple-900 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-purple-500/25 dark:hover:shadow-purple-400/30 border-2 border-white/20 dark:border-white/10">
-            <RiCustomerService2Line size={24} className="group-hover:scale-110 transition-transform duration-200" />
-          </button>
-          
-          {/* Floating help text */}
-          <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-            <div className="flex items-center gap-2">
-              <Zap size={16} className="text-yellow-500 dark:text-yellow-400" />
-              <span className="font-semibold">Need help? We're online!</span>
-            </div>
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white dark:border-t-gray-800"></div>
-          </div>
-        </div>
-      </div>;
-  }
+
 
   // Mobile fullscreen layout
   if (isMobile) {
