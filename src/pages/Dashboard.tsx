@@ -3,17 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ListingSkeleton from '../components/loaders/DashboardLoader';
 import { getGreeting } from '../functions/getGreetings';
-import RecentConversationsSkeleton from '../components/loaders/RecentConversationLoader';
-import { Chat, User, OnlineIndicator } from './Chat';
+import { Chat } from './Chat';
 import { toast } from 'sonner';
 import { FadeIn } from '../utils/animations';
 import ProductCard from '../components/ProductCard';
+import { User } from '../store/userStore';
 import Button from '../components/Button';
 import api from '../utils/apiService';
 import { client } from '../lib/stream-chat';
 import { useChatStore } from '../store/chatStore';
 import { productService } from '../services/productService';
-import { useProductStore } from '../store/productStore';
+import { useProductStore, Product } from '../store/productStore';
 import { MessageSquareIcon, ShoppingBagIcon, PlusCircleIcon, TrendingUpIcon, BellIcon, CalendarIcon, UserIcon, CheckCircleIcon, RefreshCwIcon, DollarSignIcon, PackageIcon, BarChart2Icon, ShoppingCartIcon, HeartIcon, TagIcon, AlertTriangleIcon, BookmarkIcon, ListIcon, ClipboardListIcon, LineChartIcon, LayersIcon, UsersIcon, HelpCircleIcon, StarIcon, PieChartIcon, ActivityIcon } from 'lucide-react';
 interface UserAvatarProps {
   user?: User;
@@ -37,14 +37,21 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     return fallbackColors[hash % fallbackColors.length];
   };
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-  if (!user?.image || imageError) {
-    return <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white dark:text-gray-900 font-medium ${className}`}>
+  if (!user?.avatarUrl || imageError) {
+    return <div className={`${sizeClasses[size]} ${getColorFromId(user?.userId || '')} rounded-full flex items-center justify-center text-white dark:text-gray-900 font-medium ${className}`}>
         {initials}
       </div>;
   }
-  return <img src={user.image} alt={user.name || 'User'} className={`${sizeClasses[size]} rounded-full object-cover ${className}`} onError={() => setImageError(true)} />;
+  return <img src={user.avatarUrl} alt={user.name || 'User'} className={`${sizeClasses[size]} rounded-full object-cover ${className}`} onError={() => setImageError(true)} />;
 };
 interface StatsData {
+  one: string;
+  two: string;
+  three: string;
+  four: string;
+}
+
+interface SellerStatsData {
   one: string;
   two: string;
   three: string;
@@ -71,6 +78,14 @@ const BuyerDashboard = ({
   userActivity,
   totalUnreadMessages,
   navigate
+}: {
+  user: User;
+  statsData: StatsData;
+  nearbyListings: Product[];
+  loading: boolean;
+  userActivity: any;
+  totalUnreadMessages: number;
+  navigate: (path: string) => void;
 }) => {
   return <>
       {/* Buyer Stats */}
@@ -239,6 +254,13 @@ const SellerDashboard = ({
   loading,
   navigate,
   formatPrice
+}: {
+  user: User;
+  statsData: SellerStatsData;
+  activeListings: Product[];
+  loading: boolean;
+  navigate: (path: string) => void;
+  formatPrice: (price: number) => string;
 }) => {
   return <>
       {/* Seller Stats */}
@@ -470,6 +492,16 @@ const BothRoleDashboard = ({
   totalUnreadMessages,
   navigate,
   formatPrice
+}: {
+  user: User;
+  statsData: StatsData;
+  activeListings: Product[];
+  nearbyListings: Product[];
+  loading: boolean;
+  userActivity: any;
+  totalUnreadMessages: number;
+  navigate: (path: string) => void;
+  formatPrice: (price: number) => string;
 }) => {
   const [activeTab, setActiveTab] = useState<'buyer' | 'seller'>('seller');
   return <>
@@ -495,6 +527,10 @@ const AdminDashboard = ({
   user,
   statsData,
   navigate
+} : {
+  user: User;
+  statsData: StatsData;
+  navigate: (path: string) => void;
 }) => {
   return <>
       {/* Admin Stats */}
@@ -728,7 +764,7 @@ const AdminDashboard = ({
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   Opened 2 hours ago
                 </span>
-                <Button variant="outline" size="xs">
+                <Button variant="outline" size="sm">
                   Assign
                 </Button>
               </div>
@@ -752,7 +788,7 @@ const AdminDashboard = ({
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   Opened 5 hours ago
                 </span>
-                <Button variant="outline" size="xs">
+                <Button variant="outline" size="sm">
                   Assign
                 </Button>
               </div>
@@ -776,7 +812,7 @@ const AdminDashboard = ({
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   Opened 1 day ago
                 </span>
-                <Button variant="outline" size="xs">
+                <Button variant="outline" size="sm">
                   Assign
                 </Button>
               </div>
@@ -846,10 +882,7 @@ const Dashboard = () => {
     const prefix = isCurrentUser ? 'You: ' : '';
     return `${prefix}${lastMessage.text || 'Media message'}`;
   };
-  const getOtherUser = (chat: Chat): User | undefined => {
-    const members = chat.state.members || {};
-    return Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
-  };
+  
   function useTotalUnreadCount(client: any | null) {
     const [totalUnread, setTotalUnread] = useState(0);
     useEffect(() => {

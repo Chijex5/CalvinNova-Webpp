@@ -499,8 +499,7 @@ const SupportChat: React.FC<SupportChatProps> = ({
           {/* Attention-grabbing pulse ring */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600 opacity-75 animate-ping"></div>
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600 opacity-50 animate-pulse"></div>
-          
-          {/* Main button */}
+
           <button onClick={() => {
           setIsOpen(true);
         }} className="relative bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800 hover:from-blue-700 hover:to-purple-800 dark:hover:from-blue-800 dark:hover:to-purple-900 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-purple-500/25 dark:hover:shadow-purple-400/30 border-2 border-white/20 dark:border-white/10">
