@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ListingSkeleton from '../components/loaders/DashboardLoader';
@@ -14,7 +14,7 @@ import { client } from '../lib/stream-chat';
 import { useChatStore } from '../store/chatStore';
 import { productService } from '../services/productService';
 import { useProductStore } from '../store/productStore';
-import { MessageSquareIcon, ShoppingBagIcon, PlusCircleIcon, TrendingUpIcon, BellIcon, CalendarIcon, UserIcon, CheckCircleIcon, RefreshCwIcon } from 'lucide-react';
+import { MessageSquareIcon, ShoppingBagIcon, PlusCircleIcon, TrendingUpIcon, BellIcon, CalendarIcon, UserIcon, CheckCircleIcon, RefreshCwIcon, DollarSignIcon, PackageIcon, BarChart2Icon, ShoppingCartIcon, HeartIcon, TagIcon, AlertTriangleIcon, BookmarkIcon, ListIcon, ClipboardListIcon, LineChartIcon, LayersIcon, UsersIcon, HelpCircleIcon, StarIcon, PieChartIcon, ActivityIcon } from 'lucide-react';
 interface UserAvatarProps {
   user?: User;
   size?: 'sm' | 'md' | 'lg';
@@ -50,6 +50,748 @@ interface StatsData {
   three: string;
   four: string;
 }
+interface DashboardMetrics {
+  totalListings?: number;
+  totalSales?: number;
+  totalEarnings?: number;
+  completedOrders?: number;
+  totalSpent?: number;
+  pendingOrders?: number;
+  totalUsers?: number;
+  activeTickets?: number;
+  totalReports?: number;
+  platformRevenue?: number;
+}
+// Component for the buyer dashboard
+const BuyerDashboard = ({
+  user,
+  statsData,
+  nearbyListings,
+  loading,
+  userActivity,
+  totalUnreadMessages,
+  navigate
+}) => {
+  return <>
+      {/* Buyer Stats */}
+      <FadeIn direction="up" delay={0.1}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+                <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {totalUnreadMessages}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  New Messages
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
+                <ShoppingCartIcon size={20} className="text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {statsData.two}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Orders
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
+                <DollarSignIcon size={20} className="text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                  ₦{statsData.three}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Spent
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
+                <CheckCircleIcon size={20} className="text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                  {statsData.four}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Completed Purchases
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Quick Actions for Buyers */}
+      <FadeIn direction="up" delay={0.15}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Quick Actions
+            </h2>
+          </div>
+          <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <button onClick={() => navigate('/marketplace')} className="flex flex-col items-center justify-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+              <ShoppingBagIcon size={24} className="text-indigo-600 dark:text-indigo-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Browse Marketplace
+              </span>
+            </button>
+            <button onClick={() => navigate('/account/transactions')} className="flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+              <ClipboardListIcon size={24} className="text-green-600 dark:text-green-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                My Orders
+              </span>
+            </button>
+            <button onClick={() => navigate('/notifications')} className="flex flex-col items-center justify-center p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+              <BellIcon size={24} className="text-amber-600 dark:text-amber-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Notifications
+              </span>
+            </button>
+            <button onClick={() => navigate('/chat')} className="flex flex-col items-center justify-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+              <MessageSquareIcon size={24} className="text-purple-600 dark:text-purple-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Messages
+              </span>
+            </button>
+          </div>
+        </div>
+      </FadeIn>
+      {/* New Listings Near You */}
+      <FadeIn direction="up" delay={0.2}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              New Listings Near You
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
+              See All
+            </Button>
+          </div>
+          <div className="p-6">
+            {loading ? <ListingSkeleton type="nearbyListings" count={4} /> : nearbyListings.length === 0 ? <div className="text-center p-8">
+                <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                <p className="text-gray-500 dark:text-gray-400">
+                  No new listings nearby
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Check back later or explore the marketplace!
+                </p>
+              </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {nearbyListings.map((product, index) => <ProductCard key={product.id} product={product} delay={0.1 * index} />)}
+              </div>}
+            <div className="mt-4 text-center">
+              <Button variant="secondary" size="sm" onClick={() => navigate('/marketplace')}>
+                Explore More Items
+              </Button>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Saved Searches & Alerts */}
+      <FadeIn direction="up" delay={0.25}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Saved Searches & Alerts
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="text-center p-4">
+              <BookmarkIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-500 dark:text-gray-400">
+                No saved searches yet
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">
+                Save searches to get notified when new items are listed
+              </p>
+              <Button variant="primary" size="sm" onClick={() => navigate('/marketplace')}>
+                Browse Categories
+              </Button>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+    </>;
+};
+// Component for the seller dashboard
+const SellerDashboard = ({
+  user,
+  statsData,
+  activeListings,
+  loading,
+  navigate,
+  formatPrice
+}) => {
+  return <>
+      {/* Seller Stats */}
+      <FadeIn direction="up" delay={0.1}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+                <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {statsData.one}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  New Messages
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
+                <TagIcon size={20} className="text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {statsData.two}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Listings
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
+                <DollarSignIcon size={20} className="text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                  ₦{statsData.three}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Earnings
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
+                <CheckCircleIcon size={20} className="text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                  {statsData.four}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Completed Sales
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Quick Actions for Sellers */}
+      <FadeIn direction="up" delay={0.15}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Quick Actions
+            </h2>
+          </div>
+          <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <button onClick={() => navigate('/sell')} className="flex flex-col items-center justify-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+              <PlusCircleIcon size={24} className="text-indigo-600 dark:text-indigo-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Create Listing
+              </span>
+            </button>
+            <button onClick={() => navigate('/account/transactions')} className="flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+              <DollarSignIcon size={24} className="text-green-600 dark:text-green-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                My Sales
+              </span>
+            </button>
+            <button onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+              <ListIcon size={24} className="text-amber-600 dark:text-amber-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                My Listings
+              </span>
+            </button>
+            <button onClick={() => navigate('/chat')} className="flex flex-col items-center justify-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+              <MessageSquareIcon size={24} className="text-purple-600 dark:text-purple-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Messages
+              </span>
+            </button>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Your Active Listings */}
+      <FadeIn direction="up" delay={0.2}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Your Active Listings
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+              Manage All
+            </Button>
+          </div>
+          {loading ? <ListingSkeleton type="activeListings" count={4} /> : <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
+                    <div className="flex items-center space-x-3">
+                      <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                          {listing.title}
+                        </p>
+                        <p className="text-indigo-600 dark:text-indigo-400 font-bold">
+                          {formatPrice(listing.price)}
+                        </p>
+                        <div className="flex items-center mt-1">
+                          <span className="text-xs px-2 py-1 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
+                            {listing.category}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            {new Date(listing.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end space-y-1">
+                        <span className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                          Active
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          0 views
+                        </span>
+                      </div>
+                    </div>
+                  </div>) : <div className="p-8 text-center">
+                  <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No active listings
+                  </p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">
+                    Start selling your unused items today!
+                  </p>
+                  <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
+                    Create Listing
+                  </Button>
+                </div>}
+            </div>}
+          {activeListings.length > 0 && <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/70 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing {activeListings.length} of {statsData.two} listings
+                </p>
+                <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
+                  New Listing
+                </Button>
+              </div>
+            </div>}
+        </div>
+      </FadeIn>
+      {/* Sales Performance */}
+      <FadeIn direction="up" delay={0.25}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Sales Performance
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="text-center p-4">
+              <LineChartIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-500 dark:text-gray-400">
+                Sales data will appear here
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">
+                Complete more sales to see your performance metrics
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Response Rate
+                </p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                  100%
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Avg. Response Time
+                </p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                  30 min
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Seller Rating
+                </p>
+                <div className="flex items-center justify-center mt-1">
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    5.0
+                  </p>
+                  <StarIcon size={16} className="text-yellow-500 ml-1" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+    </>;
+};
+// Component for users with both buyer and seller roles
+const BothRoleDashboard = ({
+  user,
+  statsData,
+  activeListings,
+  nearbyListings,
+  loading,
+  userActivity,
+  totalUnreadMessages,
+  navigate,
+  formatPrice
+}) => {
+  const [activeTab, setActiveTab] = useState<'buyer' | 'seller'>('seller');
+  return <>
+      {/* Role Toggle Tabs */}
+      <FadeIn direction="up" delay={0.05}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+          <div className="flex">
+            <button onClick={() => setActiveTab('seller')} className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'seller' ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}>
+              Seller Dashboard
+            </button>
+            <button onClick={() => setActiveTab('buyer')} className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'buyer' ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}>
+              Buyer Dashboard
+            </button>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Conditional Dashboard Content */}
+      {activeTab === 'seller' ? <SellerDashboard user={user} statsData={statsData} activeListings={activeListings} loading={loading} navigate={navigate} formatPrice={formatPrice} /> : <BuyerDashboard user={user} statsData={statsData} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} />}
+    </>;
+};
+// Component for admin dashboard
+const AdminDashboard = ({
+  user,
+  statsData,
+  navigate
+}) => {
+  return <>
+      {/* Admin Stats */}
+      <FadeIn direction="up" delay={0.1}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+                <UsersIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {statsData.one}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Verified Users
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
+                <ShoppingBagIcon size={20} className="text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {statsData.two}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Active Products
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
+                <CheckCircleIcon size={20} className="text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                  {statsData.three}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Completed Orders
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+            <div className="flex items-center space-x-3">
+              <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
+                <DollarSignIcon size={20} className="text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                  ₦{statsData.four}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Platform Revenue
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Admin Quick Actions */}
+      <FadeIn direction="up" delay={0.15}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Admin Controls
+            </h2>
+          </div>
+          <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <button onClick={() => navigate('/admin/users')} className="flex flex-col items-center justify-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+              <UsersIcon size={24} className="text-indigo-600 dark:text-indigo-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Manage Users
+              </span>
+            </button>
+            <button onClick={() => navigate('/admin/reports')} className="flex flex-col items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+              <AlertTriangleIcon size={24} className="text-red-600 dark:text-red-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Reports
+              </span>
+            </button>
+            <button onClick={() => navigate('/marketplace')} className="flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+              <ShoppingBagIcon size={24} className="text-green-600 dark:text-green-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Products
+              </span>
+            </button>
+            <button onClick={() => navigate('/chat')} className="flex flex-col items-center justify-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+              <HelpCircleIcon size={24} className="text-purple-600 dark:text-purple-400 mb-2" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                Support
+              </span>
+            </button>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Platform Metrics */}
+      <FadeIn direction="up" delay={0.2}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          {/* User Activity */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="font-bold text-gray-900 dark:text-white">
+                User Activity
+              </h2>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin/users')}>
+                Details
+              </Button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    New Registrations (Today)
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    12
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Active Users (Last 24h)
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    87
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Verified Sellers
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    45
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Flagged Accounts
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    3
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Transaction Stats */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="font-bold text-gray-900 dark:text-white">
+                Transaction Stats
+              </h2>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin/reports')}>
+                Reports
+              </Button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    New Orders (Today)
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    8
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Pending Verification
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    5
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Completed (Last 7 Days)
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    32
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Total GMV (Last 30 Days)
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    ₦325,750
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+      {/* Support Tickets */}
+      <FadeIn direction="up" delay={0.25}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 className="font-bold text-gray-900 dark:text-white">
+              Support Tickets
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin/reports')}>
+              View All
+            </Button>
+          </div>
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    Payment Issue
+                  </span>
+                </div>
+                <span className="text-xs px-2 py-1 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full">
+                  High Priority
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-5">
+                User unable to complete transaction #TR-7829
+              </p>
+              <div className="flex justify-between items-center mt-2 ml-5">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Opened 2 hours ago
+                </span>
+                <Button variant="outline" size="xs">
+                  Assign
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    Account Verification
+                  </span>
+                </div>
+                <span className="text-xs px-2 py-1 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full">
+                  Medium Priority
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-5">
+                Seller requesting manual verification of identity
+              </p>
+              <div className="flex justify-between items-center mt-2 ml-5">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Opened 5 hours ago
+                </span>
+                <Button variant="outline" size="xs">
+                  Assign
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    Feature Request
+                  </span>
+                </div>
+                <span className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                  Low Priority
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-5">
+                Multiple users requesting bulk listing feature
+              </p>
+              <div className="flex justify-between items-center mt-2 ml-5">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Opened 1 day ago
+                </span>
+                <Button variant="outline" size="xs">
+                  Assign
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/70 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              3 active tickets requiring attention
+            </p>
+          </div>
+        </div>
+      </FadeIn>
+    </>;
+};
+// Main Dashboard component
 const Dashboard = () => {
   const {
     user,
@@ -68,19 +810,6 @@ const Dashboard = () => {
     three: '0',
     four: '0'
   });
-  const getTitle = (number: number, role: string) => {
-    if (role === 'buyer') {
-      return number === 1 ? 'New Message' : number === 2 ? 'Total Orders' : number === 3 ? 'Total Amount Spent' : 'Completed Purchases';
-    } else if (role === 'seller') {
-      return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listings' : number === 3 ? 'Total Earnings' : 'Completed Sales';
-    } else if (role === 'both') {
-      return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listed' : number === 3 ? 'Total Earnings' : 'Completed Purchases';
-    } else if (role === 'admin') {
-      return number === 1 ? 'Verified Users' : number === 2 ? 'Active Products' : number === 3 ? 'Completed Orders' : 'Platform Revenue';
-    } else if (role === 'agent') {
-      return number === 1 ? 'Active Cases' : number === 2 ? 'Resolved Cases' : number === 3 ? 'TimedOut Tickets' : 'Assigned Cases';
-    }
-  };
   const {
     chats,
     getChatsForUser,
@@ -132,27 +861,20 @@ const Dashboard = () => {
             members: {
               $in: [client.user.id]
             }
-          }, {},
-          // sort
-          {
+          }, {}, {
             watch: false,
             state: true
-          } // only fetch channel state
-          );
+          });
           let total = 0;
           for (const channel of channels) {
             total += channel.countUnread();
           }
           if (isMounted) setTotalUnread(total);
         } catch (err) {
-          console.error("Failed to fetch unread counts:", err);
+          console.error('Failed to fetch unread counts:', err);
         }
       };
-
-      // Fetch on mount
       calculateUnreadCount();
-
-      // Listener for real-time new messages
       const handleNewMessage = async (event: any) => {
         const senderId = event.user?.id;
         const isMine = senderId === client.user?.id;
@@ -204,7 +926,7 @@ const Dashboard = () => {
       currency: 'NGN'
     }).format(price);
   };
-  const activeListings = products.filter(product => product.sellerId === user?.userId).slice(0, 2);
+  const activeListings = products.filter(product => product.sellerId === user?.userId).slice(0, 4);
   const nearbyListings = products.filter(product => product.sellerId !== user?.userId).slice(0, 4);
   if (!user) return null;
   return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -221,12 +943,14 @@ const Dashboard = () => {
                   </span>{' '}
                   👋
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">{greeting.subMessage}</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  {greeting.subMessage}
+                </p>
               </div>
               <div className="mt-4 md:mt-0 flex items-center space-x-2">
-                <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
-                  List an Item
-                </Button>
+                {(user.role === 'seller' || user.role === 'both') && <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
+                    List an Item
+                  </Button>}
                 <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
                   Browse
                 </Button>
@@ -234,357 +958,27 @@ const Dashboard = () => {
             </div>
           </div>
         </FadeIn>
-
-        {/* Activity Cards */}
-        <FadeIn direction="up" delay={0.1}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
-                <div className="flex items-center space-x-3">
-                  {/* Icon Placeholder */}
-                  <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
-                    <div className="w-5 h-5 bg-indigo-300 dark:bg-indigo-500 rounded" />
-                  </div>
-
-                  {/* Text Placeholder */}
-                  <div className="flex flex-col space-y-2">
-                    <div className="w-10 h-4 bg-indigo-200 dark:bg-indigo-600 rounded" />
-                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
-                  </div>
-                </div>
-              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
-                    <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                      {user.role === 'admin' || user.role === 'agent' ? statsData.one : userActivity.newMessages}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(1, user.role)}</p>
-                  </div>
-                </div>
-              </div>}
-            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
-                <div className="flex items-center space-x-3">
-                  {/* Icon Placeholder */}
-                  <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
-                    <div className="w-5 h-5 bg-green-300 dark:bg-green-500 rounded" />
-                  </div>
-
-                  {/* Text Placeholder */}
-                  <div className="flex flex-col space-y-2">
-                    <div className="w-10 h-4 bg-green-200 dark:bg-green-600 rounded" />
-                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
-                  </div>
-                </div>
-              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
-                    <CheckCircleIcon size={20} className="text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                      {statsData.two}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(2, user?.role)}</p>
-                  </div>
-                </div>
-              </div>}
-
-            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
-                <div className="flex items-center space-x-3">
-                  {/* Icon Placeholder */}
-                  <div className="bg-indigo-100 dark:bg-purple-900/50 p-2 rounded-lg">
-                    <div className="w-5 h-5 bg-purple-300 dark:bg-indigo-500 rounded" />
-                  </div>
-
-                  {/* Text Placeholder */}
-                  <div className="flex flex-col space-y-2">
-                    <div className="w-10 h-4 bg-purple-200 dark:bg-purple-600 rounded" />
-                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
-                  </div>
-                </div>
-              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
-                    <TrendingUpIcon size={20} className="text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                      {statsData.three}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(3, user?.role)}</p>
-                  </div>
-                </div>
-              </div>}
-
-            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
-                <div className="flex items-center space-x-3">
-                  {/* Icon Placeholder */}
-                  <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
-                    <div className="w-5 h-5 bg-amber-300 dark:bg-amber-500 rounded" />
-                  </div>
-
-                  {/* Text Placeholder */}
-                  <div className="flex flex-col space-y-2">
-                    <div className="w-10 h-4 bg-amber-200 dark:bg-amber-600 rounded" />
-                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
-                  </div>
-                </div>
-              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
-                    <ShoppingBagIcon size={20} className="text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                      {statsData.four}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(4, user?.role)}</p>
-                  </div>
-                </div>
-              </div>}
-          </div>
-        </FadeIn>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Active Conversations */}
-          <div className="lg:col-span-1">
-            <FadeIn direction="up" delay={0.2}>
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <h2 className="font-bold text-gray-900 dark:text-white">
-                    Recent Conversations
-                  </h2>
-                  <Button variant="outline" size="sm" onClick={() => navigate('/chat')}>
-                    See All
-                  </Button>
-                </div>
-                {isLoadingChats ? <RecentConversationsSkeleton count={3} /> : <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {chats.slice(0, 3).map((convo, index) => <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <UserAvatar user={getOtherUser(convo)} size="md" className="flex-shrink-0" />
-                            {<OnlineIndicator userId={getOtherUser(convo)?.userId || ''} size="sm" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start">
-                              <p className="font-medium text-gray-900 dark:text-white truncate">
-                                {getOtherUser(convo)?.name || 'Unknown User'}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {convo.state.last_message_at ? new Date(convo.state.last_message_at).toLocaleDateString() : 'No date'}
-                              </p>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                              {getLastMessage(convo)}
-                            </p>
-                          </div>
-                          {convo.countUnread() > 0 && <span className="bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                              {convo.countUnread()}
-                            </span>}
-                        </div>
-                      </div>)}
-                    {chats.length === 0 && <div className="p-8 text-center">
-                        <MessageSquareIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400">No conversations yet</p>
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                          Start browsing to find items and chat with sellers!
-                        </p>
-                      </div>}
-                  </div>}
-                {chats.length > 0 && <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/50 text-center">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Pro tip:{' '}
-                      <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                        Quick responses
-                      </span>{' '}
-                      get you better deals! 
-                    </p>
-                  </div>}
-              </div>
-            </FadeIn>
-
-            {/* Your Active Listings */}
-            {(user.role === 'seller' || user.role === 'both') && <FadeIn direction="up" delay={0.3}>
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="font-bold text-gray-900 dark:text-white">
-                      Your Active Listings
-                    </h2>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-                      Manage
-                    </Button>
-                  </div>
-                  {loading ? <ListingSkeleton type="activeListings" count={2} /> : <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
-                            <div className="flex items-center space-x-3">
-                              <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700" />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-gray-900 dark:text-white truncate">
-                                  {listing.title}
-                                </p>
-                                <p className="text-indigo-600 dark:text-indigo-400 font-bold">
-                                  {formatPrice(listing.price)}
-                                </p>
-                                <div className="flex items-center mt-1">
-                                  <span className="text-xs px-2 py-1 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
-                                    {listing.category}
-                                  </span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                                    {new Date(listing.createdAt).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>) : <div className="p-8 text-center">
-                          <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                          <p className="text-gray-500 dark:text-gray-400">No active listings</p>
-                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">
-                            Start selling your unused items today!
-                          </p>
-                          <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
-                            Create Listing
-                          </Button>
-                        </div>}
-                    </div>}
-                  </div>
-              </FadeIn>}
-          </div>
-
-          {/* Right Column - New Listings & Upcoming */}
-          <div className="lg:col-span-2">
-            {/* New Listings Near You */}
-            <FadeIn direction="up" delay={0.2}>
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <h2 className="font-bold text-gray-900 dark:text-white">
-                    New Listings Near You
-                  </h2>
-                  <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
-                    See All
-                  </Button>
-                </div>
-                <div className="p-6">
-                  {loading ? <ListingSkeleton type="nearbyListings" count={4} /> : nearbyListings.length === 0 ? <div className="text-center p-8">
-                      <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                      <p className="text-gray-500 dark:text-gray-400">No new listings nearby</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                        Check back later or explore the marketplace!
-                      </p>
-                    </div> : null}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {nearbyListings.map((product, index) => <ProductCard key={product.id} product={product} delay={0.1 * index} />)}
-                  </div>
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                      Found something you like?{' '}
-                      <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                        Message the seller
-                      </span>{' '}
-                      to reserve it!
-                    </p>
-                    <Button variant="secondary" size="sm" onClick={() => navigate('/marketplace')}>
-                      Explore More Items
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </FadeIn>
-
-            {/* Campus Events & Upcoming */}
-            <FadeIn direction="up" delay={0.3}>
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="font-bold text-gray-900 dark:text-white">Campus Happenings</h2>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800/50">
-                      <div className="flex items-start space-x-3">
-                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-indigo-200 dark:ring-indigo-800/50">
-                          <CalendarIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-white">
-                            End of Semester Sale
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Graduating seniors are listing items at huge
-                            discounts! Check the marketplace this weekend.
-                          </p>
-                          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2 font-medium">
-                            May 15-20
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800/50">
-                      <div className="flex items-start space-x-3">
-                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-purple-200 dark:ring-purple-800/50">
-                          <UserIcon size={20} className="text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-white">
-                            Campus Ambassadors
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Become a CalvinNova campus ambassador and earn rewards
-                            for helping fellow students!
-                          </p>
-                          <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 font-medium">
-                            Applications open
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800/50">
-                      <div className="flex items-start space-x-3">
-                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-amber-200 dark:ring-amber-800/50">
-                          <RefreshCwIcon size={20} className="text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-white">
-                            Textbook Exchange
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Find and swap textbooks for your upcoming classes.
-                            Save money and help the environment!
-                          </p>
-                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
-                            Ongoing
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl p-4 border border-teal-200 dark:border-teal-800/50">
-                      <div className="flex items-start space-x-3">
-                        <div className="bg-white dark:bg-gray-800 p-2 rounded-lg ring-1 ring-teal-200 dark:ring-teal-800/50">
-                          <BellIcon size={20} className="text-teal-600 dark:text-teal-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-white">
-                            Set Item Alerts
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Looking for something specific? Set alerts and we'll
-                            notify you when it's listed!
-                          </p>
-                          <Button variant="outline" size="sm" className="mt-2 text-xs py-1 px-2 border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/50">
-                            Create Alert
-                          </Button>
-                        </div>
-                      </div>
+        {/* Role-specific Dashboard Content */}
+        {statLoading ? <div className="animate-pulse space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-gray-200 dark:bg-gray-700 p-2 rounded-lg w-10 h-10"></div>
+                    <div>
+                      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
+                </div>)}
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm h-48"></div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm h-64"></div>
+          </div> : <>
+            {user.role === 'buyer' && <BuyerDashboard user={user} statsData={statsData} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} />}
+            {user.role === 'seller' && <SellerDashboard user={user} statsData={statsData} activeListings={activeListings} loading={loading} navigate={navigate} formatPrice={formatPrice} />}
+            {user.role === 'both' && <BothRoleDashboard user={user} statsData={statsData} activeListings={activeListings} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} formatPrice={formatPrice} />}
+            {user.role === 'admin' && <AdminDashboard user={user} statsData={statsData} navigate={navigate} />}
+          </>}
       </div>
     </div>;
 };
