@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, Component } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, CreditCard, CheckCircle, Clock, AlertCircle, User, Calendar, DollarSign, ShoppingBag, Handshake, Filter, Search, ExternalLinkIcon } from 'lucide-react';
+import { ArrowLeft, Package, CreditCard, CheckCircle, Clock, AlertCircle, User, Calendar, DollarSign, ShoppingBag, Handshake, Filter, Search, ExternalLink, ChevronRight, Truck, ShieldCheck, Repeat, RefreshCw } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { FadeIn } from '../utils/animations';
+import api from '../utils/apiService';
 export interface Transaction {
   id: number;
   buyerId: string;
@@ -8,10 +11,11 @@ export interface Transaction {
   transactionId: string;
   productTitle: string;
   productImage: string;
+  productId: string;
   amount: number;
   sellerAmount: number;
   agentFee: number;
-  status: string;
+  status: 'pending' | 'paid' | 'completed' | 'cancelled' | 'refunded';
   sellerPaidout: boolean;
   createdAt: string;
   completedAt?: string;
@@ -21,6 +25,7 @@ export interface Transaction {
   buyerAvatar: string;
   sellerAvatar: string;
 }
+// Mock transactions data
 const mockTransactions = [{
   id: 1,
   buyerId: 'user123',
@@ -28,10 +33,9 @@ const mockTransactions = [{
   transactionId: 'TXN-2025-001',
   productTitle: 'MacBook Pro M1 2021',
   productImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400',
+  productId: '1',
   amount: 850000,
-  // buyer pays full amount
   sellerAmount: 833000,
-  // seller gets amount minus fees
   agentFee: 17000,
   status: 'completed',
   sellerPaidout: true,
@@ -49,6 +53,7 @@ const mockTransactions = [{
   transactionId: 'TXN-2025-002',
   productTitle: 'iPhone 14 Pro Max',
   productImage: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
+  productId: '2',
   amount: 450000,
   sellerAmount: 441000,
   agentFee: 9000,
@@ -66,6 +71,7 @@ const mockTransactions = [{
   transactionId: 'TXN-2025-003',
   productTitle: 'Dell XPS 13 Laptop',
   productImage: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
+  productId: '3',
   amount: 320000,
   sellerAmount: 313600,
   agentFee: 6400,
@@ -76,52 +82,178 @@ const mockTransactions = [{
   sellerName: 'John Doe',
   buyerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
   sellerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100'
+}, {
+  id: 4,
+  buyerId: 'user123',
+  sellerId: 'user789',
+  transactionId: 'TXN-2025-004',
+  productTitle: 'Sony WH-1000XM4 Headphones',
+  productImage: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400',
+  productId: '6',
+  amount: 180000,
+  sellerAmount: 176400,
+  agentFee: 3600,
+  status: 'cancelled',
+  sellerPaidout: false,
+  createdAt: '2025-01-10T14:30:00Z',
+  buyerName: 'John Doe',
+  sellerName: 'Mike Johnson',
+  buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+  sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'
+}, {
+  id: 5,
+  buyerId: 'user123',
+  sellerId: 'user555',
+  transactionId: 'TXN-2025-005',
+  productTitle: 'Ergonomic Office Chair',
+  productImage: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400',
+  productId: '8',
+  amount: 70000,
+  sellerAmount: 68600,
+  agentFee: 1400,
+  status: 'refunded',
+  sellerPaidout: false,
+  createdAt: '2025-01-05T11:20:00Z',
+  completedAt: '2025-01-06T09:15:00Z',
+  buyerName: 'John Doe',
+  sellerName: 'Sarah Williams',
+  buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+  sellerAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100'
 }];
-const currentUserId = 'user123'; // Mock current user
-
+// Format currency helper
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN'
+  }).format(price);
+};
+// Format date helper
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-NG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+// Get relative time helper
+const getRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diffInSeconds < 60) {
+    return 'just now';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  } else if (diffInSeconds < 31536000) {
+    const months = Math.floor(diffInSeconds / 2592000);
+    return `${months} month${months > 1 ? 's' : ''} ago`;
+  } else {
+    const years = Math.floor(diffInSeconds / 31536000);
+    return `${years} year${years > 1 ? 's' : ''} ago`;
+  }
+};
+// Status helpers
+const getStatusColor = (status: Transaction['status']) => {
+  switch (status) {
+    case 'completed':
+      return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
+    case 'paid':
+      return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'pending':
+      return 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400';
+    case 'cancelled':
+      return 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400';
+    case 'refunded':
+      return 'text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400';
+    default:
+      return 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400';
+  }
+};
+const getStatusIcon = (status: Transaction['status']) => {
+  switch (status) {
+    case 'completed':
+      return <CheckCircle size={16} />;
+    case 'paid':
+      return <CreditCard size={16} />;
+    case 'pending':
+      return <Clock size={16} />;
+    case 'cancelled':
+      return <AlertCircle size={16} />;
+    case 'refunded':
+      return <Repeat size={16} />;
+    default:
+      return <Clock size={16} />;
+  }
+};
+const getStatusText = (status: Transaction['status'], isSeller: boolean, sellerPaidout: boolean) => {
+  if (status === 'completed') {
+    if (isSeller && !sellerPaidout) return 'Awaiting Payout';
+    if (isSeller && sellerPaidout) return 'Paid Out';
+    return 'Completed';
+  }
+  if (status === 'paid') {
+    return isSeller ? 'Payment Received' : 'Paid';
+  }
+  if (status === 'pending') {
+    return 'Pending Payment';
+  }
+  if (status === 'cancelled') {
+    return 'Cancelled';
+  }
+  if (status === 'refunded') {
+    return 'Refunded';
+  }
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+// Transaction List Component
 const TransactionList = () => {
+  const {
+    user
+  } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [filter, setFilter] = useState('all'); // all, buying, selling
+  const [filter, setFilter] = useState<'all' | 'buying' | 'selling'>('all');
+  const [statusFilter, setStatusFilter] = useState<Transaction['status'] | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN'
-    }).format(price);
-  };
-  const getStatusColor = (status: string, isSeller: boolean, sellerPaidout: boolean) => {
-    if (status === 'completed') {
-      if (isSeller && sellerPaidout) return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
-      if (isSeller && !sellerPaidout) return 'text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400';
-      return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
-    }
-    if (status === 'paid') return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
-    return 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400';
-  };
-  const getStatusText = (status: string, isSeller: boolean, sellerPaidout: boolean) => {
-    if (status === 'completed') {
-      if (isSeller && sellerPaidout) return 'Paid Out';
-      if (isSeller && !sellerPaidout) return 'Awaiting Payout';
-      return 'Completed';
-    }
-    if (status === 'paid') return isSeller ? 'Payment Received' : 'Paid';
-    return 'Pending Payment';
-  };
-  const getStatusIcon = (status: string, isSeller: boolean, sellerPaidout: boolean) => {
-    if (status === 'completed') {
-      if (isSeller && sellerPaidout) return <CheckCircle size={16} />;
-      if (isSeller && !sellerPaidout) return <Clock size={16} />;
-      return <CheckCircle size={16} />;
-    }
-    if (status === 'paid') return <CreditCard size={16} />;
-    return <AlertCircle size={16} />;
-  };
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  useEffect(() => {
+    // In a real app, this would fetch transactions from an API
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 800));
+        // In a real implementation, you would call your API here:
+        // const response = await api.get('/api/transactions');
+        // setTransactions(response.data.transactions);
+        setTransactions(mockTransactions);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, [user?.userId]);
+  const currentUserId = user?.userId || '';
   const filteredTransactions = transactions.filter(transaction => {
     const isBuyer = transaction.buyerId === currentUserId;
-    const matchesFilter = filter === 'all' || filter === 'buying' && isBuyer || filter === 'selling' && !isBuyer;
+    const isSeller = transaction.sellerId === currentUserId;
+    // Filter by role (buying/selling)
+    const matchesRoleFilter = filter === 'all' || filter === 'buying' && isBuyer || filter === 'selling' && isSeller;
+    // Filter by status
+    const matchesStatusFilter = statusFilter === 'all' || transaction.status === statusFilter;
+    // Filter by search term
     const matchesSearch = searchTerm === '' || transaction.productTitle.toLowerCase().includes(searchTerm.toLowerCase()) || transaction.transactionId.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesRoleFilter && matchesStatusFilter && matchesSearch;
   });
   return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -129,7 +261,7 @@ const TransactionList = () => {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <Link to="/account" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+              <Link to="/" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                 <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
               </Link>
               <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -140,108 +272,163 @@ const TransactionList = () => {
               <Filter size={20} className="text-gray-600 dark:text-gray-400" />
             </button>
           </div>
-
           {/* Search Bar */}
           <div className="relative mb-4">
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Search transactions..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-600 transition-all" />
+            <input type="text" placeholder="Search transactions..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-all" />
           </div>
-
           {/* Filter Buttons */}
-          {showFilters && <div className="flex space-x-2 mb-4">
-              {[{
-            key: 'all',
-            label: 'All',
-            icon: <Handshake size={16} />
-          }, {
-            key: 'buying',
-            label: 'Buying',
-            icon: <ShoppingBag size={16} />
-          }, {
-            key: 'selling',
-            label: 'Selling',
-            icon: <Package size={16} />
-          }].map(({
-            key,
-            label,
-            icon
-          }) => <button key={key} onClick={() => setFilter(key)} className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === key ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
-                  {icon}
-                  <span>{label}</span>
-                </button>)}
-            </div>}
+          {showFilters && <FadeIn direction="up">
+              <div className="space-y-4 mb-4">
+                <div className="flex flex-wrap gap-2">
+                  {[{
+                key: 'all',
+                label: 'All Transactions',
+                icon: <Handshake size={16} />
+              }, {
+                key: 'buying',
+                label: 'Purchases',
+                icon: <ShoppingBag size={16} />
+              }, {
+                key: 'selling',
+                label: 'Sales',
+                icon: <Package size={16} />
+              }].map(({
+                key,
+                label,
+                icon
+              }) => <button key={key} onClick={() => setFilter(key as 'all' | 'buying' | 'selling')} className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === key ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                      {icon}
+                      <span>{label}</span>
+                    </button>)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                    Status
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {[{
+                  key: 'all',
+                  label: 'All Statuses'
+                }, {
+                  key: 'pending',
+                  label: 'Pending'
+                }, {
+                  key: 'paid',
+                  label: 'Paid'
+                }, {
+                  key: 'completed',
+                  label: 'Completed'
+                }, {
+                  key: 'cancelled',
+                  label: 'Cancelled'
+                }, {
+                  key: 'refunded',
+                  label: 'Refunded'
+                }].map(({
+                  key,
+                  label
+                }) => <button key={key} onClick={() => setStatusFilter(key as Transaction['status'] | 'all')} className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${statusFilter === key ? getStatusColor(key as Transaction['status']) : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                        {label}
+                      </button>)}
+                  </div>
+                </div>
+              </div>
+            </FadeIn>}
         </div>
       </div>
-
       {/* Transaction List */}
       <div className="px-4 py-6">
-        {filteredTransactions.length === 0 ? <div className="text-center py-12">
+        {isLoading ? <div className="space-y-4">
+            {[...Array(3)].map((_, index) => <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 animate-pulse">
+                <div className="flex items-start space-x-4">
+                  <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                  <div className="flex-1">
+                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                  </div>
+                  <div className="w-20">
+                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                  </div>
+                </div>
+              </div>)}
+          </div> : filteredTransactions.length === 0 ? <div className="text-center py-12">
             <Package size={48} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
               No transactions found
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {searchTerm ? 'Try adjusting your search terms' : 'You haven\'t made any transactions yet'}
+              {searchTerm ? 'Try adjusting your search terms' : "You haven't made any transactions yet"}
             </p>
           </div> : <div className="space-y-4">
-            {filteredTransactions.map(transaction => {
+            {filteredTransactions.map((transaction, index) => {
           const isBuyer = transaction.buyerId === currentUserId;
           const otherUser = isBuyer ? transaction.sellerName : transaction.buyerName;
           const otherUserAvatar = isBuyer ? transaction.sellerAvatar : transaction.buyerAvatar;
           const displayAmount = isBuyer ? transaction.amount : transaction.sellerAmount;
-          return <Link key={transaction.id} to={`/account/transaction/${transaction.transactionId}`} className="block bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-start space-x-4">
-                    {/* Product Image */}
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
-                      <img src={transaction.productImage} alt={transaction.productTitle} className="w-full h-full object-cover" />
-                    </div>
-
-                    {/* Transaction Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                            {transaction.productTitle}
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {isBuyer ? 'Bought from' : 'Sold to'} {otherUser}
-                          </p>
-                        </div>
-                        <div className="text-right ml-2">
-                          <p className="font-bold text-gray-900 dark:text-gray-100">
-                            {formatPrice(displayAmount)}
-                          </p>
-                          <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status, !isBuyer, transaction.sellerPaidout)}`}>
-                            {getStatusIcon(transaction.status, !isBuyer, transaction.sellerPaidout)}
-                            <span>{getStatusText(transaction.status, !isBuyer, transaction.sellerPaidout)}</span>
-                          </span>
-                        </div>
+          return <FadeIn key={transaction.id} direction="up" delay={index * 0.05}>
+                  <div onClick={() => navigate(`/account/transaction/${transaction.transactionId}`)} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700 cursor-pointer">
+                    <div className="flex items-start space-x-4">
+                      {/* Product Image */}
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={transaction.productImage} alt={transaction.productTitle} className="w-full h-full object-cover" />
                       </div>
-
-                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                        <div className="flex items-center space-x-2">
-                          <img src={otherUserAvatar} alt={otherUser} className="w-5 h-5 rounded-full" />
-                          <span className="text-xs">{transaction.transactionId}</span>
+                      {/* Transaction Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                              {transaction.productTitle}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {isBuyer ? 'Bought from' : 'Sold to'} {otherUser}
+                            </p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <p className="font-bold text-gray-900 dark:text-gray-100">
+                              {formatPrice(displayAmount)}
+                            </p>
+                            <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
+                              {getStatusIcon(transaction.status)}
+                              <span>
+                                {getStatusText(transaction.status, !isBuyer, transaction.sellerPaidout)}
+                              </span>
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar size={12} />
-                          <span className="text-xs">
-                            {new Date(transaction.createdAt).toLocaleDateString()}
-                          </span>
+                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-2">
+                            <img src={otherUserAvatar} alt={otherUser} className="w-5 h-5 rounded-full" />
+                            <span className="text-xs">
+                              {transaction.transactionId}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Calendar size={12} />
+                            <span className="text-xs">
+                              {getRelativeTime(transaction.createdAt)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </Link>;
+                </FadeIn>;
         })}
           </div>}
       </div>
     </div>;
 };
+// Transaction Detail Component
 const TransactionDetail = () => {
   const {
     transactionId
   } = useParams();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
@@ -249,23 +436,25 @@ const TransactionDetail = () => {
     // Mock API call - replace with actual API
     const fetchTransaction = async () => {
       setLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const found = mockTransactions.find(t => t.transactionId === transactionId);
-      setTransaction(found || null);
-      setLoading(false);
+      try {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        // In a real implementation, you would call your API here:
+        // const response = await api.get(`/api/transactions/${transactionId}`);
+        // setTransaction(response.data.transaction);
+        const found = mockTransactions.find(t => t.transactionId === transactionId);
+        setTransaction(found as Transaction);
+      } catch (error) {
+        console.error('Error fetching transaction:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchTransaction();
   }, [transactionId]);
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN'
-    }).format(price);
-  };
   if (loading) {
     return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>;
   }
   if (!transaction) {
@@ -278,12 +467,13 @@ const TransactionDetail = () => {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             The transaction you're looking for doesn't exist.
           </p>
-          <button onClick={() => navigate('/account/transactions')} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <button onClick={() => navigate('/account/transactions')} className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
             Back to Transactions
           </button>
         </div>
       </div>;
   }
+  const currentUserId = user?.userId || '';
   const isBuyer = transaction.buyerId === currentUserId;
   const otherUser = isBuyer ? transaction.sellerName : transaction.buyerName;
   const otherUserAvatar = isBuyer ? transaction.sellerAvatar : transaction.buyerAvatar;
@@ -291,21 +481,32 @@ const TransactionDetail = () => {
     const steps = [{
       label: 'Order Placed',
       completed: true,
-      date: transaction.createdAt
+      date: transaction.createdAt,
+      icon: <ShoppingBag size={18} />
     }, {
       label: isBuyer ? 'Payment Made' : 'Payment Received',
-      completed: ['paid', 'completed'].includes(transaction.status),
-      date: transaction.status === 'paid' || transaction.status === 'completed' ? transaction.createdAt : null
+      completed: ['paid', 'completed', 'refunded'].includes(transaction.status),
+      date: transaction.status === 'paid' || transaction.status === 'completed' || transaction.status === 'refunded' ? transaction.createdAt : null,
+      icon: <CreditCard size={18} />
     }, {
       label: isBuyer ? 'Item Collected' : 'Item Handed Over',
-      completed: transaction.status === 'completed',
-      date: transaction.completedAt
+      completed: transaction.status === 'completed' || transaction.status === 'refunded',
+      date: transaction.completedAt,
+      icon: <Truck size={18} />
     }];
-    if (!isBuyer) {
+    if (transaction.status === 'refunded') {
+      steps.push({
+        label: 'Refund Processed',
+        completed: true,
+        date: transaction.completedAt,
+        icon: <Repeat size={18} />
+      });
+    } else if (!isBuyer) {
       steps.push({
         label: 'Payment Received',
         completed: transaction.sellerPaidout,
-        date: transaction.sellerPaidout ? transaction.completedAt : undefined
+        date: transaction.sellerPaidout ? transaction.completedAt : undefined,
+        icon: <DollarSign size={18} />
       });
     }
     return steps;
@@ -329,159 +530,190 @@ const TransactionDetail = () => {
           </div>
         </div>
       </div>
-
       {/* Content */}
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-6 space-y-6 max-w-2xl mx-auto">
         {/* Product Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-start space-x-4">
-            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden flex-shrink-0">
-              <img src={transaction.productImage} alt={transaction.productTitle} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                {transaction.productTitle}
-              </h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                <img src={otherUserAvatar} alt={otherUser} className="w-6 h-6 rounded-full" />
-                <span>{isBuyer ? 'Sold by' : 'Bought by'} {otherUser}</span>
+        <FadeIn direction="up">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-start space-x-4">
+              <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden flex-shrink-0">
+                <img src={transaction.productImage} alt={transaction.productTitle} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  {transaction.productTitle}
+                </h2>
+                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  <img src={otherUserAvatar} alt={otherUser} className="w-6 h-6 rounded-full" />
+                  <span>
+                    {isBuyer ? 'Sold by' : 'Bought by'} {otherUser}
+                  </span>
+                </div>
+                <button onClick={() => navigate(`/product/${transaction.productId}`)} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium flex items-center hover:text-indigo-700 dark:hover:text-indigo-300">
+                  View Product
+                  <ChevronRight size={16} className="ml-1" />
+                </button>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Payment Summary */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <DollarSign size={20} className="mr-2" />
-            Payment Summary
-          </h3>
-          
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-400">Item Price</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">
-                {formatPrice(transaction.amount)}
-              </span>
+        </FadeIn>
+        {/* Transaction Status */}
+        <FadeIn direction="up" delay={0.1}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+              <RefreshCw size={20} className="mr-2" />
+              Transaction Status
+            </h3>
+            <div className="space-y-8">
+              {getStatusSteps().map((step, index) => <div key={index} className="flex items-start space-x-4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${step.completed ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
+                    {step.completed ? step.icon : <div className="w-2 h-2 bg-current rounded-full" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`font-medium ${step.completed ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {step.label}
+                    </p>
+                    {step.date && <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatDate(step.date)}
+                      </p>}
+                  </div>
+                </div>)}
             </div>
-            
-            {!isBuyer && <>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Platform Fee</span>
-                  <span className="font-medium text-red-600 dark:text-red-400">
-                    -{formatPrice(transaction.agentFee)}
-                  </span>
-                </div>
-                <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+          </div>
+        </FadeIn>
+        {/* Payment Summary */}
+        <FadeIn direction="up" delay={0.2}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <DollarSign size={20} className="mr-2" />
+              Payment Summary
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400">
+                  Item Price
+                </span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {formatPrice(transaction.amount)}
+                </span>
+              </div>
+              {!isBuyer && <>
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      You {transaction.sellerPaidout ? 'Received' : 'Will Receive'}
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Platform Fee
                     </span>
-                    <span className="font-bold text-green-600 dark:text-green-400">
-                      {formatPrice(transaction.sellerAmount)}
+                    <span className="font-medium text-red-600 dark:text-red-400">
+                      -{formatPrice(transaction.agentFee)}
                     </span>
                   </div>
-                </div>
-              </>}
-            
-            {isBuyer && <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Total Paid</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">
-                    {formatPrice(transaction.amount)}
-                  </span>
-                </div>
-              </div>}
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                        You{' '}
+                        {transaction.sellerPaidout ? 'Received' : 'Will Receive'}
+                      </span>
+                      <span className="font-bold text-green-600 dark:text-green-400">
+                        {formatPrice(transaction.sellerAmount)}
+                      </span>
+                    </div>
+                  </div>
+                </>}
+              {isBuyer && <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">
+                      Total Paid
+                    </span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                      {formatPrice(transaction.amount)}
+                    </span>
+                  </div>
+                </div>}
+            </div>
           </div>
-        </div>
-
-        {/* Transaction Status */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-            <CheckCircle size={20} className="mr-2" />
-            Transaction Status
-          </h3>
-          
-          <div className="space-y-4">
-            {getStatusSteps().map((step, index) => <div key={index} className="flex items-start space-x-4">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${step.completed ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
-                  {step.completed ? <CheckCircle size={16} /> : <div className="w-2 h-2 bg-current rounded-full" />}
-                </div>
-                <div className="flex-1">
-                  <p className={`font-medium ${step.completed ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {step.label}
-                  </p>
-                  {step.date && <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(step.date).toLocaleString()}
-                    </p>}
-                </div>
-              </div>)}
-          </div>
-        </div>
-
+        </FadeIn>
         {/* Transaction Details */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Transaction Details
-          </h3>
-          
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Transaction ID</span>
-              <span className="font-mono text-gray-900 dark:text-gray-100">
-                {transaction.transactionId}
-              </span>
-            </div>
-            
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Date Created</span>
-              <span className="text-gray-900 dark:text-gray-100">
-                {new Date(transaction.createdAt).toLocaleString()}
-              </span>
-            </div>
-            
-            {transaction.completedAt && <div className="flex justify-between">
+        <FadeIn direction="up" delay={0.3}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Transaction Details
+            </h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {isBuyer ? 'Collected On' : 'Completed On'}
+                  Transaction ID
+                </span>
+                <span className="font-mono text-gray-900 dark:text-gray-100">
+                  {transaction.transactionId}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">
+                  Date Created
                 </span>
                 <span className="text-gray-900 dark:text-gray-100">
-                  {new Date(transaction.completedAt).toLocaleString()}
+                  {formatDate(transaction.createdAt)}
                 </span>
-              </div>}
-            
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Status</span>
-              <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${transaction.status === 'completed' ? 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400' : transaction.status === 'paid' ? 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400'}`}>
-                {transaction.status === 'completed' ? <CheckCircle size={12} /> : transaction.status === 'paid' ? <CreditCard size={12} /> : <Clock size={12} />}
-                <span className="capitalize">{transaction.status}</span>
-              </span>
+              </div>
+              {transaction.completedAt && <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {isBuyer ? 'Collected On' : 'Completed On'}
+                  </span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    {formatDate(transaction.completedAt)}
+                  </span>
+                </div>}
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Status</span>
+                <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
+                  {getStatusIcon(transaction.status)}
+                  <span className="capitalize">{transaction.status}</span>
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-
+        </FadeIn>
+        {/* Action Buttons */}
+        {(transaction.status === 'paid' || transaction.status === 'pending') && <FadeIn direction="up" delay={0.4}>
+            <div className="flex gap-3">
+              {isBuyer && transaction.status === 'paid' && <button className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                  <CheckCircle size={18} className="mr-2" />
+                  Confirm Receipt
+                </button>}
+              {!isBuyer && transaction.status === 'paid' && <button className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                  <Truck size={18} className="mr-2" />
+                  Mark as Delivered
+                </button>}
+              {transaction.status === 'pending' && <button className="flex-1 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center">
+                  <AlertCircle size={18} className="mr-2" />
+                  Cancel Transaction
+                </button>}
+            </div>
+          </FadeIn>}
         {/* Contact Support */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-              <ExternalLinkIcon size={16} className="text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                Need Help?
-              </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                If you have any issues with this transaction, our support team is here to help.
-              </p>
-              <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline">
-                Contact Support
-              </button>
+        <FadeIn direction="up" delay={0.5}>
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-indigo-900 dark:text-indigo-100 mb-1">
+                  Need Help?
+                </h4>
+                <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-3">
+                  If you have any issues with this transaction, our support team
+                  is here to help.
+                </p>
+                <button className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline">
+                  Contact Support
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </FadeIn>
       </div>
     </div>;
 };
-
 // Main component that handles routing
 const TransactionPages = () => {
   const {
