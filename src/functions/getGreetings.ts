@@ -5,7 +5,7 @@ interface GreetingResult {
 }
 function getGreeting(userFullName: string, userRole: UserRole): GreetingResult {
   const firstName = userFullName.split(' ')[0];
-  const styledFirstName = `<span className="text-indigo-600 dark:text-indigo-400">${firstName}</span>`;
+  const styledFirstName = `<span class="text-indigo-600 dark:text-indigo-400">${firstName}</span>`;
   const currentHour = new Date().getHours();
   const currentDay = new Date().toLocaleDateString('en-US', {
     weekday: 'long'
