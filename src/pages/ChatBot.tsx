@@ -6,7 +6,7 @@ import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { useAuth } from '../context/AuthContext';
 import { client } from '../lib/stream-chat';
-
+import RatingModal from '../components/RatingModal';
 // Bot configuration
 const CHATBOT_ID = "novaplus-support-bot";
 const SUPPORT_AGENT_ID = "support-agent-id";
@@ -492,6 +492,9 @@ const SupportChat: React.FC<SupportChatProps> = ({
     </div>;
   if (isLoading || !isReady) {
     return null;
+  }
+  if ( isOpen) {
+    return <RatingModal onClose={() => setIsOpen(false)} onSubmit={ () => setIsOpen(false)}/>;
   }
   if (!isOpen) {
     return <div className={`fixed ${isMobile ? 'bottom-20 right-6' : 'bottom-24 right-8'} z-50`}>
