@@ -936,12 +936,12 @@ const Dashboard = () => {
           <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-xl p-6 mb-8 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/10">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white"
-                  dangerouslySetInnerHTML={{ __html: greeting.greeting }}
-                />
-                <p className="text-gray-600 dark:text-gray-400 mt-1"
-                  dangerouslySetInnerHTML={{ __html: greeting.subMessage }}
-                />
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white" dangerouslySetInnerHTML={{
+                __html: greeting.greeting
+              }} />
+                <p className="text-gray-600 dark:text-gray-400 mt-1" dangerouslySetInnerHTML={{
+                __html: greeting.subMessage
+              }} />
               </div>
               <div className="mt-4 md:mt-0 flex items-center space-x-2">
                 {(user.role === 'seller' || user.role === 'both') && <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
