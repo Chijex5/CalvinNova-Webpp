@@ -9,6 +9,7 @@
     "deploy": "npx vite build && firebase deploy",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "type-check": "tsc --noEmit",
+    
     "build": "npx vite build",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "preview": "npx vite preview"
@@ -27,15 +28,7 @@
     "react-router-dom": "^6.26.2",
     "sonner": "^2.0.6",
     "stream-chat": "^9.10.1",
-    "zustand": "^5.0.6",
-    "react-icons/md": "latest",
-    "firebase/auth": "latest",
-    "firebase/app": "latest",
-    "firebase/firestore": "latest",
-    "react-icons/ri": "latest",
-    "@zxing/library": "latest",
-    "date-fns/locale": "latest",
-    "zustand/middleware": "latest"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.11.18",

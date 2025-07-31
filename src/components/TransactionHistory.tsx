@@ -4,64 +4,7 @@ import { Package, CreditCard, CheckCircle, Clock, AlertCircle, Calendar, Chevron
 import { useAuth } from '../context/AuthContext';
 import { Transaction } from '../pages/TransactionPage';
 import { FadeIn } from '../utils/animations';
-// Mock transactions data - in a real app, this would come from an API
-const mockTransactions = [{
-  id: 1,
-  buyerId: 'user123',
-  sellerId: 'seller456',
-  transactionId: 'TXN-2025-001',
-  productTitle: 'MacBook Pro M1 2021',
-  productImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400',
-  productId: '1',
-  amount: 850000,
-  sellerAmount: 833000,
-  agentFee: 17000,
-  status: 'completed',
-  sellerPaidout: true,
-  createdAt: '2025-01-15T10:30:00Z',
-  completedAt: '2025-01-16T14:20:00Z',
-  collectedOn: '2025-01-16T14:20:00Z',
-  buyerName: 'John Doe',
-  sellerName: 'Jane Smith',
-  buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'
-}, {
-  id: 2,
-  buyerId: 'seller456',
-  sellerId: 'user789',
-  transactionId: 'TXN-2025-002',
-  productTitle: 'iPhone 14 Pro Max',
-  productImage: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
-  productId: '2',
-  amount: 450000,
-  sellerAmount: 441000,
-  agentFee: 9000,
-  status: 'paid',
-  sellerPaidout: false,
-  createdAt: '2025-01-20T09:15:00Z',
-  buyerName: 'Jane Smith',
-  sellerName: 'Mike Johnson',
-  buyerAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'
-}, {
-  id: 3,
-  buyerId: 'user999',
-  sellerId: 'user123',
-  transactionId: 'TXN-2025-003',
-  productTitle: 'Dell XPS 13 Laptop',
-  productImage: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
-  productId: '3',
-  amount: 320000,
-  sellerAmount: 313600,
-  agentFee: 6400,
-  status: 'pending',
-  sellerPaidout: false,
-  createdAt: '2025-01-22T16:45:00Z',
-  buyerName: 'Alex Brown',
-  sellerName: 'John Doe',
-  buyerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100'
-}];
+import api from '../utils/apiService';
 // Format currency helper
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-NG', {
@@ -169,12 +112,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     const fetchTransactions = async () => {
       setLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        // In a real implementation, you would call your API here:
-        // const response = await api.get('/api/transactions');
-        // setTransactions(response.data.transactions);
-        setTransactions(mockTransactions);
+        const response = await api.get('/api/transactions');
+        setTransactions(response.data.transactions);
       } catch (error) {
         console.error('Error fetching transactions:', error);
       } finally {

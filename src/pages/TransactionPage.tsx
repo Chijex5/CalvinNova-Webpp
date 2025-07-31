@@ -15,7 +15,7 @@ export interface Transaction {
   amount: number;
   sellerAmount: number;
   agentFee: number;
-  status: 'pending' | 'paid' | 'completed' | 'cancelled' | 'refunded';
+  status: 'pending' | 'paid' | 'collected' | 'cancelled' | 'refunded';
   sellerPaidout: boolean;
   createdAt: string;
   completedAt?: string;
@@ -25,101 +25,6 @@ export interface Transaction {
   buyerAvatar: string;
   sellerAvatar: string;
 }
-// Mock transactions data
-const mockTransactions = [{
-  id: 1,
-  buyerId: 'user123',
-  sellerId: 'seller456',
-  transactionId: 'TXN-2025-001',
-  productTitle: 'MacBook Pro M1 2021',
-  productImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400',
-  productId: '1',
-  amount: 850000,
-  sellerAmount: 833000,
-  agentFee: 17000,
-  status: 'completed',
-  sellerPaidout: true,
-  createdAt: '2025-01-15T10:30:00Z',
-  completedAt: '2025-01-16T14:20:00Z',
-  collectedOn: '2025-01-16T14:20:00Z',
-  buyerName: 'John Doe',
-  sellerName: 'Jane Smith',
-  buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'
-}, {
-  id: 2,
-  buyerId: 'seller456',
-  sellerId: 'user789',
-  transactionId: 'TXN-2025-002',
-  productTitle: 'iPhone 14 Pro Max',
-  productImage: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
-  productId: '2',
-  amount: 450000,
-  sellerAmount: 441000,
-  agentFee: 9000,
-  status: 'paid',
-  sellerPaidout: false,
-  createdAt: '2025-01-20T09:15:00Z',
-  buyerName: 'Jane Smith',
-  sellerName: 'Mike Johnson',
-  buyerAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'
-}, {
-  id: 3,
-  buyerId: 'user999',
-  sellerId: 'user123',
-  transactionId: 'TXN-2025-003',
-  productTitle: 'Dell XPS 13 Laptop',
-  productImage: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
-  productId: '3',
-  amount: 320000,
-  sellerAmount: 313600,
-  agentFee: 6400,
-  status: 'pending',
-  sellerPaidout: false,
-  createdAt: '2025-01-22T16:45:00Z',
-  buyerName: 'Alex Brown',
-  sellerName: 'John Doe',
-  buyerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100'
-}, {
-  id: 4,
-  buyerId: 'user123',
-  sellerId: 'user789',
-  transactionId: 'TXN-2025-004',
-  productTitle: 'Sony WH-1000XM4 Headphones',
-  productImage: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400',
-  productId: '6',
-  amount: 180000,
-  sellerAmount: 176400,
-  agentFee: 3600,
-  status: 'cancelled',
-  sellerPaidout: false,
-  createdAt: '2025-01-10T14:30:00Z',
-  buyerName: 'John Doe',
-  sellerName: 'Mike Johnson',
-  buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'
-}, {
-  id: 5,
-  buyerId: 'user123',
-  sellerId: 'user555',
-  transactionId: 'TXN-2025-005',
-  productTitle: 'Ergonomic Office Chair',
-  productImage: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400',
-  productId: '8',
-  amount: 70000,
-  sellerAmount: 68600,
-  agentFee: 1400,
-  status: 'refunded',
-  sellerPaidout: false,
-  createdAt: '2025-01-05T11:20:00Z',
-  completedAt: '2025-01-06T09:15:00Z',
-  buyerName: 'John Doe',
-  sellerName: 'Sarah Williams',
-  buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-  sellerAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100'
-}];
 // Format currency helper
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-NG', {
@@ -162,7 +67,7 @@ const getRelativeTime = (dateString: string) => {
 // Status helpers
 const getStatusColor = (status: Transaction['status']) => {
   switch (status) {
-    case 'completed':
+    case 'collected':
       return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
     case 'paid':
       return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
@@ -178,7 +83,7 @@ const getStatusColor = (status: Transaction['status']) => {
 };
 const getStatusIcon = (status: Transaction['status']) => {
   switch (status) {
-    case 'completed':
+    case 'collected':
       return <CheckCircle size={16} />;
     case 'paid':
       return <CreditCard size={16} />;
@@ -193,10 +98,10 @@ const getStatusIcon = (status: Transaction['status']) => {
   }
 };
 const getStatusText = (status: Transaction['status'], isSeller: boolean, sellerPaidout: boolean) => {
-  if (status === 'completed') {
+  if (status === 'collected') {
     if (isSeller && !sellerPaidout) return 'Awaiting Payout';
     if (isSeller && sellerPaidout) return 'Paid Out';
-    return 'Completed';
+    return 'Collected';
   }
   if (status === 'paid') {
     return isSeller ? 'Payment Received' : 'Paid';
@@ -217,7 +122,7 @@ const TransactionList = () => {
   const {
     user
   } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<'all' | 'buying' | 'selling'>('all');
   const [statusFilter, setStatusFilter] = useState<Transaction['status'] | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -229,12 +134,9 @@ const TransactionList = () => {
     const fetchTransactions = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        // In a real implementation, you would call your API here:
-        // const response = await api.get('/api/transactions');
-        // setTransactions(response.data.transactions);
-        setTransactions(mockTransactions);
+
+        const response = await api.get('/api/transactions');
+        setTransactions(response.data.transactions);
       } catch (error) {
         console.error('Error fetching transactions:', error);
       } finally {
@@ -317,8 +219,8 @@ const TransactionList = () => {
                   key: 'paid',
                   label: 'Paid'
                 }, {
-                  key: 'completed',
-                  label: 'Completed'
+                  key: 'collected',
+                  label: 'Collected'
                 }, {
                   key: 'cancelled',
                   label: 'Cancelled'
@@ -437,13 +339,8 @@ const TransactionDetail = () => {
     const fetchTransaction = async () => {
       setLoading(true);
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        // In a real implementation, you would call your API here:
-        // const response = await api.get(`/api/transactions/${transactionId}`);
-        // setTransaction(response.data.transaction);
-        const found = mockTransactions.find(t => t.transactionId === transactionId);
-        setTransaction(found as Transaction);
+        const response = await api.get(`/api/transactions/${transactionId}`);
+        setTransaction(response.data.transaction);
       } catch (error) {
         console.error('Error fetching transaction:', error);
       } finally {
@@ -485,12 +382,12 @@ const TransactionDetail = () => {
       icon: <ShoppingBag size={18} />
     }, {
       label: isBuyer ? 'Payment Made' : 'Payment Received',
-      completed: ['paid', 'completed', 'refunded'].includes(transaction.status),
-      date: transaction.status === 'paid' || transaction.status === 'completed' || transaction.status === 'refunded' ? transaction.createdAt : null,
+      completed: ['paid', 'collected', 'refunded'].includes(transaction.status),
+      date: transaction.status === 'paid' || transaction.status === 'collected' || transaction.status === 'refunded' ? transaction.createdAt : null,
       icon: <CreditCard size={18} />
     }, {
       label: isBuyer ? 'Item Collected' : 'Item Handed Over',
-      completed: transaction.status === 'completed' || transaction.status === 'refunded',
+      completed: transaction.status === 'collected' || transaction.status === 'refunded',
       date: transaction.completedAt,
       icon: <Truck size={18} />
     }];

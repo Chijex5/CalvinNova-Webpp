@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
-import ModernItemEditForm from '../components/EditProduct'
-import { useUserStore } from '../store/userStore'
-import { useProductStore } from '../store/productStore'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react';
+import ModernItemEditForm from '../components/EditProduct';
+import { Link } from 'react-router-dom';
+import { useUserStore } from '../store/userStore';
+import { useProductStore } from '../store/productStore';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -27,28 +28,11 @@ import {
   ArrowUpDown,
   Sparkles,
   Plus,
-} from 'lucide-react'
-import { productService } from '../services/productService'
-import { useChatStore } from '../store/chatStore'
-import { FadeIn } from '../utils/animations'
-interface Product {
-  id: string
-  title: string
-  description: string
-  price: number
-  category: string
-  condition: string
-  images: string[]
-  sellerId: string
-  sellerName?: string
-  sellerAvatar?: string
-  sellerCampus?: string
-  sellerRating?: number
-  school: string
-  createdAt: string
-  slug: string
-}
-// FadeIn Animation Component
+} from 'lucide-react';
+import { productService } from '../services/productService';
+import { useChatStore } from '../store/chatStore';
+import { Product } from '../store/productStore';
+
 const FadeIn = ({
   children,
   delay = 0,
@@ -205,7 +189,7 @@ const ImageGalleryModal = ({
             onClick={() => setIsZoomed(!isZoomed)}
             onLoad={handleImageLoad}
             onError={(e) => {
-              ;(e.target as HTMLImageElement).src = '/api/placeholder/800/600'
+              (e.target as HTMLImageElement).src = '/api/placeholder/800/600'
               setIsLoading(false)
             }}
           />
@@ -257,7 +241,7 @@ const ImageGalleryModal = ({
                   onError={(
                     e: React.SyntheticEvent<HTMLImageElement, Event>,
                   ) => {
-                    ;(e.target as HTMLImageElement).src =
+                    (e.target as HTMLImageElement).src =
                       '/api/placeholder/64/64'
                   }}
                 />
@@ -1250,7 +1234,7 @@ const MarketplaceUI = () => {
           }`}
         >
           {filteredProducts.map((product, index) => (
-            <FadeIn key={product.id} delay={index * 50} duration={0.3}>
+            <FadeIn key={product.id} delay={index * 50}>
               <ProductCard
                 product={product}
                 onDelete={handleDeleteRequest}
@@ -1360,19 +1344,4 @@ const MarketplaceUI = () => {
   )
 }
 export default MarketplaceUI
-// Helper component for Plus icon since it's not imported from lucide-react
-const Plus = ({ className = 'w-6 h-6' }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-)
+
