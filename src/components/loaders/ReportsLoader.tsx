@@ -1,13 +1,10 @@
 import React from 'react';
 import { Shield, Search, Filter, ChevronDown } from 'lucide-react';
-
 const AdminReportsSkeleton = () => {
   // Generate skeleton items
-  const skeletonItems = Array.from({ length: 4 }, (_, i) => (
-    <div
-      key={i}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 animate-pulse"
-    >
+  const skeletonItems = Array.from({
+    length: 4
+  }, (_, i) => <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
       {/* Report Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -54,11 +51,8 @@ const AdminReportsSkeleton = () => {
         <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-md w-20"></div>
         <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-md w-20"></div>
       </div>
-    </div>
-  ));
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    </div>);
+  return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 py-6">
@@ -96,8 +90,6 @@ const AdminReportsSkeleton = () => {
           {skeletonItems}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminReportsSkeleton;

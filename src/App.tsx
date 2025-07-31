@@ -24,20 +24,21 @@ import QRTransactionSystem from './pages/QRCodeGenerator';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
 import { ChatProvider } from './context/ChatContext';
-
 interface ProtectedRouteProps {
   children: React.ReactNode;
   link?: string; // optional now
 }
-
 const ModernLoader: React.FC = () => {
-  return (
-    <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex items-center justify-center overflow-hidden">
+  return <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex items-center justify-center overflow-hidden">
       {/* Brand-aligned background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-400 dark:bg-teal-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 dark:bg-indigo-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-40 left-40 w-80 h-80 bg-purple-400 dark:bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 dark:bg-indigo-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{
+        animationDelay: '2s'
+      }}></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-purple-400 dark:bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{
+        animationDelay: '4s'
+      }}></div>
       </div>
       
       {/* Main loader container */}
@@ -56,8 +57,13 @@ const ModernLoader: React.FC = () => {
           
           {/* Animated rings with brand colors */}
           <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-indigo-400 border-r-purple-400 dark:border-t-indigo-300 dark:border-r-purple-300 animate-spin"></div>
-          <div className="absolute inset-2 w-16 h-16 rounded-full border-4 border-transparent border-t-teal-400 border-l-indigo-400 dark:border-t-teal-300 dark:border-l-indigo-300 animate-spin" style={{animationDirection: 'reverse', animationDelay: '0.3s'}}></div>
-          <div className="absolute inset-4 w-12 h-12 rounded-full border-4 border-transparent border-t-purple-400 border-b-teal-400 dark:border-t-purple-300 dark:border-b-teal-300 animate-spin" style={{animationDelay: '0.6s'}}></div>
+          <div className="absolute inset-2 w-16 h-16 rounded-full border-4 border-transparent border-t-teal-400 border-l-indigo-400 dark:border-t-teal-300 dark:border-l-indigo-300 animate-spin" style={{
+          animationDirection: 'reverse',
+          animationDelay: '0.3s'
+        }}></div>
+          <div className="absolute inset-4 w-12 h-12 rounded-full border-4 border-transparent border-t-purple-400 border-b-teal-400 dark:border-t-purple-300 dark:border-b-teal-300 animate-spin" style={{
+          animationDelay: '0.6s'
+        }}></div>
           
           {/* Center shield icon for trust */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -79,8 +85,12 @@ const ModernLoader: React.FC = () => {
           {/* Animated dots with brand colors */}
           <div className="flex justify-center space-x-2">
             <div className="w-2 h-2 bg-indigo-400 dark:bg-indigo-300 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-purple-400 dark:bg-purple-300 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
-            <div className="w-2 h-2 bg-teal-400 dark:bg-teal-300 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+            <div className="w-2 h-2 bg-purple-400 dark:bg-purple-300 rounded-full animate-bounce" style={{
+            animationDelay: '0.15s'
+          }}></div>
+            <div className="w-2 h-2 bg-teal-400 dark:bg-teal-300 rounded-full animate-bounce" style={{
+            animationDelay: '0.3s'
+          }}></div>
           </div>
           
           {/* Progress bar */}
@@ -92,45 +102,34 @@ const ModernLoader: React.FC = () => {
       
       {/* Floating particles representing campus community */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-white/20 dark:bg-gray-300/20 rounded-full animate-ping"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`
-            }}
-          />
-        ))}
+        {[...Array(8)].map((_, i) => <div key={i} className="absolute w-2 h-2 bg-white/20 dark:bg-gray-300/20 rounded-full animate-ping" style={{
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animationDelay: `${Math.random() * 3}s`,
+        animationDuration: `${2 + Math.random() * 2}s`
+      }} />)}
       </div>
-    </div>
-  );
+    </div>;
 };
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, link }) => {
-  const { isAuthenticated, isLoading, isCheckingAuth } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  link
+}) => {
+  const {
+    isAuthenticated,
+    isLoading,
+    isCheckingAuth
+  } = useAuth();
   const location = useLocation();
-
   const redirectTo = link || location.pathname + location.search;
-  
   if (isLoading || isCheckingAuth) {
     return <ModernLoader />;
   }
-
   if (!isAuthenticated) {
-    return (
-      <Navigate
-        to={`/login?redirectedfrom=${encodeURIComponent(redirectTo)}`}
-        replace
-      />
-    );
+    return <Navigate to={`/login?redirectedfrom=${encodeURIComponent(redirectTo)}`} replace />;
   }
-
   return <>{children}</>;
 };
-
 export default ProtectedRoute;
 
 // Seller-only route component
@@ -141,16 +140,18 @@ const SellerRoute = ({
   children: React.ReactNode;
   link: string;
 }) => {
-  const { isAuthenticated, isLoading, isCheckingAuth, user } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading,
+    isCheckingAuth,
+    user
+  } = useAuth();
   const location = useLocation();
-
   const redirectTo = link || location.pathname + location.search;
   if (isLoading || isCheckingAuth) {
-    return (
-      <div className="flex items-center justify-center h-screen">
+    return <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
-      </div>
-    );
+      </div>;
   }
   if (!isAuthenticated) {
     console.warn('Unauthorized access to seller route');
@@ -162,28 +163,30 @@ const SellerRoute = ({
   }
   return <>{children}</>;
 };
-
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+const AdminRoute = ({
+  children
+}: {
+  children: React.ReactNode;
+}) => {
+  const {
+    user
+  } = useAuth();
   if (user && user.role === 'admin') {
     return <>{children}</>;
   }
   return <Navigate to="/" replace />;
 };
-
-
 export function App() {
-  const user = useUserStore((state) => state.user);
-  const isLoading = useUserStore((state) => state.isLoading);
+  const user = useUserStore(state => state.user);
+  const isLoading = useUserStore(state => state.isLoading);
   const isASeller = user?.role === 'seller' || user?.role === 'both';
   const [showPhoneNumberModal, setShowPhoneNumberModal] = React.useState(false);
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading) return;
     if (user && isASeller && !user.phoneNumber) {
       setShowPhoneNumberModal(true);
     }
   }, [user, isASeller, isLoading]);
-
   return <Router>
       <Toaster position="top-right" richColors />
       <AuthProvider>
@@ -191,12 +194,7 @@ export function App() {
           <ChatProvider>
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
-                <PhoneNumberModal
-                  isOpen={showPhoneNumberModal}
-                  onClose={() => setShowPhoneNumberModal(false)}
-                  onSuccess={() => setShowPhoneNumberModal(false)}
-                  userRole={user?.role || 'buyer'}
-                />
+                <PhoneNumberModal isOpen={showPhoneNumberModal} onClose={() => setShowPhoneNumberModal(false)} onSuccess={() => setShowPhoneNumberModal(false)} userRole={user?.role || 'buyer'} />
                 <SupportChat />
                 <Routes>
                   <Route path="/test" element={<CameraCanvasApp />} />
@@ -204,7 +202,7 @@ export function App() {
                   <Route path="/notifications" element={<ProtectedRoute> <NotificationsPage /> </ProtectedRoute>} />
                   <Route path="/transaction/verify/:transactionId" element={<ProtectedRoute> <QRTransactionSystem /> </ProtectedRoute>} />
                   <Route path="/buy/:productId" element={<ProtectedRoute> <BuyPage /> </ProtectedRoute>} />
-                  <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute> } />
+                  <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute>} />
                   <Route path="/product/:slug" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
                   <Route path="/verification/:token" element={<EmailVerification />} />
                   <Route path="/login" element={<Login />} />
@@ -224,27 +222,21 @@ export function App() {
                   <Route path="/account/transaction/:transactionId" element={<ProtectedRoute>
                         <TransactionPages />
                       </ProtectedRoute>} />
-                  <Route path="/sell" element={
-                    <ProtectedRoute>
+                  <Route path="/sell" element={<ProtectedRoute>
                     <SellerRoute link='/sell'>
                         <Sell />
                       </SellerRoute>
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/users" element={
-                      <ProtectedRoute>
+                      </ProtectedRoute>} />
+                    <Route path="/admin/users" element={<ProtectedRoute>
                         <AdminRoute>
                           <AdminUsersPage />
                         </AdminRoute>
-                      </ProtectedRoute>
-                    } />   
-                    <Route path="/admin/reports" element={
-                      <ProtectedRoute>
+                      </ProtectedRoute>} />   
+                    <Route path="/admin/reports" element={<ProtectedRoute>
                         <AdminRoute>
                           <AdminReportsPage />
                         </AdminRoute>
-                      </ProtectedRoute>
-                    } />            
+                      </ProtectedRoute>} />            
                 </Routes>
               </Layout>
             </div>

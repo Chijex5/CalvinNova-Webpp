@@ -1,28 +1,21 @@
 import { Mail, CheckCircle, ExternalLink, X } from 'lucide-react';
-
 interface EmailSentNotificationProps {
   isOpen: boolean;
   onClose: () => void;
   email: string;
   onGoToLogin: () => void;
 }
-
 const EmailSentNotification = ({
   isOpen,
   onClose,
   email,
-  onGoToLogin,
+  onGoToLogin
 }: EmailSentNotificationProps) => {
   if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+  return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-2xl max-w-md w-full sm:max-w-lg p-4 sm:p-6 md:p-8 relative max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
-        >
+        <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X size={20} />
         </button>
 
@@ -81,16 +74,10 @@ const EmailSentNotification = ({
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 sm:py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-          >
+          <button onClick={onClose} className="flex-1 px-4 py-2 sm:py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
             I’ll Check Later
           </button>
-          <button
-            onClick={onGoToLogin}
-            className="flex-1 px-4 py-2 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition flex items-center justify-center"
-          >
+          <button onClick={onGoToLogin} className="flex-1 px-4 py-2 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition flex items-center justify-center">
             Go to Login
             <ExternalLink className="ml-2" size={16} />
           </button>
@@ -103,8 +90,6 @@ const EmailSentNotification = ({
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default EmailSentNotification;

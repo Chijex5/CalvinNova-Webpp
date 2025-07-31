@@ -8,7 +8,6 @@ import api from '../utils/apiService';
 import { Camera, CheckCircle, AlertCircle, ArrowLeft, ArrowRight, Shield, Star, Sparkles, CreditCard, Clock, Trophy, Heart, Zap, User, Package, X, StopCircle, Lightbulb, AlertTriangle, Upload, QrCode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { tr } from 'date-fns/locale';
-
 export interface TransactionData {
   transactionId: string;
   verificationCode: string;
@@ -18,18 +17,20 @@ export interface TransactionData {
   createdAt: string;
   isSeller: boolean;
 }
-
-const GenerateQRCode = ({ transactionData, onBack, onConfirm }: { 
-  transactionData: TransactionData; 
+const GenerateQRCode = ({
+  transactionData,
+  onBack,
+  onConfirm
+}: {
+  transactionData: TransactionData;
   onBack: () => void;
   onConfirm: () => void;
 }) => {
   const [qrData, setQrData] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-
   useEffect(() => {
-    const timer = setTimeout(() => { 
+    const timer = setTimeout(() => {
       setQrData(JSON.stringify({
         transactionId: transactionData.transactionId,
         verificationCode: transactionData.verificationCode,
@@ -37,14 +38,12 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
       }));
       setIsLoading(false);
     }, 1000);
-
     return () => clearTimeout(timer);
   }, [transactionData]);
-
   const handleConfirm = async () => {
     try {
-      const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`)
-      if (response && response.data.success){
+      const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`);
+      if (response && response.data.success) {
         setShowConfirmModal(false);
         onConfirm();
       }
@@ -52,28 +51,20 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
       console.error('Error confirming transaction:', error);
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Generating QR Code...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+  return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={onBack}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
+            <button onClick={onBack} className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Transaction QR Code</h1>
@@ -99,15 +90,7 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
         {/* QR Code Display */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2 text-center mb-6">
           <div className="bg-white p-2 rounded-lg inline-block shadow-inner">
-            {qrData && (
-              <QRCodeSVG 
-                value={qrData} 
-                size={320}
-                level="M"
-                includeMargin={false}
-                className="mx-auto"
-              />
-            )}
+            {qrData && <QRCodeSVG value={qrData} size={320} level="M" includeMargin={false} className="mx-auto" />}
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
             Transaction ID: {transactionData.transactionId}
@@ -143,15 +126,11 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
       </div>
 
       {/* Seller Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
+      {showConfirmModal && <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Confirm Payout</h3>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              >
+              <button onClick={() => setShowConfirmModal(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -159,32 +138,26 @@ const GenerateQRCode = ({ transactionData, onBack, onConfirm }: {
               The buyer has confirmed they received the item. By agreeing, you confirm the transaction is complete and authorize the payout.
             </p>
             <div className="flex space-x-3">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors"
-              >
+              <button onClick={() => setShowConfirmModal(false)} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirm}
-                className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-              >
+              <button onClick={handleConfirm} className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
                 I Agree
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
-const ScanQRCode = ({ transactionData, onBack, onComplete }: { 
-  transactionData: TransactionData; 
+const ScanQRCode = ({
+  transactionData,
+  onBack,
+  onComplete
+}: {
+  transactionData: TransactionData;
   onBack: () => void;
-  onComplete: () => void; 
+  onComplete: () => void;
 }) => {
-
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -195,7 +168,6 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
   const [scanAttempts, setScanAttempts] = useState(0);
   const [lastScanTime, setLastScanTime] = useState(Date.now());
   const [isProcessingConfirmation, setIsProcessingConfirmation] = useState(false);
-  
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
@@ -205,57 +177,41 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Stop existing streams first
       await stopCamera();
-      
+
       // Initialize ZXing code reader
       if (!codeReaderRef.current) {
         codeReaderRef.current = new BrowserQRCodeReader();
       }
-      
       const codeReader = codeReaderRef.current;
-      
       try {
         // Get available video devices
         const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
-        
         if (videoInputDevices.length === 0) {
           throw new Error('No camera found on this device. You can try uploading an image instead.');
         }
-        
+
         // Try to find back camera first, fallback to first available
-        const selectedDeviceId = videoInputDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear') ||
-          device.label.toLowerCase().includes('environment')
-        )?.deviceId || videoInputDevices[0].deviceId;
-        
+        const selectedDeviceId = videoInputDevices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear') || device.label.toLowerCase().includes('environment'))?.deviceId || videoInputDevices[0].deviceId;
         setIsScanning(true);
         setIsLoading(false);
-        
+
         // Start continuous decode from video device and store the controls
-        controlsRef.current = await codeReader.decodeFromVideoDevice(
-          selectedDeviceId, 
-          videoRef.current!, 
-          (result, error, controls) => {
-            setScanAttempts(prev => prev + 1);
-            setLastScanTime(Date.now());
-            
-            if (result) {
-              handleScanSuccess(result.getText());
-            }
-            
-            if (error && !(error instanceof NotFoundException)) {
-              console.error('Scan error:', error);
-            }
+        controlsRef.current = await codeReader.decodeFromVideoDevice(selectedDeviceId, videoRef.current!, (result, error, controls) => {
+          setScanAttempts(prev => prev + 1);
+          setLastScanTime(Date.now());
+          if (result) {
+            handleScanSuccess(result.getText());
           }
-        );
-        
+          if (error && !(error instanceof NotFoundException)) {
+            console.error('Scan error:', error);
+          }
+        });
       } catch (cameraError: any) {
         console.error('Camera setup error:', cameraError);
         let errorMessage = 'Camera access failed. ';
-        
         if (cameraError.name === 'NotAllowedError' || cameraError.name === 'PermissionDeniedError') {
           errorMessage += 'Please allow camera access in your browser settings and try again.';
         } else if (cameraError.name === 'NotFoundError' || cameraError.name === 'DevicesNotFoundError') {
@@ -265,12 +221,10 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
         } else {
           errorMessage += cameraError.message || 'Unknown error occurred. Please refresh and try again.';
         }
-        
         setError(errorMessage);
         setIsLoading(false);
         setIsScanning(false);
       }
-      
     } catch (err: any) {
       console.error('General camera error:', err);
       setError('Failed to initialize camera. Please refresh and try again.');
@@ -278,7 +232,6 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
       setIsScanning(false);
     }
   };
-
   const stopCamera = async () => {
     try {
       // Method 1: Stop using ZXing controls (primary method)
@@ -330,25 +283,21 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
       } catch (enumerateError) {
         console.error('Error during device enumeration cleanup:', enumerateError);
       }
-
       setIsScanning(false);
       console.log('Camera stop sequence completed');
-      
     } catch (error) {
       console.error('Error in stopCamera:', error);
       setIsScanning(false);
     }
   };
-
   const handleScanSuccess = (scannedData: string) => {
     // Prevent multiple scans while processing
     if (isProcessingConfirmation || showConfirmModal) {
       return;
     }
-
     try {
       let parsedData;
-      
+
       // Try to parse JSON if it's a string
       if (typeof scannedData === 'string') {
         try {
@@ -368,17 +317,13 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
       } else {
         parsedData = scannedData;
       }
-      
+
       // Verify scanned data matches transaction data
-      if (parsedData.transactionId === transactionData.transactionId &&
-          parsedData.sellerId === transactionData.sellerId &&
-          parsedData.verificationCode === transactionData.verificationCode) {
-        
+      if (parsedData.transactionId === transactionData.transactionId && parsedData.sellerId === transactionData.sellerId && parsedData.verificationCode === transactionData.verificationCode) {
         // Stop scanning before showing modal
         stopCamera();
         setScanResult(parsedData);
         setShowConfirmModal(true);
-        
       } else {
         setError('QR code does not match this transaction. Please scan the correct code.');
         // Restart scanning after showing error
@@ -400,28 +345,22 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
       }, 2000);
     }
   };
-
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
     setIsLoading(true);
     setError(null);
-    
     try {
       // Initialize ZXing code reader if not already done
       if (!codeReaderRef.current) {
         codeReaderRef.current = new BrowserQRCodeReader();
       }
-      
       const codeReader = codeReaderRef.current;
-      
+
       // Create a temporary URL for the file and decode QR code from it
       const imageUrl = URL.createObjectURL(file);
-      
       try {
         const result = await codeReader.decodeFromImageUrl(imageUrl);
-        
         if (result) {
           handleScanSuccess(result.getText());
         } else {
@@ -439,24 +378,21 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
         setError('Failed to scan QR code from image. Please try again.');
       }
     }
-    
     setIsLoading(false);
-    
+
     // Reset file input
     event.target.value = '';
   };
-
   const confirmReceipt = async () => {
     try {
-      setTransactionProcessing(true)
+      setTransactionProcessing(true);
       setIsProcessingConfirmation(true);
       setShowConfirmModal(false);
-      const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`)
-      if (response && response.data.success){
-        await stopCamera(); 
+      const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`);
+      if (response && response.data.success) {
+        await stopCamera();
         onComplete();
       }
-
     } catch (error) {
       console.error('Error confirming receipt:', error);
       setError('Failed to confirm receipt. Please try again.');
@@ -466,7 +402,6 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
       setIsProcessingConfirmation(false);
     }
   };
-
   const resetScanner = () => {
     setError(null);
     setScanResult(null);
@@ -498,17 +433,12 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
   const getSellerFirstName = (fullName: string) => {
     return fullName.split(' ')[0];
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+  return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Header */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm sticky top-0 z-10 border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={onBack}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:scale-105"
-            >
+            <button onClick={onBack} className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:scale-105">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
@@ -554,8 +484,7 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
 
         {/* Scanner Area */}
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-          {!isScanning && !isLoading && !error && (
-            <div className="p-8 text-center">
+          {!isScanning && !isLoading && !error && <div className="p-8 text-center">
               <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
                 <Camera className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -565,10 +494,7 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
               </p>
               
               <div className="space-y-4">
-                <button
-                  onClick={startCamera}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
-                >
+                <button onClick={startCamera} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]">
                   <Camera className="w-5 h-5" />
                   <span>Use Camera</span>
                 </button>
@@ -579,51 +505,33 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600"></div>
                 </div>
                 
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-md transform hover:scale-[1.01] active:scale-[0.99]"
-                >
+                <button onClick={() => fileInputRef.current?.click()} className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-md transform hover:scale-[1.01] active:scale-[0.99]">
                   <Upload className="w-5 h-5" />
                   <span>Upload Image</span>
                 </button>
                 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
               </div>
-            </div>
-          )}
+            </div>}
 
-          {isLoading && (
-            <div className="p-8 text-center">
+          {isLoading && <div className="p-8 text-center">
               <div className="relative w-16 h-16 mx-auto mb-6">
                 <div className="absolute inset-0 rounded-full border-4 border-indigo-200 dark:border-indigo-800"></div>
                 <div className="absolute inset-0 rounded-full border-4 border-indigo-600 dark:border-indigo-400 border-t-transparent animate-spin"></div>
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Initializing Camera</h3>
               <p className="text-gray-600 dark:text-gray-300">Please wait a moment...</p>
-            </div>
-          )}
+            </div>}
 
-          {(isScanning || isLoading) && (
-            <div className="relative">
+          {(isScanning || isLoading) && <div className="relative">
               {/* Camera Feed */}
-              <div className="relative bg-black rounded-t-2xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative bg-black rounded-t-2xl overflow-hidden" style={{
+            aspectRatio: '4/3'
+          }}>
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                 
                 {/* Scanning Overlay */}
-                {isScanning && (
-                  <>
+                {isScanning && <>
                     {/* Dark overlay with cutout */}
                     <div className="absolute inset-0 bg-black/50">
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -638,13 +546,10 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
                             
                             {/* Active scanning line animation */}
                             <div className="absolute inset-0 overflow-hidden rounded-xl">
-                              <div 
-                                className="w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent absolute animate-bounce"
-                                style={{
-                                  top: `${(scanAttempts % 20) * 5}%`,
-                                  transition: 'top 0.3s ease-in-out'
-                                }}
-                              ></div>
+                              <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent absolute animate-bounce" style={{
+                          top: `${scanAttempts % 20 * 5}%`,
+                          transition: 'top 0.3s ease-in-out'
+                        }}></div>
                             </div>
                             
                             {/* Scan activity indicator */}
@@ -661,14 +566,12 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
                         </div>
                       </div>
                     </div>
-                  </>
-                )}
+                  </>}
               </div>
               
               {/* Controls */}
               <div className="p-6 text-center">
-                {isScanning ? (
-                  <>
+                {isScanning ? <>
                     <div className="flex items-center justify-center space-x-2 mb-2">
                       <div className={`w-2 h-2 rounded-full ${Date.now() - lastScanTime < 500 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -681,39 +584,27 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                       {Date.now() - lastScanTime < 500 ? '📡 Signal detected' : '🔍 Searching for QR code'}
                     </div>
-                    <button
-                      onClick={stopCamera}
-                      className="inline-flex items-center space-x-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
-                    >
+                    <button onClick={stopCamera} className="inline-flex items-center space-x-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors">
                       <StopCircle className="w-4 h-4" />
                       <span>Stop Scanning</span>
                     </button>
-                  </>
-                ) : (
-                  <div className="animate-pulse">
+                  </> : <div className="animate-pulse">
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
-                  </div>
-                )}
+                  </div>}
               </div>
-            </div>
-          )}
+            </div>}
 
-          {error && (
-            <div className="p-8 text-center">
+          {error && <div className="p-8 text-center">
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
               </div>
               <h3 className="font-semibold text-red-900 dark:text-red-100 mb-2">Scan Failed</h3>
               <p className="text-sm text-red-700 dark:text-red-300 mb-6 leading-relaxed px-4">{error}</p>
-              <button
-                onClick={resetScanner}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-              >
+              <button onClick={resetScanner} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg">
                 Try Again
               </button>
-            </div>
-          )}
+            </div>}
         </div>
 
         {/* Tips */}
@@ -733,8 +624,7 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
       </div>
 
       {/* Buyer Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      {showConfirmModal && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
@@ -748,10 +638,7 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
                     <p className="text-green-100 text-sm">Ready to complete transaction</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowConfirmModal(false)}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors rounded-lg"
-                >
+                <button onClick={() => setShowConfirmModal(false)} className="p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors rounded-lg">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -779,76 +666,67 @@ const ScanQRCode = ({ transactionData, onBack, onComplete }: {
               </div>
               
               <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowConfirmModal(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                >
+                <button onClick={() => setShowConfirmModal(false)} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                   Cancel
                 </button>
-                <button
-                  onClick={confirmReceipt}
-                  disabled={transactionProcessing}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {transactionProcessing?'Confirming.....': 'Confirm Receipt'}
+                <button onClick={confirmReceipt} disabled={transactionProcessing} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                  {transactionProcessing ? 'Confirming.....' : 'Confirm Receipt'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
-const BuyerTransactionProcessing = ({ 
-  sellerName, 
+const BuyerTransactionProcessing = ({
+  sellerName,
   transactionId,
-  onComplete 
-}: { 
-  sellerName: string; 
+  onComplete
+}: {
+  sellerName: string;
   transactionId: string;
   onComplete: () => void;
 }) => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [showPulse, setShowPulse] = useState(true);
-  const [particles, setParticles] = useState<Array<{id: number, x: number, y: number, delay: number}>>([]);
-
-  const processingSteps = [
-    { 
-      icon: Package, 
-      text: "Confirming item receipt", 
-      subtext: "Verifying handover completion",
-      duration: 2000,
-      color: "from-blue-500 to-cyan-500"
-    },
-    { 
-      icon: Shield, 
-      text: "Securing transaction", 
-      subtext: "Applying security protocols",
-      duration: 1800,
-      color: "from-green-500 to-emerald-500"
-    },
-    { 
-      icon: CreditCard, 
-      text: "Processing payment release", 
-      subtext: "Authorizing seller payout",
-      duration: 2500,
-      color: "from-purple-500 to-pink-500"
-    },
-    { 
-      icon: Trophy, 
-      text: "Finalizing transaction", 
-      subtext: "Completing all records",
-      duration: 1200,
-      color: "from-yellow-500 to-orange-500"
-    }
-  ];
+  const [particles, setParticles] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    delay: number;
+  }>>([]);
+  const processingSteps = [{
+    icon: Package,
+    text: "Confirming item receipt",
+    subtext: "Verifying handover completion",
+    duration: 2000,
+    color: "from-blue-500 to-cyan-500"
+  }, {
+    icon: Shield,
+    text: "Securing transaction",
+    subtext: "Applying security protocols",
+    duration: 1800,
+    color: "from-green-500 to-emerald-500"
+  }, {
+    icon: CreditCard,
+    text: "Processing payment release",
+    subtext: "Authorizing seller payout",
+    duration: 2500,
+    color: "from-purple-500 to-pink-500"
+  }, {
+    icon: Trophy,
+    text: "Finalizing transaction",
+    subtext: "Completing all records",
+    duration: 1200,
+    color: "from-yellow-500 to-orange-500"
+  }];
 
   // Initialize floating particles
   useEffect(() => {
-    const newParticles = Array.from({ length: 12 }, (_, i) => ({
+    const newParticles = Array.from({
+      length: 12
+    }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -856,9 +734,7 @@ const BuyerTransactionProcessing = ({
     }));
     setParticles(newParticles);
   }, []);
-
   useEffect(() => {
-
     const stepTimeouts: NodeJS.Timeout[] = [];
 
     // Start progress animation
@@ -877,14 +753,13 @@ const BuyerTransactionProcessing = ({
     processingSteps.forEach((step, index) => {
       const timeout = setTimeout(() => {
         setCurrentStep(index);
-        
+
         // Add some visual feedback
         if (index < processingSteps.length - 1) {
           setShowPulse(false);
           setTimeout(() => setShowPulse(true), 100);
         }
       }, cumulativeDuration);
-      
       stepTimeouts.push(timeout);
       cumulativeDuration += step.duration;
     });
@@ -893,20 +768,16 @@ const BuyerTransactionProcessing = ({
     const completionTimeout = setTimeout(() => {
       onComplete();
     }, cumulativeDuration + 500);
-
     return () => {
       clearInterval(progressInterval);
       stepTimeouts.forEach(timeout => clearTimeout(timeout));
       clearTimeout(completionTimeout);
     };
   }, [onComplete]);
-
   const currentStepData = processingSteps[currentStep];
   const CurrentIcon = currentStepData?.icon || Package;
   const getSellerFirstName = (fullName: string) => fullName.split(' ')[0];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
+  return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -916,18 +787,12 @@ const BuyerTransactionProcessing = ({
         <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-gradient-to-br from-green-200/50 to-blue-200/50 dark:from-green-800/30 dark:to-blue-800/30 rounded-full animate-pulse delay-500 blur-md"></div>
         
         {/* Floating particles */}
-        {particles.map((particle) => (
-          <div
-            key={particle.id}
-            className="absolute w-2 h-2 bg-indigo-400/60 dark:bg-indigo-300/40 rounded-full animate-bounce"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              animationDelay: `${particle.delay}ms`,
-              animationDuration: `${3000 + Math.random() * 2000}ms`
-            }}
-          />
-        ))}
+        {particles.map(particle => <div key={particle.id} className="absolute w-2 h-2 bg-indigo-400/60 dark:bg-indigo-300/40 rounded-full animate-bounce" style={{
+        left: `${particle.x}%`,
+        top: `${particle.y}%`,
+        animationDelay: `${particle.delay}ms`,
+        animationDuration: `${3000 + Math.random() * 2000}ms`
+      }} />)}
       </div>
 
       {/* Main Content */}
@@ -965,28 +830,9 @@ const BuyerTransactionProcessing = ({
               <div className="relative w-40 h-40 mx-auto mb-8">
                 {/* Background ring */}
                 <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 160 160">
-                  <circle
-                    cx="80"
-                    cy="80"
-                    r="70"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="none"
-                    className="text-gray-200 dark:text-gray-700"
-                  />
+                  <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
                   {/* Progress ring with gradient */}
-                  <circle
-                    cx="80"
-                    cy="80"
-                    r="70"
-                    stroke="url(#progressGradient)"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 70}`}
-                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 100)}`}
-                    className="transition-all duration-500 ease-out drop-shadow-sm"
-                  />
+                  <circle cx="80" cy="80" r="70" stroke="url(#progressGradient)" strokeWidth="8" fill="none" strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 70}`} strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 100)}`} className="transition-all duration-500 ease-out drop-shadow-sm" />
                   <defs>
                     <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#6366f1" />
@@ -1000,11 +846,10 @@ const BuyerTransactionProcessing = ({
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     {/* Animated Icon */}
-                    <div className={`w-20 h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center shadow-xl transform transition-all duration-700 ${showPulse ? 'scale-110' : 'scale-100'}`}
-                         style={{
-                           background: `linear-gradient(135deg, ${currentStepData ? currentStepData.color.replace('from-', '').replace(' to-', ', ').replace('-500', '') : 'rgb(99, 102, 241), rgb(139, 92, 246)'})`,
-                           boxShadow: '0 10px 30px rgba(99, 102, 241, 0.3)'
-                         }}>
+                    <div className={`w-20 h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center shadow-xl transform transition-all duration-700 ${showPulse ? 'scale-110' : 'scale-100'}`} style={{
+                    background: `linear-gradient(135deg, ${currentStepData ? currentStepData.color.replace('from-', '').replace(' to-', ', ').replace('-500', '') : 'rgb(99, 102, 241), rgb(139, 92, 246)'})`,
+                    boxShadow: '0 10px 30px rgba(99, 102, 241, 0.3)'
+                  }}>
                       <CurrentIcon className={`w-10 h-10 text-white transition-all duration-500 ${currentStep === processingSteps.length - 1 ? 'animate-bounce' : ''}`} />
                     </div>
                     
@@ -1019,29 +864,23 @@ const BuyerTransactionProcessing = ({
                 </div>
 
                 {/* Floating success indicators around the ring */}
-                {progress > 25 && (
-                  <div className="absolute top-2 right-8 animate-bounce delay-300">
+                {progress > 25 && <div className="absolute top-2 right-8 animate-bounce delay-300">
                     <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
                       <CheckCircle className="w-4 h-4 text-white" />
                     </div>
-                  </div>
-                )}
+                  </div>}
                 
-                {progress > 50 && (
-                  <div className="absolute bottom-2 left-8 animate-bounce delay-700">
+                {progress > 50 && <div className="absolute bottom-2 left-8 animate-bounce delay-700">
                     <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
                       <Shield className="w-4 h-4 text-white" />
                     </div>
-                  </div>
-                )}
+                  </div>}
                 
-                {progress > 75 && (
-                  <div className="absolute top-8 left-2 animate-bounce delay-1000">
+                {progress > 75 && <div className="absolute top-8 left-2 animate-bounce delay-1000">
                     <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
                       <Zap className="w-4 h-4 text-white" />
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
 
               {/* Current Step Display */}
@@ -1060,16 +899,7 @@ const BuyerTransactionProcessing = ({
 
                 {/* Step Progress Indicators */}
                 <div className="flex justify-center space-x-2 mt-6">
-                  {processingSteps.map((step, index) => (
-                    <div
-                      key={index}
-                      className={`h-2 rounded-full transition-all duration-700 ${
-                        index <= currentStep 
-                          ? `bg-gradient-to-r ${step.color} w-10 shadow-md` 
-                          : 'bg-gray-200 dark:bg-gray-700 w-2'
-                      }`}
-                    />
-                  ))}
+                  {processingSteps.map((step, index) => <div key={index} className={`h-2 rounded-full transition-all duration-700 ${index <= currentStep ? `bg-gradient-to-r ${step.color} w-10 shadow-md` : 'bg-gray-200 dark:bg-gray-700 w-2'}`} />)}
                 </div>
               </div>
 
@@ -1117,44 +947,43 @@ const BuyerTransactionProcessing = ({
                 <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce delay-200"></div>
               </div>
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                {progress < 30 ? "Hang tight, magic happening..." : 
-                 progress < 60 ? "Almost there, stay awesome!" :
-                 progress < 90 ? "Final touches, you're amazing!" :
-                 "Success incoming! 🎉"}
+                {progress < 30 ? "Hang tight, magic happening..." : progress < 60 ? "Almost there, stay awesome!" : progress < 90 ? "Final touches, you're amazing!" : "Success incoming! 🎉"}
               </span>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 
-
 // Enhanced Success Page Component
-const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType: 'seller' | 'buyer' }) => {
+const TransactionSuccess = ({
+  onBack,
+  userType
+}: {
+  onBack: () => void;
+  userType: 'seller' | 'buyer';
+}) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [animationStage, setAnimationStage] = useState(0);
-
   useEffect(() => {
     // Stage 0: Initial load
     const timer1 = setTimeout(() => setAnimationStage(1), 300);
-    
+
     // Stage 1: Confetti explosion
     const timer2 = setTimeout(() => {
       setShowConfetti(true);
       setAnimationStage(2);
     }, 800);
-    
+
     // Stage 2: Content reveal
     const timer3 = setTimeout(() => setAnimationStage(3), 1500);
-    
+
     // Stage 3: Final state
     const timer4 = setTimeout(() => {
       setShowConfetti(false);
       setAnimationStage(4);
     }, 4000);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -1162,39 +991,30 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
       clearTimeout(timer4);
     };
   }, []);
-
-  const confettiPieces = Array.from({ length: 50 }, (_, i) => ({
+  const confettiPieces = Array.from({
+    length: 50
+  }, (_, i) => ({
     id: i,
     color: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'][i % 6],
     left: Math.random() * 100,
     animationDelay: Math.random() * 2,
     size: Math.random() * 6 + 4
   }));
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
+  return <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
       
       {/* Confetti Animation */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-30">
-          {confettiPieces.map((piece) => (
-            <div
-              key={piece.id}
-              className="absolute animate-bounce"
-              style={{
-                left: `${piece.left}%`,
-                backgroundColor: piece.color,
-                width: `${piece.size}px`,
-                height: `${piece.size}px`,
-                borderRadius: piece.id % 3 === 0 ? '50%' : piece.id % 2 === 0 ? '0%' : '20%',
-                animationDelay: `${piece.animationDelay}s`,
-                animationDuration: '3s',
-                top: '-10px'
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {showConfetti && <div className="fixed inset-0 pointer-events-none z-30">
+          {confettiPieces.map(piece => <div key={piece.id} className="absolute animate-bounce" style={{
+        left: `${piece.left}%`,
+        backgroundColor: piece.color,
+        width: `${piece.size}px`,
+        height: `${piece.size}px`,
+        borderRadius: piece.id % 3 === 0 ? '50%' : piece.id % 2 === 0 ? '0%' : '20%',
+        animationDelay: `${piece.animationDelay}s`,
+        animationDuration: '3s',
+        top: '-10px'
+      }} />)}
+        </div>}
 
       {/* Floating Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -1208,17 +1028,10 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
       <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md shadow-sm sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={onBack}
-              className={`p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-300 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:scale-110 transform ${
-                animationStage >= 3 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-              }`}
-            >
+            <button onClick={onBack} className={`p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-300 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:scale-110 transform ${animationStage >= 3 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className={`transition-all duration-500 delay-300 ${
-              animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-            }`}>
+            <div className={`transition-all duration-500 delay-300 ${animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
               <h1 className="text-lg font-bold text-gray-900 dark:text-white">Transaction Complete</h1>
               <p className="text-xs text-green-600 dark:text-green-400 font-medium">✨ Successfully processed</p>
             </div>
@@ -1230,9 +1043,7 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
       <div className="max-w-md mx-auto px-4 py-8 relative z-10">
         
         {/* Success Card */}
-        <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-1000 transform ${
-          animationStage >= 1 ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-8'
-        }`}>
+        <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-1000 transform ${animationStage >= 1 ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-8'}`}>
           
           {/* Success Header with Gradient */}
           <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 p-8 text-white relative overflow-hidden">
@@ -1240,27 +1051,19 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
             
-            <div className={`relative z-10 text-center transition-all duration-800 delay-500 ${
-              animationStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
+            <div className={`relative z-10 text-center transition-all duration-800 delay-500 ${animationStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               {/* Animated Success Icon */}
               <div className="relative inline-block mb-4">
-                <div className={`w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transform transition-all duration-700 ${
-                  animationStage >= 2 ? 'scale-100 rotate-0' : 'scale-50 rotate-45'
-                }`}>
-                  <CheckCircle className={`w-10 h-10 text-white transition-all duration-500 delay-700 ${
-                    animationStage >= 2 ? 'scale-100' : 'scale-0'
-                  }`} />
+                <div className={`w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transform transition-all duration-700 ${animationStage >= 2 ? 'scale-100 rotate-0' : 'scale-50 rotate-45'}`}>
+                  <CheckCircle className={`w-10 h-10 text-white transition-all duration-500 delay-700 ${animationStage >= 2 ? 'scale-100' : 'scale-0'}`} />
                 </div>
                 
                 {/* Sparkle Effects */}
-                {animationStage >= 2 && (
-                  <>
+                {animationStage >= 2 && <>
                     <Sparkles className="w-4 h-4 text-yellow-300 absolute -top-1 -right-1 animate-ping" />
                     <Star className="w-3 h-3 text-yellow-200 absolute -bottom-1 -left-1 animate-pulse delay-300" />
                     <Zap className="w-3 h-3 text-yellow-100 absolute top-2 -left-2 animate-bounce delay-500" />
-                  </>
-                )}
+                  </>}
               </div>
               
               <h2 className="text-2xl font-bold mb-2">🎉 Amazing!</h2>
@@ -1274,31 +1077,20 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
           <div className="p-8 space-y-6">
             
             {/* Status Message */}
-            <div className={`text-center transition-all duration-600 delay-700 ${
-              animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
+            <div className={`text-center transition-all duration-600 delay-700 ${animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                 {userType === 'seller' ? '💰 Payment Processing' : '📦 Item Confirmed'}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                {userType === 'seller' 
-                  ? 'Great job! Your payment will be processed and transferred to your account within the next few minutes.' 
-                  : 'Perfect! You\'ve successfully confirmed receipt of your item. The transaction is now complete.'
-                }
+                {userType === 'seller' ? 'Great job! Your payment will be processed and transferred to your account within the next few minutes.' : 'Perfect! You\'ve successfully confirmed receipt of your item. The transaction is now complete.'}
               </p>
             </div>
 
             {/* Feature Highlights */}
-            <div className={`grid grid-cols-2 gap-4 transition-all duration-600 delay-900 ${
-              animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
+            <div className={`grid grid-cols-2 gap-4 transition-all duration-600 delay-900 ${animationStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4 text-center">
                 <div className="w-10 h-10 bg-green-100 dark:bg-green-800/50 rounded-xl flex items-center justify-center mx-auto mb-2">
-                  {userType === 'seller' ? (
-                    <CreditCard className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <Package className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  )}
+                  {userType === 'seller' ? <CreditCard className="w-5 h-5 text-green-600 dark:text-green-400" /> : <Package className="w-5 h-5 text-green-600 dark:text-green-400" />}
                 </div>
                 <p className="text-sm font-semibold text-green-800 dark:text-green-200">
                   {userType === 'seller' ? 'Secure Payment' : 'Item Verified'}
@@ -1318,9 +1110,7 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
             </div>
 
             {/* Next Steps */}
-            <div className={`bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl p-5 transition-all duration-600 delay-1100 ${
-              animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
+            <div className={`bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl p-5 transition-all duration-600 delay-1100 ${animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -1328,23 +1118,15 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">What's next?</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {userType === 'seller' 
-                      ? 'You\'ll receive a notification once the payment hits your account. Check your transaction history for updates.'
-                      : 'You can rate your experience and the seller. Check your purchase history anytime in your account.'
-                    }
+                    {userType === 'seller' ? 'You\'ll receive a notification once the payment hits your account. Check your transaction history for updates.' : 'You can rate your experience and the seller. Check your purchase history anytime in your account.'}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Action Button */}
-            <div className={`transition-all duration-600 delay-1300 ${
-              animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
-              <button
-                onClick={onBack}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
-              >
+            <div className={`transition-all duration-600 delay-1300 ${animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <button onClick={onBack} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
                 <Heart className="w-5 h-5" />
                 <span>Continue Shopping</span>
               </button>
@@ -1353,8 +1135,7 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
         </div>
 
         {/* Floating Success Elements */}
-        {animationStage >= 2 && (
-          <div className="absolute inset-0 pointer-events-none">
+        {animationStage >= 2 && <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-4 left-4 animate-bounce delay-1000">
               <Star className="w-6 h-6 text-yellow-400" />
             </div>
@@ -1364,32 +1145,32 @@ const TransactionSuccess = ({ onBack, userType }: { onBack: () => void; userType
             <div className="absolute bottom-16 left-8 animate-bounce delay-2000">
               <Trophy className="w-4 h-4 text-indigo-400" />
             </div>
-          </div>
-        )}
+          </div>}
       </div>
-    </div>
-  );
+    </div>;
 };
 
 // Main Component
 const QRTransactionSystem = () => {
   const [currentView, setCurrentView] = useState('loading');
   const [transactionData, setTransactionData] = useState<TransactionData | null>(null);
-  const { transactionId } = useParams();
-  const { user } = useAuth();
-
+  const {
+    transactionId
+  } = useParams();
+  const {
+    user
+  } = useAuth();
   useEffect(() => {
     const fetchTransactionData = async () => {
       try {
         const response = await api.get(`/api/transactions/complete/${transactionId}`);
-        if(!response.data.success){
+        if (!response.data.success) {
           toast.error(response.data.message || 'Failed to fetch transaction data.');
           setCurrentView('error');
           console.error("Failed to fetch transaction data:", response.data.message);
           return;
         }
-
-        const data = response.data.transaction
+        const data = response.data.transaction;
         if (!data) {
           setCurrentView('error');
           return;
@@ -1399,105 +1180,59 @@ const QRTransactionSystem = () => {
           setCurrentView('unauthorized');
           return;
         }
-        
         setTransactionData(data);
         setCurrentView('main');
       } catch (err: any) {
-        const message =
-          err?.response?.data?.message ||
-          err?.message ||
-          'Something went wrong while fetching the transaction.';
+        const message = err?.response?.data?.message || err?.message || 'Something went wrong while fetching the transaction.';
         toast.error(message);
-        setCurrentView('error')
+        setCurrentView('error');
       }
     };
-
     if (transactionId && user) {
       fetchTransactionData();
     }
   }, [transactionId, user]);
-
   const handleSellerConfirm = () => {
     // TODO: Implement seller confirmation backend call
     setCurrentView('success');
   };
-
   const renderCurrentView = () => {
     switch (currentView) {
       case 'loading':
-        return (
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent mx-auto mb-4"></div>
               <p className="text-gray-600 dark:text-gray-300">Loading transaction...</p>
             </div>
-          </div>
-        );
-      
+          </div>;
       case 'error':
-        return (
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
             <div className="text-center">
               <AlertCircle className="w-16 h-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error</h2>
               <p className="text-gray-600 dark:text-gray-300">Failed to load transaction data</p>
             </div>
-          </div>
-        );
-      
+          </div>;
       case 'unauthorized':
-        return (
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
             <div className="text-center">
               <AlertCircle className="w-16 h-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Unauthorized</h2>
               <p className="text-gray-600 dark:text-gray-300">You don't have access to this transaction</p>
             </div>
-          </div>
-        );
-      
+          </div>;
       case 'success':
-        return (
-          <TransactionSuccess 
-            onBack={() => setCurrentView('main')}
-            userType={transactionData?.isSeller ? 'seller' : 'buyer'}
-          />
-        );
-
+        return <TransactionSuccess onBack={() => setCurrentView('main')} userType={transactionData?.isSeller ? 'seller' : 'buyer'} />;
       case 'buyerProcessing':
-        return (
-          <BuyerTransactionProcessing 
-            sellerName={transactionData?.sellerName || 'Seller'}
-            transactionId={transactionData?.transactionId || 'N/A'}
-            onComplete={() => setCurrentView('success')}
-          />
-        )
-      
+        return <BuyerTransactionProcessing sellerName={transactionData?.sellerName || 'Seller'} transactionId={transactionData?.transactionId || 'N/A'} onComplete={() => setCurrentView('success')} />;
       case 'main':
       default:
         if (!transactionData) return null;
-        
-        return transactionData.isSeller ? (
-          <GenerateQRCode 
-            transactionData={transactionData}
-            onBack={() => setCurrentView('main')}
-            onConfirm={handleSellerConfirm}
-          />
-        ) : (
-          <ScanQRCode 
-            transactionData={transactionData}
-            onBack={() => setCurrentView('main')}
-            onComplete={() => setCurrentView('success')}
-          />
-        );
+        return transactionData.isSeller ? <GenerateQRCode transactionData={transactionData} onBack={() => setCurrentView('main')} onConfirm={handleSellerConfirm} /> : <ScanQRCode transactionData={transactionData} onBack={() => setCurrentView('main')} onComplete={() => setCurrentView('success')} />;
     }
   };
-
-  return (
-    <div className="relative">
+  return <div className="relative">
       {renderCurrentView()}
-    </div>
-  );
+    </div>;
 };
-
 export default QRTransactionSystem;

@@ -3,24 +3,26 @@ import { Phone, X } from 'lucide-react';
 import Button from '../components/Button';
 import api from '../utils/apiService';
 import { useUserStore } from '../store/userStore';
-
 interface PhoneNumberModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
   userRole?: 'buyer' | 'seller' | 'both' | 'admin' | 'agent';
 }
-
-const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: PhoneNumberModalProps) => {
+const PhoneNumberModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  userRole = 'seller'
+}: PhoneNumberModalProps) => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const store = useUserStore.getState()
+  const store = useUserStore.getState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
   const validateNigerianPhone = (phone: string) => {
     // Remove all spaces and non-digit characters except +
     const cleanPhone = phone.replace(/[^\d+]/g, '');
-    
+
     // Check if it starts with +234 (should be 14 digits total)
     if (cleanPhone.startsWith('+234')) {
       if (cleanPhone.length !== 14) {
@@ -35,7 +37,7 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       }
       return null;
     }
-    
+
     // Check if it starts with 0 (should be 11 digits total)
     if (cleanPhone.startsWith('0')) {
       if (cleanPhone.length !== 11) {
@@ -49,7 +51,7 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       }
       return null;
     }
-    
+
     // If it doesn't start with +234 or 0, it might be another country code or format
     if (cleanPhone.startsWith('+')) {
       if (cleanPhone.length < 10 || cleanPhone.length > 15) {
@@ -57,14 +59,11 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       }
       return null;
     }
-    
     return 'Please enter a valid phone number starting with +234 or 0';
   };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPhoneNumber(value);
-    
     if (value.trim()) {
       const validationError = validateNigerianPhone(value);
       setError(validationError || '');
@@ -72,21 +71,22 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       setError('');
     }
   };
-
   const handleSubmit = async () => {
     if (!phoneNumber.trim()) return;
-    
     const validationError = validateNigerianPhone(phoneNumber);
     if (validationError) {
       setError(validationError);
       return;
     }
-
     setIsLoading(true);
     try {
-      const response = await api.post('/api/user/add-phone-number', { phoneNumber });
+      const response = await api.post('/api/user/add-phone-number', {
+        phoneNumber
+      });
       if (response.data.success) {
-        store.updateUser({phoneNumber: phoneNumber})
+        store.updateUser({
+          phoneNumber: phoneNumber
+        });
         onSuccess?.();
         onClose();
         setPhoneNumber('');
@@ -99,7 +99,6 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       setIsLoading(false);
     }
   };
-
   const handleClose = () => {
     if (!isLoading) {
       onClose();
@@ -107,9 +106,7 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       setError('');
     }
   };
-
   if (!isOpen) return null;
-
   const getModalContent = () => {
     if (userRole === 'seller' || userRole === 'both') {
       return {
@@ -125,12 +122,9 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
       };
     }
   };
-
   const content = getModalContent();
   const isValid = phoneNumber.trim() && !error;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
+  return <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -142,11 +136,7 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
               {content.title}
             </h2>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 disabled:opacity-50"
-          >
+          <button onClick={handleClose} disabled={isLoading} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 disabled:opacity-50">
             <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
@@ -167,53 +157,25 @@ const PhoneNumberModal = ({ isOpen, onClose, onSuccess, userRole = 'seller' }: P
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Phone Number
             </label>
-            <input
-              type="tel"
-              placeholder="e.g., +234 801 234 5678 or 08012345678"
-              value={phoneNumber}
-              onChange={handlePhoneChange}
-              disabled={isLoading}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
-                error ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              autoFocus
-            />
-            {error ? (
-              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+            <input type="tel" placeholder="e.g., +234 801 234 5678 or 08012345678" value={phoneNumber} onChange={handlePhoneChange} disabled={isLoading} className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${error ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'}`} autoFocus />
+            {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">
                 {error}
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              </p> : <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Format: +234 801 234 5678 (14 digits) or 08012345678 (11 digits)
-              </p>
-            )}
+              </p>}
           </div>
 
           {/* Buttons */}
           <div className="flex space-x-3">
-            <Button 
-              variant="secondary" 
-              fullWidth 
-              onClick={handleClose}
-              disabled={isLoading}
-            >
+            <Button variant="secondary" fullWidth onClick={handleClose} disabled={isLoading}>
               Skip for Now
             </Button>
-            <Button 
-              variant="primary" 
-              fullWidth 
-              onClick={handleSubmit}
-              disabled={!isValid || isLoading}
-              loading={isLoading}
-              loadingText="Saving..."
-            >
+            <Button variant="primary" fullWidth onClick={handleSubmit} disabled={!isValid || isLoading} loading={isLoading} loadingText="Saving...">
               Save Phone Number
             </Button>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default PhoneNumberModal;

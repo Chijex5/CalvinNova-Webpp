@@ -1,9 +1,7 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
-
 const ProductDetailSkeleton = () => {
-  return (
-    <div className="container mx-auto px-4 py-6">
+  return <div className="container mx-auto px-4 py-6">
       {/* Back button skeleton */}
       <div className="inline-flex items-center text-gray-400 mb-6">
         <ChevronLeft size={16} />
@@ -30,12 +28,7 @@ const ProductDetailSkeleton = () => {
           
           {/* Thumbnail navigation skeleton */}
           <div className="flex mt-4 space-x-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="w-16 h-16 rounded-md bg-gray-300 animate-pulse"
-              ></div>
-            ))}
+            {[1, 2, 3, 4].map(i => <div key={i} className="w-16 h-16 rounded-md bg-gray-300 animate-pulse"></div>)}
           </div>
         </div>
 
@@ -45,9 +38,7 @@ const ProductDetailSkeleton = () => {
           <div className="flex justify-between items-start">
             <div className="w-3/4 h-8 bg-gray-300 rounded animate-pulse"></div>
             <div className="flex space-x-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="w-8 h-8 bg-gray-300 rounded animate-pulse"></div>
-              ))}
+              {[1, 2, 3].map(i => <div key={i} className="w-8 h-8 bg-gray-300 rounded animate-pulse"></div>)}
             </div>
           </div>
 
@@ -88,8 +79,6 @@ const ProductDetailSkeleton = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default ProductDetailSkeleton;

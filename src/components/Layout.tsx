@@ -2,27 +2,24 @@ import React, { useEffect } from 'react';
 import Navigation from './Navigation';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
 interface LayoutProps {
   children: React.ReactNode;
 }
-
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
   const location = useLocation();
   const {
     isAuthenticated,
-    isLoading,
+    isLoading
   } = useAuth();
   const isAdminPage = location.pathname.includes('/admin');
   const isHomePage = location.pathname === '/';
-  
+
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
-  
   return <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {<Navigation />}
       <main className="flex-grow mt-50">{children}</main>
@@ -96,11 +93,7 @@ const Layout: React.FC<LayoutProps> = ({
                   Get the latest updates and offers.
                 </p>
                 <div className="flex">
-                  <input 
-                    type="email" 
-                    placeholder="Your email" 
-                    className="px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-0 dark:border dark:border-gray-600" 
-                  />
+                  <input type="email" placeholder="Your email" className="px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-0 dark:border dark:border-gray-600" />
                   <button className="bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-blue-600 dark:to-purple-600 text-white px-4 py-2 rounded-r-lg hover:from-indigo-600 hover:to-purple-600 dark:hover:from-blue-700 dark:hover:to-purple-700 transition-colors">
                     Subscribe
                   </button>
@@ -114,5 +107,4 @@ const Layout: React.FC<LayoutProps> = ({
         </footer>}
     </div>;
 };
-
 export default Layout;

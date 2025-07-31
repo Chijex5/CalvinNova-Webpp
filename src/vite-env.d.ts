@@ -4,7 +4,6 @@ interface ImportMetaEnv {
   readonly VITE_STREAM_API_KEY: string;
   readonly VITE_API_BASE_URL: string;
 }
-
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }

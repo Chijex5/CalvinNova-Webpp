@@ -18,14 +18,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
     e.stopPropagation();
     setCurrentImageIndex(prev => prev === product.images.length - 1 ? 0 : prev + 1);
   };
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
     }).format(price);
   };
-
   const prevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

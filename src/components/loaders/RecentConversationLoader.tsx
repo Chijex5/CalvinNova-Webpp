@@ -1,10 +1,11 @@
 import React from 'react';
-
-const RecentConversationsSkeleton = ({ count = 3 }) => {
-  return (
-    <div className="divide-y divide-gray-100">
-      {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="p-4 animate-pulse">
+const RecentConversationsSkeleton = ({
+  count = 3
+}) => {
+  return <div className="divide-y divide-gray-100">
+      {Array.from({
+      length: count
+    }).map((_, index) => <div key={index} className="p-4 animate-pulse">
           <div className="flex items-center space-x-3">
             {/* Avatar skeleton */}
             <div className="relative">
@@ -28,10 +29,7 @@ const RecentConversationsSkeleton = ({ count = 3 }) => {
             {/* Unread count skeleton */}
             <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
           </div>
-        </div>
-      ))}
-    </div>
-  );
+        </div>)}
+    </div>;
 };
-
 export default RecentConversationsSkeleton;

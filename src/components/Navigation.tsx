@@ -4,8 +4,7 @@ import { useUserStore } from '../store/userStore';
 import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, BarChart3Icon } from 'lucide-react';
 import { MdReportGmailerrorred } from "react-icons/md";
 import { useAuth } from '../context/AuthContext';
-import logo from './logo.svg'
-
+import logo from './logo.svg';
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -17,7 +16,6 @@ const Navigation = () => {
   } = useAuth();
   const store = useUserStore.getState();
   const thereIsUnreadNotifications = store.thereIsUnreadNotifications();
-
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -29,7 +27,6 @@ const Navigation = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -37,92 +34,66 @@ const Navigation = () => {
   // Define navigation items based on user roles
   const getNavigationItems = () => {
     if (!user || !user.role) return [];
-
-    const baseItems = [
-      {
-        name: 'Home',
-        path: '/',
-        icon: <HomeIcon size={20} />,
-        roles: ['buyer', 'seller', 'admin', 'both']
-      },
-      {
-        name: 'Marketplace',
-        path: '/marketplace',
-        icon: <ShoppingBagIcon size={20} />,
-        roles: ['buyer', 'seller', 'admin', 'both']
-      },
-      {
-        name: 'Chat',
-        path: '/chat',
-        icon: <MessageSquareIcon size={20} />,
-        roles: ['buyer', 'seller', 'admin', 'both', 'agent']
-      }
-    ];
+    const baseItems = [{
+      name: 'Home',
+      path: '/',
+      icon: <HomeIcon size={20} />,
+      roles: ['buyer', 'seller', 'admin', 'both']
+    }, {
+      name: 'Marketplace',
+      path: '/marketplace',
+      icon: <ShoppingBagIcon size={20} />,
+      roles: ['buyer', 'seller', 'admin', 'both']
+    }, {
+      name: 'Chat',
+      path: '/chat',
+      icon: <MessageSquareIcon size={20} />,
+      roles: ['buyer', 'seller', 'admin', 'both', 'agent']
+    }];
 
     // Seller-specific items
-    const sellerItems = [
-      {
-        name: 'Sell',
-        path: '/sell',
-        icon: <PlusCircleIcon size={20} />,
-        roles: ['seller', 'both']
-      },
-      {
-        name: 'My Products',
-        path: '/my-products',
-        icon: <BarChart3Icon size={20} />,
-        roles: ['seller', 'both']
-      }
-    ];
+    const sellerItems = [{
+      name: 'Sell',
+      path: '/sell',
+      icon: <PlusCircleIcon size={20} />,
+      roles: ['seller', 'both']
+    }, {
+      name: 'My Products',
+      path: '/my-products',
+      icon: <BarChart3Icon size={20} />,
+      roles: ['seller', 'both']
+    }];
 
     // Admin-specific items
-    const adminItems = [
-      {
-        name: 'Users',
-        path: '/admin/users',
-        icon: <UserIcon size={20} />,
-        roles: ['admin']
-      },
-      {
-        name: 'Reports',
-        path: '/admin/reports',
-        icon: <MdReportGmailerrorred size={20} />,
-        roles: ['admin']
-      }
-    ];
+    const adminItems = [{
+      name: 'Users',
+      path: '/admin/users',
+      icon: <UserIcon size={20} />,
+      roles: ['admin']
+    }, {
+      name: 'Reports',
+      path: '/admin/reports',
+      icon: <MdReportGmailerrorred size={20} />,
+      roles: ['admin']
+    }];
 
     // Combine all items
     const allItems = [...baseItems, ...sellerItems, ...adminItems];
 
     // Filter items based on user role
-    return allItems.filter(item => 
-      item.roles.includes(user.role) || 
-      (user.role === 'both' && (item.roles.includes('buyer') || item.roles.includes('seller')))
-    );
+    return allItems.filter(item => item.roles.includes(user.role) || user.role === 'both' && (item.roles.includes('buyer') || item.roles.includes('seller')));
   };
-
   const navItems = getNavigationItems();
-
   if (!isAuthenticated || isLoading) {
     return null;
   }
-
-  return (
-    <header className={`sticky top-0 left-0 right-0 z-40 mb-50 transition-all duration-500 ${
-      isScrolled 
-        ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-700/50' 
-        : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md'
-    }`}>
+  return <header className={`sticky top-0 left-0 right-0 z-40 mb-50 transition-all duration-500 ${isScrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-700/50' : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md'}`}>
       <div className="container mx-auto px-4 lg:px-6">
         <div className="flex justify-between items-center h-16 lg:h-18">
           {/* Logo */}
           <Link to="/" className="flex items-center group">
             <div className="relative">
-              <img 
-                src={logo} 
-                alt="CalvinNova Logo" 
-                className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105 group-hover:rotate-12"
-              />
+              <img src={logo} alt="CalvinNova Logo" className="h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 group-hover:scale-105 group-hover:rotate-12" />
             </div>
             <span className="ml-3 text-xl lg:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               CalvinNova
@@ -131,53 +102,31 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-            {navItems.map(item => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`group flex items-center space-x-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-full text-sm lg:text-base font-medium transition-all duration-300 ${
-                  location.pathname === item.path
-                    ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 hover:shadow-sm'
-                }`}
-              >
-                {item.icon && (
-                  <span className={`transition-transform duration-300 ${
-                    location.pathname === item.path ? '' : 'group-hover:scale-110'
-                  }`}>
+            {navItems.map(item => <Link key={item.path} to={item.path} className={`group flex items-center space-x-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-full text-sm lg:text-base font-medium transition-all duration-300 ${location.pathname === item.path ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 hover:shadow-sm'}`}>
+                {item.icon && <span className={`transition-transform duration-300 ${location.pathname === item.path ? '' : 'group-hover:scale-110'}`}>
                     {item.icon}
-                  </span>
-                )}
+                  </span>}
                 <span className="hidden lg:inline">{item.name}</span>
-              </Link>
-            ))}
+              </Link>)}
             
             {/* Notification Bell - Desktop */}
             <Link to="/notifications" className="relative">
               <button className="relative p-2 lg:p-3 ml-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 group">
                 <BellIcon size={20} className="group-hover:scale-110 transition-transform duration-300" />
-                {thereIsUnreadNotifications && (
-                  <>
+                {thereIsUnreadNotifications && <>
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full animate-ping"></span>
-                  </>
-                )}
+                  </>}
               </button>
             </Link>
 
             {/* User Avatar - Desktop */}
-            {user && (
-              <Link to="/profile" className="relative ml-2 group">
+            {user && <Link to="/profile" className="relative ml-2 group">
                 <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-indigo-100 dark:border-indigo-800 group-hover:border-indigo-300 dark:group-hover:border-indigo-600 transition-all duration-300 group-hover:scale-105">
-                  <img 
-                    src={user.avatarUrl} 
-                    alt={user.name} 
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-              </Link>
-            )}
+              </Link>}
           </nav>
 
           {/* Mobile Right Section */}
@@ -186,44 +135,22 @@ const Navigation = () => {
             <Link to="/notifications" className="relative">
               <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300">
                 <BellIcon size={20} />
-                {thereIsUnreadNotifications && (
-                  <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                )}
+                {thereIsUnreadNotifications && <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
               </button>
             </Link>
 
             {/* User Avatar - Mobile */}
-            {user && (
-              <Link to="/profile" className="relative">
+            {user && <Link to="/profile" className="relative">
                 <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-indigo-100 dark:border-indigo-800 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-200">
-                  <img 
-                    src={user.avatarUrl} 
-                    alt={user.name} 
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
                 </div>
-              </Link>
-            )}
+              </Link>}
 
             {/* Mobile Menu Button */}
-            <button 
-              onClick={toggleMenu} 
-              className="p-2 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 group"
-              aria-label="Toggle menu"
-            >
+            <button onClick={toggleMenu} className="p-2 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 group" aria-label="Toggle menu">
               <div className="relative w-6 h-6">
-                <MenuIcon 
-                  size={24} 
-                  className={`absolute inset-0 text-gray-700 dark:text-gray-300 transition-all duration-300 ${
-                    isMenuOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'
-                  }`}
-                />
-                <XIcon 
-                  size={24} 
-                  className={`absolute inset-0 text-gray-700 dark:text-gray-300 transition-all duration-300 ${
-                    isMenuOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'
-                  }`}
-                />
+                <MenuIcon size={24} className={`absolute inset-0 text-gray-700 dark:text-gray-300 transition-all duration-300 ${isMenuOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`} />
+                <XIcon size={24} className={`absolute inset-0 text-gray-700 dark:text-gray-300 transition-all duration-300 ${isMenuOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'}`} />
               </div>
             </button>
           </div>
@@ -231,38 +158,20 @@ const Navigation = () => {
       </div>
 
       {/* Mobile Navigation Menu */}
-      <div className={`md:hidden transition-all duration-300 ${
-        isMenuOpen 
-          ? 'max-h-96 opacity-100' 
-          : 'max-h-0 opacity-0 overflow-hidden'
-      }`}>
+      <div className={`md:hidden transition-all duration-300 ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
         <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200/50 dark:border-gray-700/50 shadow-lg">
           <div className="container mx-auto px-4 py-2">
-            {navItems.map((item, index) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg my-1 transition-all duration-300 ${
-                  location.pathname === item.path
-                    ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                {item.icon && (
-                  <span className="transition-transform duration-300">
+            {navItems.map((item, index) => <Link key={item.path} to={item.path} className={`flex items-center space-x-3 px-4 py-3 rounded-lg my-1 transition-all duration-300 ${location.pathname === item.path ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/30'}`} onClick={() => setIsMenuOpen(false)} style={{
+            animationDelay: `${index * 50}ms`
+          }}>
+                {item.icon && <span className="transition-transform duration-300">
                     {item.icon}
-                  </span>
-                )}
+                  </span>}
                 <span className="font-medium">{item.name}</span>
-              </Link>
-            ))}
+              </Link>)}
           </div>
         </nav>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Navigation;

@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Camera, CameraOff, Square, RotateCcw } from 'lucide-react';
-
 const CameraCanvasApp: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8,27 +7,27 @@ const CameraCanvasApp: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string>('');
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-
   const startCamera = async () => {
     try {
       setError('');
-      
+
       // Stop existing stream if any
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
-
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: {
+            ideal: 1280
+          },
+          height: {
+            ideal: 720
+          }
         },
         audio: false
       });
-
       setStream(mediaStream);
-      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         videoRef.current.play();
@@ -40,7 +39,6 @@ const CameraCanvasApp: React.FC = () => {
       setIsStreaming(false);
     }
   };
-
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -51,24 +49,21 @@ const CameraCanvasApp: React.FC = () => {
     }
     setIsStreaming(false);
   };
-
   const captureFrame = () => {
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       const ctx = canvas.getContext('2d');
-      
       if (ctx) {
         // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
+
         // Draw the current video frame to canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
     }
   };
-
   const toggleCamera = () => {
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   };
@@ -76,18 +71,15 @@ const CameraCanvasApp: React.FC = () => {
   // Auto-capture frames while streaming
   useEffect(() => {
     let animationId: number;
-    
     const updateCanvas = () => {
       if (isStreaming && videoRef.current && canvasRef.current) {
         captureFrame();
       }
       animationId = requestAnimationFrame(updateCanvas);
     };
-    
     if (isStreaming) {
       updateCanvas();
     }
-    
     return () => {
       if (animationId) {
         cancelAnimationFrame(animationId);
@@ -110,9 +102,7 @@ const CameraCanvasApp: React.FC = () => {
       }
     };
   }, [stream]);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -123,40 +113,23 @@ const CameraCanvasApp: React.FC = () => {
         </div>
 
         {/* Error Message */}
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 text-center">
+        {error && <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 text-center">
             <p className="text-red-200">{error}</p>
-          </div>
-        )}
+          </div>}
 
         {/* Controls */}
         <div className="flex flex-wrap justify-center gap-4 mb-8">
-          <button
-            onClick={isStreaming ? stopCamera : startCamera}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-              isStreaming
-                ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
+          <button onClick={isStreaming ? stopCamera : startCamera} className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${isStreaming ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}>
             {isStreaming ? <CameraOff size={20} /> : <Camera size={20} />}
             {isStreaming ? 'Stop Camera' : 'Start Camera'}
           </button>
 
-          <button
-            onClick={captureFrame}
-            disabled={!isStreaming}
-            className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200"
-          >
+          <button onClick={captureFrame} disabled={!isStreaming} className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200">
             <Square size={20} />
             Capture Frame
           </button>
 
-          <button
-            onClick={toggleCamera}
-            disabled={!isStreaming}
-            className="flex items-center gap-2 px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200"
-          >
+          <button onClick={toggleCamera} disabled={!isStreaming} className="flex items-center gap-2 px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200">
             <RotateCcw size={20} />
             {facingMode === 'user' ? 'Back Camera' : 'Front Camera'}
           </button>
@@ -168,21 +141,13 @@ const CameraCanvasApp: React.FC = () => {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-center">Video Stream</h2>
             <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
-              {!isStreaming && (
-                <div className="absolute inset-0 flex items-center justify-center">
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+              {!isStreaming && <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <Camera size={64} className="mx-auto mb-4 text-slate-400" />
                     <p className="text-slate-400">Camera not active</p>
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
           </div>
 
@@ -190,18 +155,13 @@ const CameraCanvasApp: React.FC = () => {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-center">Canvas Output</h2>
             <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
-              <canvas
-                ref={canvasRef}
-                className="w-full h-full object-cover"
-              />
-              {!isStreaming && (
-                <div className="absolute inset-0 flex items-center justify-center">
+              <canvas ref={canvasRef} className="w-full h-full object-cover" />
+              {!isStreaming && <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <Square size={64} className="mx-auto mb-4 text-slate-400" />
                     <p className="text-slate-400">Canvas ready</p>
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
           </div>
         </div>
@@ -220,8 +180,6 @@ const CameraCanvasApp: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CameraCanvasApp;

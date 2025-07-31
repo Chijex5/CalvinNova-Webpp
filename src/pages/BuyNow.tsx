@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Shield, 
-  CreditCard, 
-  Lock, 
-  User, 
-  Package,
-  AlertCircle,
-  X
-} from 'lucide-react';
+import { ArrowLeft, Shield, CreditCard, Lock, User, Package, AlertCircle, X } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';
 import PaymentSuccessPage from './SuccessPage';
 import { productService } from '../services/productService';
@@ -25,23 +16,23 @@ interface ProductData extends Product {
 }
 
 // Confirmation Modal Component
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, productTitle }: {
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  productTitle
+}: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   productTitle: string;
 }) => {
   if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+  return <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Confirm Purchase</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -65,33 +56,30 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, productTitle }: {
         </div>
 
         <div className="flex space-x-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
+          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             Cancel
           </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
-          >
+          <button onClick={onConfirm} className="flex-1 px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors">
             Yes, Proceed to Payment
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 
 // Main Buy Page Component
 const BuyPage = () => {
-  const { productId } = useParams();
+  const {
+    productId
+  } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
+  const {
+    user
+  } = useAuth();
+
   // State management
   const [showModal, setShowModal] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState({
@@ -109,7 +97,11 @@ const BuyPage = () => {
   }>({});
 
   // Store hooks
-  const { products, loading: productsLoading, error: productError } = useProductStore();
+  const {
+    products,
+    loading: productsLoading,
+    error: productError
+  } = useProductStore();
 
   // Format price function
   const formatPrice = (price: number) => {
@@ -127,9 +119,7 @@ const BuyPage = () => {
         if (!products.length && !productsLoading) {
           await productService.fetchProducts();
         }
-
         const foundProduct = products.find(p => p.id === parseInt(productId || '0', 10));
-        
         if (!foundProduct && products.length > 0) {
           setLocalError('Product not found');
           navigate('/marketplace'); // Redirect if product not found
@@ -141,7 +131,6 @@ const BuyPage = () => {
         setLocalError('Failed to load product');
       }
     };
-
     if (productId) {
       loadProduct();
     }
@@ -150,7 +139,11 @@ const BuyPage = () => {
   // Check if user is authenticated
   useEffect(() => {
     if (!user && !productsLoading) {
-      navigate('/login', { state: { returnTo: `/buy/${productId}` } });
+      navigate('/login', {
+        state: {
+          returnTo: `/buy/${productId}`
+        }
+      });
     }
   }, [user, productId, navigate, productsLoading]);
 
@@ -160,14 +153,11 @@ const BuyPage = () => {
       navigate(`/product/${product.slug}`); // Redirect to product page
     }
   }, [product, user, navigate]);
-
   const platformFee = product ? Math.round(product.price * 0) : 0;
   const totalAmount = product ? product.price + platformFee : 0;
-
   const handleConfirmPurchase = () => {
     setShowModal(false);
   };
-
   const handleBackClick = () => {
     if (product) {
       navigate(`/product/${product.slug}`);
@@ -175,7 +165,6 @@ const BuyPage = () => {
       navigate('/marketplace');
     }
   };
-
   const validateCard = () => {
     const newErrors: {
       cardNumber?: string;
@@ -183,41 +172,30 @@ const BuyPage = () => {
       cvv?: string;
       cardholderName?: string;
     } = {};
-    
     if (!cardDetails.cardNumber || cardDetails.cardNumber.replace(/\s/g, '').length < 16) {
       newErrors.cardNumber = 'Please enter a valid card number';
     }
-    
     if (!cardDetails.expiryDate || !/^\d{2}\/\d{2}$/.test(cardDetails.expiryDate)) {
       newErrors.expiryDate = 'Please enter a valid expiry date (MM/YY)';
     }
-    
     if (!cardDetails.cvv || cardDetails.cvv.length < 3) {
       newErrors.cvv = 'Please enter a valid CVV';
     }
-    
     if (!cardDetails.cardholderName.trim()) {
       newErrors.cardholderName = 'Please enter the cardholder name';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const generateTransactionId = () => {
     const transactionId = `tr-${Date.now()}`;
     return transactionId;
   };
-
   const transactionId = generateTransactionId();
-
   const handlePayment = async () => {
     if (!validateCard() || !product || !user) return;
-
     setIsProcessing(true);
-    
     try {
-      
       const result = await selfService.checkout({
         productId: product.id,
         sellerId: product.sellerId,
@@ -228,7 +206,7 @@ const BuyPage = () => {
         transactionId: transactionId,
         buyerEmail: user.email,
         buyerId: user.userId,
-        amount: totalAmount,
+        amount: totalAmount
       });
       if (result.success) {
         productService.refreshProducts();
@@ -236,7 +214,6 @@ const BuyPage = () => {
       } else {
         throw new Error(result.message || 'Payment processing failed');
       }
-      
     } catch (error: any) {
       console.error('Payment failed:', error);
       setLocalError(error?.response?.data?.message || 'Payment processing failed');
@@ -244,7 +221,6 @@ const BuyPage = () => {
       setIsProcessing(false);
     }
   };
-
   const formatCardNumber = (value: string) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
     const matches = v.match(/\d{4,16}/g);
@@ -259,7 +235,6 @@ const BuyPage = () => {
       return v;
     }
   };
-
   const formatExpiryDate = (value: string) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
     if (v.length >= 2) {
@@ -270,19 +245,15 @@ const BuyPage = () => {
 
   // Loading and error states
   if (productsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading product details...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (localError || productError || !product) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -291,44 +262,24 @@ const BuyPage = () => {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             The product you're trying to purchase could not be loaded.
           </p>
-          <button
-            onClick={() => navigate('/marketplace')}
-            className="px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
-          >
+          <button onClick={() => navigate('/marketplace')} className="px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors">
             Back to Marketplace
           </button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (showModal) {
-    return (
-      <ConfirmationModal
-        isOpen={showModal}
-        onClose={() => navigate(`/product/${product.slug}`)}
-        onConfirm={handleConfirmPurchase}
-        productTitle={product.title}
-      />
-    );
+    return <ConfirmationModal isOpen={showModal} onClose={() => navigate(`/product/${product.slug}`)} onConfirm={handleConfirmPurchase} productTitle={product.title} />;
   }
-
   if (showSuccessModal) {
-    return(
-      <PaymentSuccessPage product={product} />
-    )
+    return <PaymentSuccessPage product={product} />;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+  return <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={handleBackClick}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
+            <button onClick={handleBackClick} className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Review & Complete Your Purchase</h1>
@@ -349,14 +300,9 @@ const BuyPage = () => {
               </h2>
               
               <div className="flex space-x-4">
-                <img
-                  src={product.images?.[0] || '/api/placeholder/150/150'}
-                  alt={product.title}
-                  className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
-                  onError={(e) => {
-                    e.currentTarget.src = '/api/placeholder/150/150';
-                  }}
-                />
+                <img src={product.images?.[0] || '/api/placeholder/150/150'} alt={product.title} className="w-24 h-24 object-cover rounded-lg flex-shrink-0" onError={e => {
+                e.currentTarget.src = '/api/placeholder/150/150';
+              }} />
                 
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{product.title}</h3>
@@ -445,37 +391,22 @@ const BuyPage = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Cardholder Name
                   </label>
-                  <input
-                    type="text"
-                    value={cardDetails.cardholderName}
-                    onChange={(e) => setCardDetails({...cardDetails, cardholderName: e.target.value})}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                      errors.cardholderName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="John Doe"
-                  />
-                  {errors.cardholderName && (
-                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cardholderName}</p>
-                  )}
+                  <input type="text" value={cardDetails.cardholderName} onChange={e => setCardDetails({
+                  ...cardDetails,
+                  cardholderName: e.target.value
+                })} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.cardholderName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'}`} placeholder="John Doe" />
+                  {errors.cardholderName && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cardholderName}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Card Number
                   </label>
-                  <input
-                    type="text"
-                    value={cardDetails.cardNumber}
-                    onChange={(e) => setCardDetails({...cardDetails, cardNumber: formatCardNumber(e.target.value)})}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                      errors.cardNumber ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                  />
-                  {errors.cardNumber && (
-                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cardNumber}</p>
-                  )}
+                  <input type="text" value={cardDetails.cardNumber} onChange={e => setCardDetails({
+                  ...cardDetails,
+                  cardNumber: formatCardNumber(e.target.value)
+                })} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.cardNumber ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'}`} placeholder="1234 5678 9012 3456" maxLength={19} />
+                  {errors.cardNumber && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cardNumber}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -483,60 +414,36 @@ const BuyPage = () => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Expiry Date
                     </label>
-                    <input
-                      type="text"
-                      value={cardDetails.expiryDate}
-                      onChange={(e) => setCardDetails({...cardDetails, expiryDate: formatExpiryDate(e.target.value)})}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                        errors.expiryDate ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-                      }`}
-                      placeholder="MM/YY"
-                      maxLength={5}
-                    />
-                    {errors.expiryDate && (
-                      <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.expiryDate}</p>
-                    )}
+                    <input type="text" value={cardDetails.expiryDate} onChange={e => setCardDetails({
+                    ...cardDetails,
+                    expiryDate: formatExpiryDate(e.target.value)
+                  })} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.expiryDate ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'}`} placeholder="MM/YY" maxLength={5} />
+                    {errors.expiryDate && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.expiryDate}</p>}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       CVV
                     </label>
-                    <input
-                      type="text"
-                      value={cardDetails.cvv}
-                      onChange={(e) => setCardDetails({...cardDetails, cvv: e.target.value.replace(/\D/g, '')})}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                        errors.cvv ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-                      }`}
-                      placeholder="123"
-                      maxLength={4}
-                    />
-                    {errors.cvv && (
-                      <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cvv}</p>
-                    )}
+                    <input type="text" value={cardDetails.cvv} onChange={e => setCardDetails({
+                    ...cardDetails,
+                    cvv: e.target.value.replace(/\D/g, '')
+                  })} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.cvv ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'}`} placeholder="123" maxLength={4} />
+                    {errors.cvv && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.cvv}</p>}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Pay Now Button */}
-            <button
-              onClick={handlePayment}
-              disabled={isProcessing}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-2"
-            >
-              {isProcessing ? (
-                <>
+            <button onClick={handlePayment} disabled={isProcessing} className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-2">
+              {isProcessing ? <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                   <span>Processing Payment...</span>
-                </>
-              ) : (
-                <>
+                </> : <>
                   <Lock className="w-5 h-5" />
                   <span>Pay Now - {formatPrice(totalAmount)}</span>
-                </>
-              )}
+                </>}
             </button>
 
             {/* Legal Notice */}
@@ -550,8 +457,6 @@ const BuyPage = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default BuyPage;

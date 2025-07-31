@@ -3,25 +3,21 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, X, Mail, Lock, ArrowRight, ShoppingBag, Users, Star, Shield, AlertCircle, CheckCircle, Ban, Clock, UserX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
 interface FormErrors {
   email?: string;
   password?: string;
   forgotEmail?: string;
 }
-
 interface TouchedFields {
   email?: boolean;
   password?: boolean;
   forgotEmail?: boolean;
 }
-
 interface AccountStatusModal {
   show: boolean;
   type: 'suspended' | 'banned' | 'incomplete' | 'verification' | null;
   message: string;
 }
-
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -35,11 +31,16 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<TouchedFields>({});
-  
-  const { login, user, isAuthenticated, resetPassword, error: authError, clearError } = useAuth();
+  const {
+    login,
+    user,
+    isAuthenticated,
+    resetPassword,
+    error: authError,
+    clearError
+  } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -62,12 +63,7 @@ const Login = () => {
   // Handle auth context errors
   useEffect(() => {
     if (authError) {
-      const msg = typeof authError === 'string'
-        ? authError
-        : (authError as any)?.response?.data?.message ||
-          (authError as any)?.message ||
-          "An unknown error occurred";
-
+      const msg = typeof authError === 'string' ? authError : (authError as any)?.response?.data?.message || (authError as any)?.message || "An unknown error occurred";
       toast.error(msg);
       clearError && clearError();
     }
@@ -77,7 +73,10 @@ const Login = () => {
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) {
-      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setFormData(prev => ({
+        ...prev,
+        email: savedEmail
+      }));
       setRememberMe(true);
     }
   }, []);
@@ -85,51 +84,49 @@ const Login = () => {
   // Form validation
   const validateForm = () => {
     const newErrors: FormErrors = {};
-    
+
     // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
     return newErrors;
   };
 
   // Validate forgot password form
   const validateForgotPasswordForm = () => {
     const newErrors: FormErrors = {};
-    
     if (!formData.forgotEmail) {
       newErrors.forgotEmail = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.forgotEmail)) {
       newErrors.forgotEmail = 'Please enter a valid email address';
     }
-    
     return newErrors;
   };
-
   interface InputChangeEvent {
     target: {
       name: string;
       value: string;
     };
   }
-
   const handleInputChange = (e: InputChangeEvent) => {
-    const { name, value } = e.target;
+    const {
+      name,
+      value
+    } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
@@ -138,13 +135,12 @@ const Login = () => {
       }));
     }
   };
-
   const handleInputBlur = (field: keyof FormErrors) => {
     setTouched(prev => ({
       ...prev,
       [field]: true
     }));
-    
+
     // Validate on blur
     const fieldErrors = validateForm();
     setErrors(prev => ({
@@ -152,7 +148,6 @@ const Login = () => {
       [field]: fieldErrors[field] || ''
     }));
   };
-
   interface LoginResponse {
     success: boolean;
     error?: string;
@@ -161,7 +156,6 @@ const Login = () => {
     requires_support?: boolean;
     requires_completion?: boolean;
   }
-
   interface LoginError {
     response?: {
       status: number;
@@ -175,39 +169,41 @@ const Login = () => {
     };
     message?: string;
   }
-
   interface FormEvent {
     preventDefault(): void;
   }
-
   const handleLogin = async (e: FormEvent) => {
     e?.preventDefault();
-    
+
     // Clear previous errors and modals
     setErrors({});
-    setAccountStatusModal({ show: false, type: null, message: '' });
-    
+    setAccountStatusModal({
+      show: false,
+      type: null,
+      message: ''
+    });
+
     // Validate form
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      setTouched({ email: true, password: true });
+      setTouched({
+        email: true,
+        password: true
+      });
       toast.error('Please fix the errors below');
       return;
     }
-
     try {
       setIsLoading(true);
-      
+
       // Handle remember me
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', formData.email);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
-      
       const response: LoginResponse = await login(formData.email, formData.password);
-      
       if (response?.success) {
         // Small delay for better UX, then redirect to original path or home
         setTimeout(() => {
@@ -217,7 +213,6 @@ const Login = () => {
       } else {
         // Handle specific error responses based on backend flags
         const errorMessage: string = response?.error || response?.message || 'Login failed. Please try again.';
-        
         if (response?.requires_verification) {
           setAccountStatusModal({
             show: true,
@@ -226,7 +221,6 @@ const Login = () => {
           });
           return;
         }
-        
         if (response?.requires_support) {
           // Determine if suspended or banned based on error message
           const isSuspended = errorMessage.toLowerCase().includes('suspended');
@@ -237,7 +231,6 @@ const Login = () => {
           });
           return;
         }
-        
         if (response?.requires_completion) {
           setAccountStatusModal({
             show: true,
@@ -246,29 +239,32 @@ const Login = () => {
           });
           return;
         }
-        
+
         // Handle regular login errors
         if (errorMessage.toLowerCase().includes('email')) {
-          setErrors(prev => ({ ...prev, email: 'Invalid email address' }));
+          setErrors(prev => ({
+            ...prev,
+            email: 'Invalid email address'
+          }));
         } else if (errorMessage.toLowerCase().includes('password')) {
-          setErrors(prev => ({ ...prev, password: 'Invalid password' }));
+          setErrors(prev => ({
+            ...prev,
+            password: 'Invalid password'
+          }));
         }
-        
         toast.error(errorMessage, {
           icon: <AlertCircle className="text-red-500" size={16} />
         });
       }
     } catch (error: unknown) {
       console.error('Login error:', error);
-      
       const loginError = error as LoginError;
-      
+
       // Handle different types of errors from backend
       let errorMessage = 'An unexpected error occurred. Please try again.';
-      
       if (loginError.response?.data) {
         const data = loginError.response.data;
-        
+
         // Check for special response flags first
         if (data.requires_verification) {
           setAccountStatusModal({
@@ -278,7 +274,6 @@ const Login = () => {
           });
           return;
         }
-        
         if (data.requires_support) {
           const isSuspended = (data.error || data.message || '').toLowerCase().includes('suspended');
           setAccountStatusModal({
@@ -288,7 +283,6 @@ const Login = () => {
           });
           return;
         }
-        
         if (data.requires_completion) {
           setAccountStatusModal({
             show: true,
@@ -297,14 +291,16 @@ const Login = () => {
           });
           return;
         }
-        
         errorMessage = data.error || data.message || errorMessage;
       }
-      
+
       // Handle HTTP status codes
       if (loginError.response?.status === 401) {
         errorMessage = 'Invalid email or password';
-        setErrors({ email: 'Invalid credentials', password: 'Invalid credentials' });
+        setErrors({
+          email: 'Invalid credentials',
+          password: 'Invalid credentials'
+        });
       } else if (loginError.response?.status === 429) {
         errorMessage = 'Too many login attempts. Please try again later.';
       } else if (loginError.response?.status && loginError.response.status >= 500) {
@@ -312,7 +308,6 @@ const Login = () => {
       } else if (loginError.message) {
         errorMessage = loginError.message;
       }
-      
       toast.error(errorMessage, {
         icon: <AlertCircle className="text-red-500" size={16} />
       });
@@ -320,23 +315,20 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
   interface ForgotPasswordResponse {
     success: boolean;
     error?: string;
     message?: string;
   }
-
   interface ForgotPasswordError {
     response?: {
       status: number;
     };
     message?: string;
   }
-
   const handleForgotPassword = async (e: FormEvent) => {
     e?.preventDefault();
-    
+
     // Validate forgot password form
     const formErrors = validateForgotPasswordForm();
     if (Object.keys(formErrors).length > 0) {
@@ -344,20 +336,21 @@ const Login = () => {
       toast.error('Please enter a valid email address');
       return;
     }
-
     try {
       setIsForgotPasswordLoading(true);
-      
+
       // Use resetPassword from auth context if available
       if (resetPassword) {
         const response: ForgotPasswordResponse = await resetPassword(formData.forgotEmail);
-        
         if (response?.success) {
           toast.success('Password reset link sent to your email!', {
             icon: <CheckCircle className="text-green-500" size={16} />
           });
           setShowForgotModal(false);
-          setFormData(prev => ({ ...prev, forgotEmail: '' }));
+          setFormData(prev => ({
+            ...prev,
+            forgotEmail: ''
+          }));
         } else {
           throw new Error(response?.error || 'Failed to send reset link');
         }
@@ -367,14 +360,15 @@ const Login = () => {
           icon: <CheckCircle className="text-green-500" size={16} />
         });
         setShowForgotModal(false);
-        setFormData(prev => ({ ...prev, forgotEmail: '' }));
+        setFormData(prev => ({
+          ...prev,
+          forgotEmail: ''
+        }));
       }
     } catch (error: unknown) {
       console.error('Forgot password error:', error);
-      
       const forgotPasswordError = error as ForgotPasswordError;
       let errorMessage = 'Failed to send reset link. Please try again.';
-      
       if (forgotPasswordError.response?.status === 404) {
         errorMessage = 'Email address not found';
       } else if (forgotPasswordError.response?.status === 429) {
@@ -382,7 +376,6 @@ const Login = () => {
       } else if (forgotPasswordError.message) {
         errorMessage = forgotPasswordError.message;
       }
-      
       toast.error(errorMessage, {
         icon: <AlertCircle className="text-red-500" size={16} />
       });
@@ -390,40 +383,37 @@ const Login = () => {
       setIsForgotPasswordLoading(false);
     }
   };
-
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleLogin(e);
     }
   };
-
   const handleForgotModalKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleForgotPassword(e);
     }
   };
-
   const closeAccountStatusModal = () => {
-    setAccountStatusModal({ show: false, type: null, message: '' });
+    setAccountStatusModal({
+      show: false,
+      type: null,
+      message: ''
+    });
   };
-
   const handleCompleteProfile = () => {
     closeAccountStatusModal();
     navigate('/complete-profile');
   };
-
   const handleContactSupport = () => {
     closeAccountStatusModal();
     // You can navigate to support page or open email client
     window.location.href = 'mailto:support@calvinnova.com?subject=Account Access Issue';
   };
-
   const handleResendVerification = () => {
     closeAccountStatusModal();
     // Navigate to verification page or trigger resend
     navigate('/verify-email');
   };
-
   const getModalIcon = () => {
     switch (accountStatusModal.type) {
       case 'suspended':
@@ -438,7 +428,6 @@ const Login = () => {
         return <AlertCircle className="text-gray-500" size={32} />;
     }
   };
-
   const getModalTitle = () => {
     switch (accountStatusModal.type) {
       case 'suspended':
@@ -453,75 +442,43 @@ const Login = () => {
         return 'Account Issue';
     }
   };
-
   const getModalActions = () => {
     switch (accountStatusModal.type) {
       case 'suspended':
       case 'banned':
-        return (
-          <div className="flex space-x-3">
-            <button
-              onClick={closeAccountStatusModal}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+        return <div className="flex space-x-3">
+            <button onClick={closeAccountStatusModal} className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               Understood
             </button>
-            <button
-              onClick={handleContactSupport}
-              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
-            >
+            <button onClick={handleContactSupport} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200">
               Contact Support
             </button>
-          </div>
-        );
+          </div>;
       case 'incomplete':
-        return (
-          <div className="flex space-x-3">
-            <button
-              onClick={closeAccountStatusModal}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+        return <div className="flex space-x-3">
+            <button onClick={closeAccountStatusModal} className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               Later
             </button>
-            <button
-              onClick={handleCompleteProfile}
-              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
-            >
+            <button onClick={handleCompleteProfile} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200">
               Complete Profile
             </button>
-          </div>
-        );
+          </div>;
       case 'verification':
-        return (
-          <div className="flex space-x-3">
-            <button
-              onClick={closeAccountStatusModal}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+        return <div className="flex space-x-3">
+            <button onClick={closeAccountStatusModal} className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               Close
             </button>
-            <button
-              onClick={handleResendVerification}
-              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
-            >
+            <button onClick={handleResendVerification} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200">
               Verify Email
             </button>
-          </div>
-        );
+          </div>;
       default:
-        return (
-          <button
-            onClick={closeAccountStatusModal}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
-          >
+        return <button onClick={closeAccountStatusModal} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200">
             Close
-          </button>
-        );
+          </button>;
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex">
+  return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex">
       {/* Left Side - Branding & Features */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-indigo-800 dark:via-indigo-900 dark:to-purple-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80')] opacity-10 bg-cover bg-center"></div>
@@ -610,30 +567,13 @@ const Login = () => {
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    onBlur={() => handleInputBlur('email')}
-                    onKeyPress={handleKeyPress}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 dark:text-white ${
-                      errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter your email"
-                    required
-                  />
-                  {errors.email && (
-                    <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" size={20} />
-                  )}
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} onBlur={() => handleInputBlur('email')} onKeyPress={handleKeyPress} className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 dark:text-white ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} placeholder="Enter your email" required />
+                  {errors.email && <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" size={20} />}
                 </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                {errors.email && <p className="mt-1 text-sm text-red-600 flex items-center">
                     <AlertCircle size={16} className="mr-1" />
                     {errors.email}
-                  </p>
-                )}
+                  </p>}
               </div>
 
               <div>
@@ -642,75 +582,38 @@ const Login = () => {
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    onBlur={() => handleInputBlur('password')}
-                    onKeyPress={handleKeyPress}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 dark:text-white ${
-                      errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter your password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  >
+                  <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={formData.password} onChange={handleInputChange} onBlur={() => handleInputBlur('password')} onKeyPress={handleKeyPress} className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 dark:text-white ${errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} placeholder="Enter your password" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                {errors.password && <p className="mt-1 text-sm text-red-600 flex items-center">
                     <AlertCircle size={16} className="mr-1" />
                     {errors.password}
-                  </p>
-                )}
+                  </p>}
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
-                  />
+                  <input type="checkbox" id="remember" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700" />
                   <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                     Remember me
                   </label>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotModal(true)}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium transition-colors"
-                >
+                <button type="button" onClick={() => setShowForgotModal(true)} className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium transition-colors">
                   Forgot password?
                 </button>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full group relative flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
+              <button type="submit" disabled={isLoading} className="w-full group relative flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl">
                 <div className="flex items-center">
-                  {isLoading ? (
-                    <>
+                  {isLoading ? <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Signing in...
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       <span>Sign In</span>
                       <ArrowRight className="ml-2" size={20} />
-                    </>
-                  )}
+                    </>}
                 </div>
               </button>
             </form>
@@ -718,10 +621,7 @@ const Login = () => {
             <div className="mt-8 text-center">
               <p className="text-gray-600 dark:text-gray-300">
                 Don't have an account?{' '}
-                <a
-                  href="/signup"
-                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold transition-colors"
-                >
+                <a href="/signup" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold transition-colors">
                   Sign up here
                 </a>
               </p>
@@ -740,13 +640,9 @@ const Login = () => {
       </div>
 
       {/* Account Status Modal */}
-      {accountStatusModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      {accountStatusModal.show && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md relative">
-            <button
-              onClick={closeAccountStatusModal}
-              className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
+            <button onClick={closeAccountStatusModal} className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               <X size={24} />
             </button>
             
@@ -762,56 +658,49 @@ const Login = () => {
               </p>
               
               {/* Additional context based on modal type */}
-              {accountStatusModal.type === 'suspended' && (
-                <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              {accountStatusModal.type === 'suspended' && <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                   <p className="text-sm text-orange-800 dark:text-orange-200">
                     Your account access has been temporarily restricted. If you believe this is an error, please contact our support team to appeal this decision.
                   </p>
-                </div>
-              )}
+                </div>}
               
-              {accountStatusModal.type === 'banned' && (
-                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              {accountStatusModal.type === 'banned' && <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                   <p className="text-sm text-red-800 dark:text-red-200">
                     Your account has been permanently restricted due to policy violations. You may appeal this decision by contacting our support team.
                   </p>
-                </div>
-              )}
+                </div>}
               
-              {accountStatusModal.type === 'incomplete' && (
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              {accountStatusModal.type === 'incomplete' && <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
                     Complete your profile to access all CalvinNova features and start trading with fellow students.
                   </p>
-                </div>
-              )}
+                </div>}
               
-              {accountStatusModal.type === 'verification' && (
-                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              {accountStatusModal.type === 'verification' && <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                   <p className="text-sm text-purple-800 dark:text-purple-200">
                     Please check your email and click the verification link to activate your account.
                   </p>
-                </div>
-              )}
+                </div>}
             </div>
 
             {getModalActions()}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Forgot Password Modal */}
-      {showForgotModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      {showForgotModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md relative">
-            <button
-              onClick={() => {
-                setShowForgotModal(false);
-                setErrors(prev => ({ ...prev, forgotEmail: '' }));
-                setFormData(prev => ({ ...prev, forgotEmail: '' }));
-              }}
-              className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
+            <button onClick={() => {
+          setShowForgotModal(false);
+          setErrors(prev => ({
+            ...prev,
+            forgotEmail: ''
+          }));
+          setFormData(prev => ({
+            ...prev,
+            forgotEmail: ''
+          }));
+        }} className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               <X size={24} />
             </button>
             
@@ -831,64 +720,39 @@ const Login = () => {
                   Email Address
                 </label>
                 <div className="relative">
-                  <input
-                    type="email"
-                    id="forgotEmail"
-                    name="forgotEmail"
-                    value={formData.forgotEmail}
-                    onChange={handleInputChange}
-                    onKeyPress={handleForgotModalKeyPress}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 dark:text-white ${
-                      errors.forgotEmail ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter your email"
-                    required
-                  />
-                  {errors.forgotEmail && (
-                    <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" size={20} />
-                  )}
+                  <input type="email" id="forgotEmail" name="forgotEmail" value={formData.forgotEmail} onChange={handleInputChange} onKeyPress={handleForgotModalKeyPress} className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 dark:bg-gray-700 dark:text-white ${errors.forgotEmail ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} placeholder="Enter your email" required />
+                  {errors.forgotEmail && <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" size={20} />}
                 </div>
-                {errors.forgotEmail && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                {errors.forgotEmail && <p className="mt-1 text-sm text-red-600 flex items-center">
                     <AlertCircle size={16} className="mr-1" />
                     {errors.forgotEmail}
-                  </p>
-                )}
+                  </p>}
               </div>
 
               <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForgotModal(false);
-                    setErrors(prev => ({ ...prev, forgotEmail: '' }));
-                    setFormData(prev => ({ ...prev, forgotEmail: '' }));
-                  }}
-                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
+                <button type="button" onClick={() => {
+              setShowForgotModal(false);
+              setErrors(prev => ({
+                ...prev,
+                forgotEmail: ''
+              }));
+              setFormData(prev => ({
+                ...prev,
+                forgotEmail: ''
+              }));
+            }} className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={isForgotPasswordLoading}
-                  className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isForgotPasswordLoading ? (
-                    <div className="flex items-center justify-center">
+                <button type="submit" disabled={isForgotPasswordLoading} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isForgotPasswordLoading ? <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Sending...
-                    </div>
-                  ) : (
-                    'Send Link'
-                  )}
+                    </div> : 'Send Link'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
 export default Login;

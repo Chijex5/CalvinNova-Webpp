@@ -6,14 +6,12 @@ interface GetProductsResponse {
   success: boolean;
   item: Product;
 }
-
 interface ApiUpdateResponse {
   message?: string;
   success: boolean;
   product: Product;
   error?: string;
 }
-
 class ProductService {
   private lastFetchTime = 0;
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -26,7 +24,7 @@ class ProductService {
       const store = useProductStore.getState();
       const now = Date.now();
       const timeSinceLastFetch = now - this.lastFetchTime;
-      
+
       // Check if we have cached products and they're still valid
       if (!forceRefresh && store.products.length > 0 && timeSinceLastFetch < this.cacheTimeout) {
         console.log('Using cached products');
@@ -37,9 +35,7 @@ class ProductService {
       console.log('Fetching products from API');
       store.setLoading(true);
       store.setError(null);
-
       const response = await api.get<GetProductsResponse>('/api/users/items');
-      
       if (response.data.success) {
         const products = response.data.items;
         store.setProducts(products);
@@ -52,13 +48,12 @@ class ProductService {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch products';
       const store = useProductStore.getState();
       store.setError(errorMessage);
-      
+
       // If we have cached products, return them instead of throwing
       if (store.products.length > 0) {
         console.log('API failed, returning cached products');
         return store.products;
       }
-      
       throw new Error(errorMessage);
     } finally {
       const store = useProductStore.getState();
@@ -100,22 +95,30 @@ class ProductService {
    * @param updates - Partial product data to update
    * @return Updated product
    */
-    async updateProduct(id: number, updates: Partial<Product>): Promise<{success: boolean, item: Product, message?: string}> {
-        try {
-        const response = await api.put<ApiUpdateResponse>(`/api/seller/item/${id}`, updates);
-        if (response.data) {
-            const store = useProductStore.getState();
-            store.updateProduct(id, response.data.product);
-            return {success : true, item : response.data.product, message: response.data.message || 'Product updated successfully'};
-        } else {
-            throw new Error('Failed to update product');
-        }
-        } catch (error: any) {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to update product';
-        console.error(errorMessage);
-        throw new Error(errorMessage);
-        }
+  async updateProduct(id: number, updates: Partial<Product>): Promise<{
+    success: boolean;
+    item: Product;
+    message?: string;
+  }> {
+    try {
+      const response = await api.put<ApiUpdateResponse>(`/api/seller/item/${id}`, updates);
+      if (response.data) {
+        const store = useProductStore.getState();
+        store.updateProduct(id, response.data.product);
+        return {
+          success: true,
+          item: response.data.product,
+          message: response.data.message || 'Product updated successfully'
+        };
+      } else {
+        throw new Error('Failed to update product');
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update product';
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
+  }
 
   /**
    * Get products with error handling
@@ -176,7 +179,6 @@ export default productService;
 // Hook for using the product service in React components
 export const useProductService = () => {
   const store = useProductStore();
-  
   return {
     ...store,
     fetchProducts: productService.fetchProducts.bind(productService),
@@ -184,6 +186,6 @@ export const useProductService = () => {
     initializeProducts: productService.initializeProducts.bind(productService),
     isCacheValid: productService.isCacheValid.bind(productService),
     clearCache: productService.clearCache.bind(productService),
-    setCacheTimeout: productService.setCacheTimeout.bind(productService),
+    setCacheTimeout: productService.setCacheTimeout.bind(productService)
   };
 };

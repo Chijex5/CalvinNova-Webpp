@@ -6,10 +6,7 @@ import { useProductService } from '../services/productService';
 import api from '../utils/apiService';
 import { getAuth, signOut } from 'firebase/auth';
 import app from '../firebase/firebaseConfig';
-
 const auth = getAuth(app);
-
-
 interface SignupData {
   firstName: string;
   lastName: string;
@@ -20,22 +17,31 @@ interface SignupData {
   userRole: 'buyer' | 'seller' | 'both';
   avatarUrl?: string;
 }
-
 interface Response {
   success: boolean;
   message: string;
 }
-
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   isCheckingAuth: boolean;
   isMiddleOfAuthFlow: boolean;
-  setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void
+  setIsMiddleOfAuthFlow: (isMiddleOfAuthFlow: boolean) => void;
   setIsCheckingAuth: (checking: boolean) => void;
-  updateUser: (updates: Partial<User>) => Promise<{success: boolean, message?: string}>;
-  login: (email: string, userId: string) => Promise<{success: boolean, message: string, requires_support?: boolean}>;
-  verifcation: (token: string) => Promise<{status: boolean, user?: User, message?: string}>;
+  updateUser: (updates: Partial<User>) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  login: (email: string, userId: string) => Promise<{
+    success: boolean;
+    message: string;
+    requires_support?: boolean;
+  }>;
+  verifcation: (token: string) => Promise<{
+    status: boolean;
+    user?: User;
+    message?: string;
+  }>;
   error: string | null;
   clearError: () => void;
   setError: (error: string | null) => void;
@@ -48,9 +54,7 @@ interface AuthContextType {
   isSeller: boolean;
   isLoading: boolean;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -58,37 +62,37 @@ export const useAuth = () => {
   }
   return context;
 };
-
 export const AuthProvider: React.FC<{
   children: React.ReactNode;
-}> = ({ children }) => {
-  const { 
-    user, 
-    setUser, 
-    clearUser, 
-    isLoading, 
+}> = ({
+  children
+}) => {
+  const {
+    user,
+    setUser,
+    clearUser,
+    isLoading,
     updateUser: storeUpdateUser,
-    setLoading, 
-    isAuthenticated, 
+    setLoading,
+    isAuthenticated,
     setIsAuthenticated,
-    isAdmin, 
-    isBuyer, 
-    isSeller 
+    isAdmin,
+    isBuyer,
+    isSeller
   } = useUserStore();
-
   const productService = useProductService();
-
-  const { setAdminView } = useChatStore();
+  const {
+    setAdminView
+  } = useChatStore();
   const [error, setError] = useState<string | null>(null);
-
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [isMiddleOfAuthFlow, setIsMiddleOfAuthFlow] = useState<boolean>(false);
-  
+
   // Track if initial auth check is complete
   const initialAuthComplete = useRef<boolean>(false);
   // Track if StreamChat is connected
   const streamChatConnected = useRef<boolean>(false);
-  
+
   // Helper function to safely connect to StreamChat
   const connectToStreamChat = async (userData: User) => {
     try {
@@ -97,16 +101,11 @@ export const AuthProvider: React.FC<{
         await client.disconnect();
         streamChatConnected.current = false;
       }
-
-      await client.connectUser(
-        {
-          id: userData.userId,
-          name: userData.name,
-          image: userData.avatarUrl,
-        },
-        userData.userToken
-      );
-      
+      await client.connectUser({
+        id: userData.userId,
+        name: userData.name,
+        image: userData.avatarUrl
+      }, userData.userToken);
       streamChatConnected.current = true;
     } catch (error) {
       console.error('StreamChat connection error:', error);
@@ -125,7 +124,6 @@ export const AuthProvider: React.FC<{
       console.error('StreamChat disconnect error:', error);
     }
   };
-  
   const logout = async (): Promise<void> => {
     try {
       await disconnectFromStreamChat();
@@ -140,25 +138,33 @@ export const AuthProvider: React.FC<{
       setIsAuthenticated(false);
     }
   };
-
   const clearError = () => {
     setError(null);
   };
-
-  const updateUser = async (updates: Partial<User>): Promise<{success: boolean, message?: string}> => {
-    try{
+  const updateUser = async (updates: Partial<User>): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    try {
       const response = await api.put('/api/user/update', updates);
       if (response && response.data.success) {
         storeUpdateUser(response.data.user);
-        return { success: true };
+        return {
+          success: true
+        };
       }
-      return { success: false, message: 'Update failed' };
+      return {
+        success: false,
+        message: 'Update failed'
+      };
     } catch (error) {
       console.error('Error updating user:', error);
-      return { success: false, message: 'Failed to update user' };
+      return {
+        success: false,
+        message: 'Failed to update user'
+      };
     }
   };
-
   const getUserDataFromBackend = async (retryCount = 0): Promise<User> => {
     try {
       setLoading(true);
@@ -174,21 +180,19 @@ export const AuthProvider: React.FC<{
         productService.refreshProducts().catch(error => {
           setError('Failed to refresh products');
         });
-        
         return response.data.user;
       }
-
       throw new Error('Failed to fetch user data');
     } catch (error: any) {
       setError(error || 'Error fetching user data from backend');
-      
+
       // If it's a 401 error and we haven't retried, wait a bit and retry
       // This handles the case where the user was just created but isn't immediately available
       if (error.response?.status === 401 && retryCount < 2) {
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
         return getUserDataFromBackend(retryCount + 1);
       }
-      
+
       // Only logout if we're not in the middle of auth flow
       if (!isMiddleOfAuthFlow) {
         await logout();
@@ -203,13 +207,11 @@ export const AuthProvider: React.FC<{
   // Check authentication on mount
   useEffect(() => {
     let mounted = true;
-    
     const checkInitialAuth = async () => {
       if (initialAuthComplete.current) return;
-      
+
       // Check if we have a stored token
       const token = localStorage.getItem('token');
-      
       if (token) {
         try {
           const userData = await getUserDataFromBackend();
@@ -238,9 +240,7 @@ export const AuthProvider: React.FC<{
         }
       }
     };
-
     checkInitialAuth();
-
     return () => {
       mounted = false;
     };
@@ -252,119 +252,153 @@ export const AuthProvider: React.FC<{
       disconnectFromStreamChat();
     };
   }, []);
-
   const resetPassword = async (email: string): Promise<Response> => {
     try {
       setLoading(true);
-      const response = await api.post('/api/reset-password', { email });
+      const response = await api.post('/api/reset-password', {
+        email
+      });
       if (response && response.data.success) {
-        return { success: true, message: 'Password reset email sent successfully' };
+        return {
+          success: true,
+          message: 'Password reset email sent successfully'
+        };
       }
       setError('Failed to send password reset email');
-      return { success: false, message: 'Failed to send password reset email' };
+      return {
+        success: false,
+        message: 'Failed to send password reset email'
+      };
     } catch (error: any) {
       setError(error.response?.data.message || 'Failed to send password reset email');
-      return { success: false, message: error.response?.data.message || 'Failed to send password reset email' };
+      return {
+        success: false,
+        message: error.response?.data.message || 'Failed to send password reset email'
+      };
     } finally {
       setLoading(false);
     }
-  }
-
-  const login = async (email: string, password: string): Promise<{success: boolean, message: string, requires_support?: boolean}> => {
+  };
+  const login = async (email: string, password: string): Promise<{
+    success: boolean;
+    message: string;
+    requires_support?: boolean;
+  }> => {
     try {
       setLoading(true);
-
-      const response = await api.post('/api/login', { email, password });
+      const response = await api.post('/api/login', {
+        email,
+        password
+      });
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
         const userData = response.data.user;
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
-        
+
         // Connect to StreamChat
         await connectToStreamChat(userData);
-        
         setUser(userData);
         setIsAuthenticated(true);
         initialAuthComplete.current = true;
-        
-        return {success: true, message: 'Login successful'};
+        return {
+          success: true,
+          message: 'Login successful'
+        };
       }
-      
-      return {success: false, message: 'Login failed'};
+      return {
+        success: false,
+        message: 'Login failed'
+      };
     } catch (error: any) {
       setError(error.response?.data.error || 'Login failed');
-      console.error(error)
-      return {success: false, message: error.response?.data.error || 'Login failed', requires_support: error.response?.data.requires_support || false};
+      console.error(error);
+      return {
+        success: false,
+        message: error.response?.data.error || 'Login failed',
+        requires_support: error.response?.data.requires_support || false
+      };
     } finally {
       setIsMiddleOfAuthFlow(false);
       setLoading(false);
     }
   };
-
   const signup = async (data: SignupData): Promise<Response> => {
     try {
       setLoading(true);
-      
       const response = await api.post('/api/signup', data);
-
       if (response && response.data.success) {
-        return {success: true, message: 'Signup successful'};
+        return {
+          success: true,
+          message: 'Signup successful'
+        };
       }
-      
-      return {success: false, message: 'Signup Failed'};
+      return {
+        success: false,
+        message: 'Signup Failed'
+      };
     } catch (error: any) {
       setError(error.response?.data.message || 'Signup failed');
-      return {success: false, message: error.response?.data.message || 'Signup failed'};
+      return {
+        success: false,
+        message: error.response?.data.message || 'Signup failed'
+      };
     } finally {
       setIsMiddleOfAuthFlow(false);
       setLoading(false);
     }
   };
-
-  const verifcation = async (token: string): Promise<{status: boolean, user?: User, message?: string}> => {
+  const verifcation = async (token: string): Promise<{
+    status: boolean;
+    user?: User;
+    message?: string;
+  }> => {
     try {
       setLoading(true);
       const response = await api.get(`/verify-email/${token}`);
-      
       if (response && response.data.success) {
         localStorage.setItem('token', response.data.access_token);
         response.data.user.role === 'admin' ? setAdminView(true) : setAdminView(false);
-        
+
         // Connect to StreamChat
         await connectToStreamChat(response.data.user);
-        
         setUser(response.data.user);
         setIsAuthenticated(true);
         initialAuthComplete.current = true;
-        
         productService.fetchProducts().catch(error => {
           console.error('Background product fetch failed:', error);
         });
-
-        return {status: true, user: response.data.user, message: 'Email verified successfully'};
+        return {
+          status: true,
+          user: response.data.user,
+          message: 'Email verified successfully'
+        };
       }
-      
-      return {status: false, message: 'Email verification failed'};
+      return {
+        status: false,
+        message: 'Email verification failed'
+      };
     } catch (error: any) {
       setError(error.response?.data.message || 'Email verification failed');
       console.error('Verification error:', error);
-      return {status: false, message: error.response?.data.message || 'Email verification failed'};
+      return {
+        status: false,
+        message: error.response?.data.message || 'Email verification failed'
+      };
     } finally {
       setIsMiddleOfAuthFlow(false);
       setLoading(false);
     }
-  }
+  };
   const refresh = async (): Promise<void> => {
     if (isMiddleOfAuthFlow) {
       console.warn('Cannot refresh while in the middle of an auth flow');
       return;
     }
-    
     const token = localStorage.getItem('token');
     if (token) {
       try {
         setLoading(true);
-        
+
         // Refetch user data from backend
         const userData = await getUserDataFromBackend();
         setUser(userData);
@@ -377,7 +411,6 @@ export const AuthProvider: React.FC<{
       }
     }
   };
-
   const value: AuthContextType = {
     user,
     isAdmin,

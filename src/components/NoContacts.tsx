@@ -1,72 +1,78 @@
 import { AlertTriangle, X, Shield, Phone, Mail, MessageSquare, CreditCard } from 'lucide-react';
-
 interface ContactViolation {
   type: 'phone' | 'social' | 'email' | 'payment';
   match: string;
   position: number;
   category: string;
 }
-
 interface CheckResult {
   hasViolation: boolean;
   violations: ContactViolation[];
   message: string;
   riskLevel: 'low' | 'medium' | 'high';
 }
-
 interface ContactWarningBannerProps {
   checkResult: CheckResult;
   onDismiss?: () => void;
 }
-
-export default function ContactWarningBanner({ checkResult, onDismiss }: ContactWarningBannerProps) {
-
+export default function ContactWarningBanner({
+  checkResult,
+  onDismiss
+}: ContactWarningBannerProps) {
   const handleDismiss = () => {
     onDismiss?.();
   };
-
   const getViolationIcon = (type: string) => {
     switch (type) {
-      case 'phone': return <Phone className="h-4 w-4" />;
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'social': return <MessageSquare className="h-4 w-4" />;
-      case 'payment': return <CreditCard className="h-4 w-4" />;
-      default: return <AlertTriangle className="h-4 w-4" />;
+      case 'phone':
+        return <Phone className="h-4 w-4" />;
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'social':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'payment':
+        return <CreditCard className="h-4 w-4" />;
+      default:
+        return <AlertTriangle className="h-4 w-4" />;
     }
   };
-
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
-      case 'high': return 'red';
-      case 'medium': return 'orange';
-      case 'low': return 'yellow';
-      default: return 'red';
+      case 'high':
+        return 'red';
+      case 'medium':
+        return 'orange';
+      case 'low':
+        return 'yellow';
+      default:
+        return 'red';
     }
   };
-
   const getRiskBadgeClasses = (riskLevel: string) => {
     const baseClasses = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
     switch (riskLevel) {
-      case 'high': return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300`;
-      case 'medium': return `${baseClasses} bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300`;
-      case 'low': return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300`;
-      default: return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300`;
+      case 'high':
+        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300`;
+      case 'medium':
+        return `${baseClasses} bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300`;
+      case 'low':
+        return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300`;
+      default:
+        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300`;
     }
   };
-
   const riskColor = getRiskColor(checkResult.riskLevel);
-
-  return (
-    <>
+  return <>
       {/* Full screen overlay with highest z-index */}
-      <div 
-        className="fixed inset-0 bg-black/60 dark:bg-black/80 z-[9999]" 
-        onClick={handleDismiss}
-        style={{ height: '100vh', width: '100vw' }}
-      />
+      <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-[9999]" onClick={handleDismiss} style={{
+      height: '100vh',
+      width: '100vw'
+    }} />
       
       {/* Warning modal - centered on screen */}
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-6" style={{ height: '100vh' }}>
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-6" style={{
+      height: '100vh'
+    }}>
         <div className={`w-full max-w-sm sm:max-w-md bg-gradient-to-br from-${riskColor}-50 to-${riskColor === 'red' ? 'orange' : riskColor}-50 dark:from-${riskColor}-950/50 dark:to-${riskColor === 'red' ? 'orange' : riskColor}-950/50 border-l-4 border-${riskColor}-500 dark:border-${riskColor}-400 rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-top duration-300 ease-out max-h-[90vh] overflow-y-auto`}>
           
           {/* Compact header */}
@@ -90,10 +96,7 @@ export default function ContactWarningBanner({ checkResult, onDismiss }: Contact
                   </div>
                 </div>
               </div>
-              <button
-                onClick={handleDismiss}
-                className="text-white hover:text-opacity-80 transition-colors p-1"
-              >
+              <button onClick={handleDismiss} className="text-white hover:text-opacity-80 transition-colors p-1">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -110,8 +113,7 @@ export default function ContactWarningBanner({ checkResult, onDismiss }: Contact
                   Violations ({checkResult.violations.length})
                 </h4>
                 <div className="space-y-1.5">
-                  {checkResult.violations.slice(0, 2).map((violation, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-700 rounded-md p-2 border border-gray-200 dark:border-gray-600">
+                  {checkResult.violations.slice(0, 2).map((violation, index) => <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-700 rounded-md p-2 border border-gray-200 dark:border-gray-600">
                       <div className="flex items-center space-x-2">
                         <div className={`text-${riskColor}-500 dark:text-${riskColor}-400`}>
                           {getViolationIcon(violation.type)}
@@ -128,13 +130,10 @@ export default function ContactWarningBanner({ checkResult, onDismiss }: Contact
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium bg-${riskColor}-100 text-${riskColor}-800 dark:bg-${riskColor}-900/30 dark:text-${riskColor}-300`}>
                         {violation.type.toUpperCase()}
                       </span>
-                    </div>
-                  ))}
-                  {checkResult.violations.length > 2 && (
-                    <p className="text-center text-gray-500 text-xs">
+                    </div>)}
+                  {checkResult.violations.length > 2 && <p className="text-center text-gray-500 text-xs">
                       +{checkResult.violations.length - 2} more violations
-                    </p>
-                  )}
+                    </p>}
                 </div>
               </div>
 
@@ -176,22 +175,15 @@ export default function ContactWarningBanner({ checkResult, onDismiss }: Contact
             
             {/* Compact action buttons */}
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={handleDismiss}
-                className={`flex-1 bg-${riskColor}-600 dark:bg-${riskColor}-700 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-${riskColor}-700 dark:hover:bg-${riskColor}-800 transition-colors`}
-              >
+              <button onClick={handleDismiss} className={`flex-1 bg-${riskColor}-600 dark:bg-${riskColor}-700 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-${riskColor}-700 dark:hover:bg-${riskColor}-800 transition-colors`}>
                 I Understand
               </button>
-              <button
-                onClick={handleDismiss}
-                className={`sm:w-auto px-3 py-2 text-${riskColor}-600 dark:text-${riskColor}-400 border border-${riskColor}-300 dark:border-${riskColor}-700 rounded-lg text-xs font-medium hover:bg-${riskColor}-50 dark:hover:bg-${riskColor}-950/30 transition-colors`}
-              >
+              <button onClick={handleDismiss} className={`sm:w-auto px-3 py-2 text-${riskColor}-600 dark:text-${riskColor}-400 border border-${riskColor}-300 dark:border-${riskColor}-700 rounded-lg text-xs font-medium hover:bg-${riskColor}-50 dark:hover:bg-${riskColor}-950/30 transition-colors`}>
                 Dismiss
               </button>
             </div>
           </div>
         </div>
       </div>
-    </>
-  );
+    </>;
 }

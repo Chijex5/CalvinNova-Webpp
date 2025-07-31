@@ -9,155 +9,140 @@ import { toast } from 'sonner';
 import { FadeIn } from '../utils/animations';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
-import api from '../utils/apiService'
+import api from '../utils/apiService';
 import { client } from '../lib/stream-chat';
 import { useChatStore } from '../store/chatStore';
 import { productService } from '../services/productService';
 import { useProductStore } from '../store/productStore';
 import { MessageSquareIcon, ShoppingBagIcon, PlusCircleIcon, TrendingUpIcon, BellIcon, CalendarIcon, UserIcon, CheckCircleIcon, RefreshCwIcon } from 'lucide-react';
-
 interface UserAvatarProps {
   user?: User;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
-
-const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = '' }) => {
+const UserAvatar: React.FC<UserAvatarProps> = ({
+  user,
+  size = 'md',
+  className = ''
+}) => {
   const [imageError, setImageError] = useState<boolean>(false);
-  
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
     lg: 'w-12 h-12 text-base'
   };
-  
-  const fallbackColors = [
-    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
-    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
-  ];
-  
+  const fallbackColors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
   const getColorFromId = (id: string): string => {
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return fallbackColors[hash % fallbackColors.length];
   };
-  
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-  
   if (!user?.image || imageError) {
-    return (
-      <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white dark:text-gray-900 font-medium ${className}`}>
+    return <div className={`${sizeClasses[size]} ${getColorFromId(user?.id || '')} rounded-full flex items-center justify-center text-white dark:text-gray-900 font-medium ${className}`}>
         {initials}
-      </div>
-    );
+      </div>;
   }
-  
-  return (
-    <img
-      src={user.image}
-      alt={user.name || 'User'}
-      className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
-      onError={() => setImageError(true)}
-    />
-  );
+  return <img src={user.image} alt={user.name || 'User'} className={`${sizeClasses[size]} rounded-full object-cover ${className}`} onError={() => setImageError(true)} />;
 };
-
 interface StatsData {
   one: string;
   two: string;
   three: string;
-  four: string
+  four: string;
 }
-
 const Dashboard = () => {
   const {
     user,
     isAuthenticated
   } = useAuth();
   const navigate = useNavigate();
-  const { products, loading, error } = useProductStore();
+  const {
+    products,
+    loading,
+    error
+  } = useProductStore();
   const [statLoading, setStatLoading] = useState<boolean>(false);
   const [statsData, setStatsData] = useState<StatsData>({
     one: '0',
     two: '0',
     three: '0',
     four: '0'
-  })
-
+  });
   const getTitle = (number: number, role: string) => {
     if (role === 'buyer') {
       return number === 1 ? 'New Message' : number === 2 ? 'Total Orders' : number === 3 ? 'Total Amount Spent' : 'Completed Purchases';
     } else if (role === 'seller') {
-     return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listings' : number === 3 ? 'Total Earnings' : 'Completed Sales';
+      return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listings' : number === 3 ? 'Total Earnings' : 'Completed Sales';
     } else if (role === 'both') {
       return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listed' : number === 3 ? 'Total Earnings' : 'Completed Purchases';
     } else if (role === 'admin') {
       return number === 1 ? 'Verified Users' : number === 2 ? 'Active Products' : number === 3 ? 'Completed Orders' : 'Platform Revenue';
-    } else if  (role === 'agent') {
+    } else if (role === 'agent') {
       return number === 1 ? 'Active Cases' : number === 2 ? 'Resolved Cases' : number === 3 ? 'TimedOut Tickets' : 'Assigned Cases';
     }
-  }
-  const { chats, getChatsForUser, isLoadingChats, } = useChatStore();
+  };
+  const {
+    chats,
+    getChatsForUser,
+    isLoadingChats
+  } = useChatStore();
   useEffect(() => {
     const loadStats = async (type: string) => {
-      try{
+      try {
         setStatLoading(true);
         const response = await api.get(`api/user/stats/${type}`);
-        if (response.data.success){
+        if (response.data.success) {
           if (type === 'both') {
-            setStatsData(response.data.stats.overview)
-          } else{
-            setStatsData(response.data.stats)
+            setStatsData(response.data.stats.overview);
+          } else {
+            setStatsData(response.data.stats);
           }
         }
       } catch (err) {
-        console.log(err)
+        console.log(err);
       } finally {
-        setStatLoading(false)
+        setStatLoading(false);
       }
-    }
-    loadStats(user?.role || '')
+    };
+    loadStats(user?.role || '');
   }, [user?.role]);
-
   const getLastMessage = (chat: Chat): string => {
     const messages = chat.state.messages || [];
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage) return 'No messages yet';
-    
     if (lastMessage.type === 'system') {
       return '🔒 System message';
     }
-    
     const isCurrentUser = lastMessage.user?.id === user?.userId;
     const prefix = isCurrentUser ? 'You: ' : '';
     return `${prefix}${lastMessage.text || 'Media message'}`;
   };
-
   const getOtherUser = (chat: Chat): User | undefined => {
     const members = chat.state.members || {};
     return Object.values(members).find(m => m.user?.id !== user?.userId)?.user;
   };
-
   function useTotalUnreadCount(client: any | null) {
     const [totalUnread, setTotalUnread] = useState(0);
-
     useEffect(() => {
       if (!client || !client.user) return;
-
       let isMounted = true;
-
       const calculateUnreadCount = async () => {
         try {
-          const channels = await client.queryChannels(
-            { members: { $in: [client.user.id] } },
-            {}, // sort
-            { watch: false, state: true } // only fetch channel state
+          const channels = await client.queryChannels({
+            members: {
+              $in: [client.user.id]
+            }
+          }, {},
+          // sort
+          {
+            watch: false,
+            state: true
+          } // only fetch channel state
           );
-
           let total = 0;
           for (const channel of channels) {
             total += channel.countUnread();
           }
-
           if (isMounted) setTotalUnread(total);
         } catch (err) {
           console.error("Failed to fetch unread counts:", err);
@@ -175,27 +160,22 @@ const Dashboard = () => {
           await calculateUnreadCount();
         }
       };
-
       client.on('message.new', handleNewMessage);
       client.on('notification.message_new', handleNewMessage);
-
       return () => {
         isMounted = false;
         client.off('message.new', handleNewMessage);
         client.off('notification.message_new', handleNewMessage);
       };
     }, [client]);
-
     return totalUnread;
   }
   const totalUnreadMessages = useTotalUnreadCount(client);
-
   useEffect(() => {
     if (isAuthenticated) {
       getChatsForUser();
     }
   }, [isAuthenticated, getChatsForUser]);
-
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -204,37 +184,30 @@ const Dashboard = () => {
         console.error('Failed to load products:', error);
       }
     };
-
     loadProducts();
   }, []);
-
   useEffect(() => {
     if (error) {
       toast.error(error || 'Failed to load products');
     }
   }, [error]);
-
   const userActivity = {
     newMessages: totalUnreadMessages,
     itemsSoldThisWeek: 2,
     viewsOnListings: 15,
     savedItems: 4
   };
-
-  const greeting = getGreeting(user?.name || 'user', user?.role || 'buyer')
-
+  const greeting = getGreeting(user?.name || 'user', user?.role || 'buyer');
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
     }).format(price);
   };
-
   const activeListings = products.filter(product => product.sellerId === user?.userId).slice(0, 2);
   const nearbyListings = products.filter(product => product.sellerId !== user?.userId).slice(0, 4);
   if (!user) return null;
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <div className="container mx-auto px-4 py-6">
         {/* Personal Greeting Section */}
         <FadeIn direction="up">
@@ -265,8 +238,7 @@ const Dashboard = () => {
         {/* Activity Cards */}
         <FadeIn direction="up" delay={0.1}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {statLoading ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
                 <div className="flex items-center space-x-3">
                   {/* Icon Placeholder */}
                   <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
@@ -279,9 +251,7 @@ const Dashboard = () => {
                     <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
                     <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
@@ -293,10 +263,8 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(1, user.role)}</p>
                   </div>
                 </div>
-              </div>
-            )}
-            {statLoading? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+              </div>}
+            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
                 <div className="flex items-center space-x-3">
                   {/* Icon Placeholder */}
                   <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
@@ -309,9 +277,7 @@ const Dashboard = () => {
                     <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
                   </div>
                 </div>
-              </div>
-            ): (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
                     <CheckCircleIcon size={20} className="text-green-600 dark:text-green-400" />
@@ -323,11 +289,9 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(2, user?.role)}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
-            {statLoading? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
                 <div className="flex items-center space-x-3">
                   {/* Icon Placeholder */}
                   <div className="bg-indigo-100 dark:bg-purple-900/50 p-2 rounded-lg">
@@ -340,9 +304,7 @@ const Dashboard = () => {
                     <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
                   </div>
                 </div>
-              </div>
-            ): (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
                     <TrendingUpIcon size={20} className="text-purple-600 dark:text-purple-400" />
@@ -354,11 +316,9 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(3, user?.role)}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
-            {statLoading ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+            {statLoading ? <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
                 <div className="flex items-center space-x-3">
                   {/* Icon Placeholder */}
                   <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
@@ -371,9 +331,7 @@ const Dashboard = () => {
                     <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+              </div> : <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
                     <ShoppingBagIcon size={20} className="text-amber-600 dark:text-amber-400" />
@@ -385,8 +343,7 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(4, user?.role)}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
           </div>
         </FadeIn>
 
@@ -403,10 +360,8 @@ const Dashboard = () => {
                     See All
                   </Button>
                 </div>
-                {isLoadingChats ? <RecentConversationsSkeleton count={3} /> : (
-                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {
-                    chats.slice(0, 3).map((convo, index) => <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
+                {isLoadingChats ? <RecentConversationsSkeleton count={3} /> : <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {chats.slice(0, 3).map((convo, index) => <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/chat/${convo.id}`)}>
                         <div className="flex items-center space-x-3">
                           <div className="relative">
                             <UserAvatar user={getOtherUser(convo)} size="md" className="flex-shrink-0" />
@@ -437,8 +392,7 @@ const Dashboard = () => {
                           Start browsing to find items and chat with sellers!
                         </p>
                       </div>}
-                  </div>
-                )}
+                  </div>}
                 {chats.length > 0 && <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/50 text-center">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Pro tip:{' '}
@@ -452,8 +406,7 @@ const Dashboard = () => {
             </FadeIn>
 
             {/* Your Active Listings */}
-            {(user.role === 'seller' || user.role === 'both') && (
-              <FadeIn direction="up" delay={0.3}>
+            {(user.role === 'seller' || user.role === 'both') && <FadeIn direction="up" delay={0.3}>
                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <h2 className="font-bold text-gray-900 dark:text-white">
@@ -463,10 +416,7 @@ const Dashboard = () => {
                       Manage
                     </Button>
                   </div>
-                  {loading ? (
-                    <ListingSkeleton type="activeListings" count={2} />
-                  ) : (
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {loading ? <ListingSkeleton type="activeListings" count={2} /> : <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       {user.role === 'seller' || user.role === 'both' && activeListings.length > 0 ? activeListings.map(listing => <div key={listing.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer" onClick={() => navigate(`/product/${listing.slug}`)}>
                             <div className="flex items-center space-x-3">
                               <img src={listing.images[0]} alt={listing.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700" />
@@ -497,11 +447,9 @@ const Dashboard = () => {
                             Create Listing
                           </Button>
                         </div>}
-                    </div>
-                  )}
+                    </div>}
                   </div>
-              </FadeIn>
-            )}
+              </FadeIn>}
           </div>
 
           {/* Right Column - New Listings & Upcoming */}
@@ -518,17 +466,13 @@ const Dashboard = () => {
                   </Button>
                 </div>
                 <div className="p-6">
-                  {loading ? (
-                    <ListingSkeleton type="nearbyListings" count={4} />
-                  ) : nearbyListings.length === 0 ? (
-                    <div className="text-center p-8">
+                  {loading ? <ListingSkeleton type="nearbyListings" count={4} /> : nearbyListings.length === 0 ? <div className="text-center p-8">
                       <ShoppingBagIcon size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
                       <p className="text-gray-500 dark:text-gray-400">No new listings nearby</p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                         Check back later or explore the marketplace!
                       </p>
-                    </div>
-                  ) : null}
+                    </div> : null}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {nearbyListings.map((product, index) => <ProductCard key={product.id} product={product} delay={0.1 * index} />)}
                   </div>
@@ -642,7 +586,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 export default Dashboard;
