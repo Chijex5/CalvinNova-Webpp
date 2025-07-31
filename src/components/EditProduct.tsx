@@ -10,6 +10,7 @@ interface ItemFormData {
   title: string;
   description: string;
   price: number;
+  sellerAmount?: number; // Optional for seller's price
   category: string;
   condition: string;
   school: string;
@@ -17,10 +18,11 @@ interface ItemFormData {
 }
 
 interface ProductData {
-  id: string;
+  id: number;
   title: string;
   description: string;
   price: number;
+  sellerAmount?: number; // Optional for seller's price
   category: string;
   condition: string;
   school: string;
@@ -45,6 +47,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
     title: '',
     description: '',
     price: 0,
+    sellerAmount: 0,
     category: '',
     condition: 'new',
     school: user?.campus ?? 'UNN',
@@ -63,6 +66,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
         price: productData.price || 0,
         category: productData.category || '',
         condition: productData.condition || 'new',
+        sellerAmount: productData.sellerAmount || 0,
         school: productData.school || user?.campus || 'UNN',
         images: productData.images || []
       });
@@ -76,6 +80,7 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
         formData.title !== productData.title ||
         formData.description !== productData.description ||
         formData.price !== productData.price ||
+        formData.sellerAmount !== productData.sellerAmount ||
         formData.category !== productData.category ||
         formData.condition !== productData.condition ||
         formData.school !== productData.school ||
@@ -130,7 +135,18 @@ const ModernItemEditForm: React.FC<ModernItemEditFormProps> = ({
   }
 
   const handleInputChange = (field: keyof ItemFormData, value: string | string[]): void => {
-    setFormData((prev: ItemFormData) => ({ ...prev, [field]: value }));
+    if (field === 'price') {
+      setFormData((prev: ItemFormData) => ({
+        ...prev,
+        price: Number(value)
+      }));
+      setFormData((prev: ItemFormData) => ({
+        ...prev,
+        sellerAmount: (Number(value) - (Number(value) * 0.08))
+      }));
+    } else {
+      setFormData((prev: ItemFormData) => ({ ...prev, [field]: value }));
+    }
     if (errors[field as keyof ValidationErrors]) {
       setErrors((prev: ValidationErrors) => ({ ...prev, [field]: '' }));
     }

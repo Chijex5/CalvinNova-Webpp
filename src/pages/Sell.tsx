@@ -13,7 +13,8 @@ interface Image {
 interface ItemFormData {
   title: string;
   description: string;
-  price: string;
+  price: number;
+  sellerAmount?: number; // Optional for seller's price
   category: string;
   condition: string;
   school: string;
@@ -37,9 +38,10 @@ const ModernItemListingForm = () => {
   const [formData, setFormData] = useState<ItemFormData>({
     title: '',
     description: '',
-    price: '',
+    price: 0,
     category: '',
     condition: 'new',
+    sellerAmount: 0,
     school: user?.campus ?? 'UNN',
     images: []
   });
@@ -272,7 +274,7 @@ const ModernItemListingForm = () => {
         setFormData({
           title: '',
           description: '',
-          price: '',
+          price: 0,
           category: '',
           condition: 'new',
           school: 'UNN',
@@ -290,11 +292,21 @@ const ModernItemListingForm = () => {
     }
   };
 
-  const calculatePayout = (price: string) => {
-    const numPrice = Number(price);
-    if (isNaN(numPrice) || numPrice <= 0) return 0;
-    const agentFee = numPrice * 0.08;
-    return numPrice - agentFee;
+  const calculatePayout = (price: number) => {
+    if (isNaN(price) || price <= 0) return 0;
+    return price - (price * 0.08);
+  };
+
+  // Update sellerAmount when price changes
+  const handlePriceChange = (value: string) => {
+    const numPrice = Number(value);
+    const payout = calculatePayout(numPrice);
+    
+    setFormData(prev => ({
+      ...prev,
+      price: numPrice,
+      sellerAmount: payout  // Set both at once
+    }));
   };
 
   const ToggleButton = ({ options, selected, onChange, label }: {options: {value: string, label: string}[], selected: string, onChange: (option: string) => void, label: string}) => (
@@ -407,7 +419,7 @@ const ModernItemListingForm = () => {
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     {uploadState.status === 'uploading' && (
                       <>
-                        <Spinner className="h-6 w-6 text-blue-500 dark:text-blue-400 mb-2" />
+                        <Spinner className="h-6 w-6 text-blue-500 dark:text-blue-400 mb-2 animate-spin" />
                         <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Uploading...</div>
                         <div className="w-3/4 bg-gray-200 dark:bg-gray-700 rounded-full h-1">
                           <div 
@@ -563,7 +575,7 @@ const ModernItemListingForm = () => {
                   <input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => handleInputChange('price', e.target.value)}
+                    onChange={(e) => handlePriceChange(e.target.value)}
                     className="w-full pl-8 pr-4 py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="0"
                   />
@@ -646,7 +658,7 @@ const ModernItemListingForm = () => {
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">₦{formData.price}</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">₦{formData.price.toLocaleString()}</div>
                   <div className="text-sm text-green-600 dark:text-green-400">
                     You'll earn: ₦{calculatePayout(formData.price).toLocaleString()}
                   </div>

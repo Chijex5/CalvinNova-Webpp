@@ -78,7 +78,7 @@ class ProductService {
    * @param id - Product ID to delete
    */
 
-  async deleteProduct(id: string): Promise<void> {
+  async deleteProduct(id: number): Promise<void> {
     try {
       const response = await api.delete(`/api/seller/delete-item/${id}`);
       if (response.data.success) {
@@ -100,7 +100,7 @@ class ProductService {
    * @param updates - Partial product data to update
    * @return Updated product
    */
-    async updateProduct(id: string, updates: Partial<Product>): Promise<{success: boolean, item: Product, message?: string}> {
+    async updateProduct(id: number, updates: Partial<Product>): Promise<{success: boolean, item: Product, message?: string}> {
         try {
         const response = await api.put<ApiUpdateResponse>(`/api/seller/item/${id}`, updates);
         if (response.data) {

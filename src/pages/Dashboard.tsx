@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ListingSkeleton from '../components/loaders/DashboardLoader';
+import { getGreeting } from '../functions/getGreetings';
 import RecentConversationsSkeleton from '../components/loaders/RecentConversationLoader';
 import { Chat, User, OnlineIndicator } from './Chat';
 import { toast } from 'sonner';
 import { FadeIn } from '../utils/animations';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
+import api from '../utils/apiService'
 import { client } from '../lib/stream-chat';
 import { useChatStore } from '../store/chatStore';
 import { productService } from '../services/productService';
@@ -59,22 +61,62 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ user, size = 'md', className = 
   );
 };
 
+interface StatsData {
+  one: string;
+  two: string;
+  three: string;
+  four: string
+}
+
 const Dashboard = () => {
   const {
     user,
     isAuthenticated
   } = useAuth();
   const navigate = useNavigate();
-  const [greeting, setGreeting] = useState('');
-  const [motivationalQuote, setMotivationalQuote] = useState('');
   const { products, loading, error } = useProductStore();
-  const { chats, getChatsForUser, isLoadingChats, } = useChatStore();
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
+  const [statLoading, setStatLoading] = useState<boolean>(false);
+  const [statsData, setStatsData] = useState<StatsData>({
+    one: '0',
+    two: '0',
+    three: '0',
+    four: '0'
+  })
+
+  const getTitle = (number: number, role: string) => {
+    if (role === 'buyer') {
+      return number === 1 ? 'New Message' : number === 2 ? 'Total Orders' : number === 3 ? 'Total Amount Spent' : 'Completed Purchases';
+    } else if (role === 'seller') {
+     return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listings' : number === 3 ? 'Total Earnings' : 'Completed Sales';
+    } else if (role === 'both') {
+      return number === 1 ? 'New Message' : number === 2 ? 'Total Products Listed' : number === 3 ? 'Total Earnings' : 'Completed Purchases';
+    } else if (role === 'admin') {
+      return number === 1 ? 'Verified Users' : number === 2 ? 'Active Products' : number === 3 ? 'Completed Orders' : 'Platform Revenue';
+    } else if  (role === 'agent') {
+      return number === 1 ? 'Active Cases' : number === 2 ? 'Resolved Cases' : number === 3 ? 'TimedOut Tickets' : 'Assigned Cases';
     }
-  }, [isAuthenticated, navigate]);
+  }
+  const { chats, getChatsForUser, isLoadingChats, } = useChatStore();
+  useEffect(() => {
+    const loadStats = async (type: string) => {
+      try{
+        setStatLoading(true);
+        const response = await api.get(`api/user/stats/${type}`);
+        if (response.data.success){
+          if (type === 'both') {
+            setStatsData(response.data.stats.overview)
+          } else{
+            setStatsData(response.data.stats)
+          }
+        }
+      } catch (err) {
+        console.log(err)
+      } finally {
+        setStatLoading(false)
+      }
+    }
+    loadStats(user?.role || '')
+  }, [user?.role]);
 
   const getLastMessage = (chat: Chat): string => {
     const messages = chat.state.messages || [];
@@ -172,28 +214,14 @@ const Dashboard = () => {
     }
   }, [error]);
 
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting('Good morning');
-    } else if (hour < 18) {
-      setGreeting('Good afternoon');
-    } else {
-      setGreeting('Good evening');
-    }
-  }, []);
-  // Set random motivational quote
-  useEffect(() => {
-    const quotes = ["Today's a great day to find what you need!", "One student's clutter is another's treasure.", 'Campus deals are just a message away!', 'Your next favorite item is waiting for you.', "Connect, buy, sell, repeat. That's the CalvinNova way!"];
-    setMotivationalQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  }, []);
-  // Mock user activity data
   const userActivity = {
     newMessages: totalUnreadMessages,
     itemsSoldThisWeek: 2,
     viewsOnListings: 15,
     savedItems: 4
   };
+
+  const greeting = getGreeting(user?.name || 'user', user?.role || 'buyer')
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -214,13 +242,13 @@ const Dashboard = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  {greeting},{' '}
+                  {greeting.greeting}
                   <span className="text-indigo-600 dark:text-indigo-400">
                     {user.name.split(' ')[0]}
                   </span>{' '}
                   👋
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">{motivationalQuote}</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">{greeting.subMessage}</p>
               </div>
               <div className="mt-4 md:mt-0 flex items-center space-x-2">
                 <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
@@ -237,61 +265,128 @@ const Dashboard = () => {
         {/* Activity Cards */}
         <FadeIn direction="up" delay={0.1}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
-                  <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                    {userActivity.newMessages}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">New messages</p>
-                </div>
-              </div>
-            </div>
+            {statLoading ? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  {/* Icon Placeholder */}
+                  <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+                    <div className="w-5 h-5 bg-indigo-300 dark:bg-indigo-500 rounded" />
+                  </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
-                  <CheckCircleIcon size={20} className="text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    {userActivity.itemsSoldThisWeek}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Items sold this week</p>
+                  {/* Text Placeholder */}
+                  <div className="flex flex-col space-y-2">
+                    <div className="w-10 h-4 bg-indigo-200 dark:bg-indigo-600 rounded" />
+                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+                    <MessageSquareIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {user.role === 'admin' || user.role === 'agent' ? statsData.one : userActivity.newMessages}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(1, user.role)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {statLoading? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  {/* Icon Placeholder */}
+                  <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
+                    <div className="w-5 h-5 bg-green-300 dark:bg-green-500 rounded" />
+                  </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
-                  <TrendingUpIcon size={20} className="text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                    {userActivity.viewsOnListings}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Views on your listings</p>
+                  {/* Text Placeholder */}
+                  <div className="flex flex-col space-y-2">
+                    <div className="w-10 h-4 bg-green-200 dark:bg-green-600 rounded" />
+                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
+                  </div>
                 </div>
               </div>
-            </div>
+            ): (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg">
+                    <CheckCircleIcon size={20} className="text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                      {statsData.two}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(2, user?.role)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
-                  <ShoppingBagIcon size={20} className="text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                    {userActivity.savedItems}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Saved items</p>
+            {statLoading? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  {/* Icon Placeholder */}
+                  <div className="bg-indigo-100 dark:bg-purple-900/50 p-2 rounded-lg">
+                    <div className="w-5 h-5 bg-purple-300 dark:bg-indigo-500 rounded" />
+                  </div>
+
+                  {/* Text Placeholder */}
+                  <div className="flex flex-col space-y-2">
+                    <div className="w-10 h-4 bg-purple-200 dark:bg-purple-600 rounded" />
+                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
+                  </div>
                 </div>
               </div>
-            </div>
+            ): (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
+                    <TrendingUpIcon size={20} className="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                      {statsData.three}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(3, user?.role)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {statLoading ? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  {/* Icon Placeholder */}
+                  <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
+                    <div className="w-5 h-5 bg-amber-300 dark:bg-amber-500 rounded" />
+                  </div>
+
+                  {/* Text Placeholder */}
+                  <div className="flex flex-col space-y-2">
+                    <div className="w-10 h-4 bg-amber-200 dark:bg-amber-600 rounded" />
+                    <div className="w-24 h-3 bg-gray-200 dark:bg-gray-600 rounded" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg">
+                    <ShoppingBagIcon size={20} className="text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                      {statsData.four}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(4, user?.role)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </FadeIn>
 

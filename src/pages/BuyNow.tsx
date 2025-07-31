@@ -217,22 +217,25 @@ const BuyPage = () => {
     setIsProcessing(true);
     
     try {
+      
       const result = await selfService.checkout({
         productId: product.id,
         sellerId: product.sellerId,
         sellerName: product.sellerName || `User ${product.sellerId.slice(0, 8)}`,
         buyerName: user.name,
+        sellerAmount: product.sellerAmount,
         title: product.title,
         transactionId: transactionId,
         buyerEmail: user.email,
         buyerId: user.userId,
         amount: totalAmount,
       });
-      if (!result.success) {
+      if (result.success) {
+        productService.refreshProducts();
+        setShowSuccessModal(true);
+      } else {
         throw new Error(result.message || 'Payment processing failed');
       }
-      productService.refreshProducts();
-      setShowSuccessModal(true);
       
     } catch (error: any) {
       console.error('Payment failed:', error);

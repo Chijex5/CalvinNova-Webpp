@@ -12,6 +12,7 @@ export interface Product {
   sellerId: string;
   sellerName?: string;
   sellerAvatar?: string;
+  sellerAmount?: number;
   sellerCampus?:string;
   sellerRating?: number;
   school: string;

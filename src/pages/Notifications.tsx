@@ -398,14 +398,17 @@ const NotificationsPage = () => {
                     }`}
                   >
                     {/* Collapsed View */}
-                    <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                    <div onClick={() => toggleExpandNotification(notification.id)} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 cursor:pointer">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 flex-1 min-w-0">
                           {/* Selection Checkbox */}
                           <input
                             type="checkbox"
                             checked={selectedNotifications.includes(notification.id)}
-                            onChange={() => toggleSelectNotification(notification.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectNotification(notification.id);
+                            }}
                             className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 flex-shrink-0"
                           />
 
