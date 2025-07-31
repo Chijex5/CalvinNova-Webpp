@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, Component } from 'react';
 import { useUserStore } from './store/userStore';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AdminReportsPage from './pages/admin/Reports';
@@ -21,6 +21,8 @@ import Login from './pages/Login';
 import BuyPage from './pages/BuyNow';
 import Signup from './pages/Signup';
 import QRTransactionSystem from './pages/QRCodeGenerator';
+import NotFound from './pages/NotFound';
+import ErrorPage from './pages/ErrorPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
 import { ChatProvider } from './context/ChatContext';
@@ -40,7 +42,7 @@ const ModernLoader: React.FC = () => {
         animationDelay: '4s'
       }}></div>
       </div>
-      
+
       {/* Main loader container */}
       <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
         {/* CalvinNova brand logo placeholder */}
@@ -49,12 +51,12 @@ const ModernLoader: React.FC = () => {
             CalvinNova
           </div>
         </div>
-        
+
         {/* Campus-themed spinner */}
         <div className="relative">
           {/* Outer ring */}
           <div className="w-20 h-20 rounded-full border-4 border-white/10 dark:border-gray-300/10"></div>
-          
+
           {/* Animated rings with brand colors */}
           <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-indigo-400 border-r-purple-400 dark:border-t-indigo-300 dark:border-r-purple-300 animate-spin"></div>
           <div className="absolute inset-2 w-16 h-16 rounded-full border-4 border-transparent border-t-teal-400 border-l-indigo-400 dark:border-t-teal-300 dark:border-l-indigo-300 animate-spin" style={{
@@ -64,7 +66,7 @@ const ModernLoader: React.FC = () => {
           <div className="absolute inset-4 w-12 h-12 rounded-full border-4 border-transparent border-t-purple-400 border-b-teal-400 dark:border-t-purple-300 dark:border-b-teal-300 animate-spin" style={{
           animationDelay: '0.6s'
         }}></div>
-          
+
           {/* Center shield icon for trust */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-6 h-6 bg-white/90 dark:bg-gray-200/90 rounded-full flex items-center justify-center">
@@ -72,7 +74,7 @@ const ModernLoader: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Campus marketplace messaging */}
         <div className="text-center space-y-4">
           <div className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 dark:from-teal-400 dark:to-cyan-400 bg-clip-text text-transparent animate-pulse">
@@ -81,7 +83,7 @@ const ModernLoader: React.FC = () => {
           <div className="text-indigo-100 dark:text-gray-300 text-sm">
             Verifying your student access...
           </div>
-          
+
           {/* Animated dots with brand colors */}
           <div className="flex justify-center space-x-2">
             <div className="w-2 h-2 bg-indigo-400 dark:bg-indigo-300 rounded-full animate-bounce"></div>
@@ -92,14 +94,14 @@ const ModernLoader: React.FC = () => {
             animationDelay: '0.3s'
           }}></div>
           </div>
-          
+
           {/* Progress bar */}
           <div className="w-64 h-1 bg-white/10 dark:bg-gray-300/10 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-indigo-400 via-purple-400 to-teal-400 dark:from-indigo-300 dark:via-purple-300 dark:to-teal-300 rounded-full animate-pulse"></div>
           </div>
         </div>
       </div>
-      
+
       {/* Floating particles representing campus community */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(8)].map((_, i) => <div key={i} className="absolute w-2 h-2 bg-white/20 dark:bg-gray-300/20 rounded-full animate-ping" style={{
@@ -131,7 +133,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   return <>{children}</>;
 };
 export default ProtectedRoute;
-
 // Seller-only route component
 const SellerRoute = ({
   children,
@@ -159,7 +160,7 @@ const SellerRoute = ({
   }
   if (user && user.role !== 'seller' && user.role !== 'both') {
     console.warn('Access denied: Seller route requires seller permissions');
-    return <Navigate to='/' replace />;
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 };
@@ -180,7 +181,7 @@ export function App() {
   const user = useUserStore(state => state.user);
   const isLoading = useUserStore(state => state.isLoading);
   const isASeller = user?.role === 'seller' || user?.role === 'both';
-  const [showPhoneNumberModal, setShowPhoneNumberModal] = React.useState(false);
+  const [showPhoneNumberModal, setShowPhoneNumberModal] = useState(false);
   useEffect(() => {
     if (isLoading) return;
     if (user && isASeller && !user.phoneNumber) {
@@ -198,12 +199,30 @@ export function App() {
                 <SupportChat />
                 <Routes>
                   <Route path="/test" element={<CameraCanvasApp />} />
-                  <Route path="/" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute>} />
-                  <Route path="/notifications" element={<ProtectedRoute> <NotificationsPage /> </ProtectedRoute>} />
-                  <Route path="/transaction/verify/:transactionId" element={<ProtectedRoute> <QRTransactionSystem /> </ProtectedRoute>} />
-                  <Route path="/buy/:productId" element={<ProtectedRoute> <BuyPage /> </ProtectedRoute>} />
-                  <Route path="/marketplace" element={<ProtectedRoute> <MarketplaceUI /> </ProtectedRoute>} />
-                  <Route path="/product/:slug" element={<ProtectedRoute> <ProductDetails /> </ProtectedRoute>} />
+                  <Route path="/" element={<ProtectedRoute>
+                        {' '}
+                        <Dashboard />{' '}
+                      </ProtectedRoute>} />
+                  <Route path="/notifications" element={<ProtectedRoute>
+                        {' '}
+                        <NotificationsPage />{' '}
+                      </ProtectedRoute>} />
+                  <Route path="/transaction/verify/:transactionId" element={<ProtectedRoute>
+                        {' '}
+                        <QRTransactionSystem />{' '}
+                      </ProtectedRoute>} />
+                  <Route path="/buy/:productId" element={<ProtectedRoute>
+                        {' '}
+                        <BuyPage />{' '}
+                      </ProtectedRoute>} />
+                  <Route path="/marketplace" element={<ProtectedRoute>
+                        {' '}
+                        <MarketplaceUI />{' '}
+                      </ProtectedRoute>} />
+                  <Route path="/product/:slug" element={<ProtectedRoute>
+                        {' '}
+                        <ProductDetails />{' '}
+                      </ProtectedRoute>} />
                   <Route path="/verification/:token" element={<EmailVerification />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
@@ -223,20 +242,22 @@ export function App() {
                         <TransactionPages />
                       </ProtectedRoute>} />
                   <Route path="/sell" element={<ProtectedRoute>
-                    <SellerRoute link='/sell'>
-                        <Sell />
-                      </SellerRoute>
+                        <SellerRoute link="/sell">
+                          <Sell />
+                        </SellerRoute>
                       </ProtectedRoute>} />
-                    <Route path="/admin/users" element={<ProtectedRoute>
+                  <Route path="/admin/users" element={<ProtectedRoute>
                         <AdminRoute>
                           <AdminUsersPage />
                         </AdminRoute>
-                      </ProtectedRoute>} />   
-                    <Route path="/admin/reports" element={<ProtectedRoute>
+                      </ProtectedRoute>} />
+                  <Route path="/admin/reports" element={<ProtectedRoute>
                         <AdminRoute>
                           <AdminReportsPage />
                         </AdminRoute>
-                      </ProtectedRoute>} />            
+                      </ProtectedRoute>} />
+                  <Route path="/error" element={<ErrorPage />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
             </div>
