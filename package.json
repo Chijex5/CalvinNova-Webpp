@@ -9,7 +9,6 @@
     "deploy": "npx vite build && firebase deploy",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "type-check": "tsc --noEmit",
-    
     "build": "npx vite build",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "preview": "npx vite preview"
@@ -19,6 +18,7 @@
     "axios": "^1.10.0",
     "date-fns": "^4.1.0",
     "firebase": "^11.10.0",
+    "flutterwave-node-v3": "^1.3.0",
     "jsqr": "^1.4.0",
     "lucide-react": "^0.441.0",
     "qrcode.react": "^4.2.0",

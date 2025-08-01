@@ -51,6 +51,20 @@ interface StatsData {
   four: string;
 }
 
+interface AdminStatsData {
+  one: string;
+  two: string;
+  three: string;
+  four: string;
+  five: string;
+  six: string;
+  seven: string;
+  eight: string;
+  nine: string;
+  ten: string;
+  eleven: string;
+}
+
 interface SellerStatsData {
   one: string;
   two: string;
@@ -113,7 +127,7 @@ const BuyerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {statsData.two}
+                  {statsData.three}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Orders
@@ -128,7 +142,7 @@ const BuyerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  ₦{statsData.three}
+                  ₦{statsData.four}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Spent
@@ -529,7 +543,7 @@ const AdminDashboard = ({
   navigate
 } : {
   user: User;
-  statsData: StatsData;
+  statsData: AdminStatsData;
   navigate: (path: string) => void;
 }) => {
   return <>
@@ -558,7 +572,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {statsData.two}
+                  {statsData.three}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Active Products
@@ -573,7 +587,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  {statsData.three}
+                  {statsData.four}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Completed Orders
@@ -588,7 +602,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                  ₦{statsData.four}
+                  ₦{statsData.five}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Platform Revenue
@@ -651,10 +665,10 @@ const AdminDashboard = ({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    New Registrations (Today)
+                    New Registrations (This Week)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    12
+                    {statsData.six}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -662,7 +676,7 @@ const AdminDashboard = ({
                     Active Users (Last 24h)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    87
+                    {statsData.seven}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -670,7 +684,7 @@ const AdminDashboard = ({
                     Verified Sellers
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    45
+                    {statsData.eleven}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -678,7 +692,7 @@ const AdminDashboard = ({
                     Flagged Accounts
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    3
+                    {statsData.eight}
                   </span>
                 </div>
               </div>
@@ -698,10 +712,10 @@ const AdminDashboard = ({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    New Orders (Today)
+                    New Orders (Last 7 Days)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    8
+                    {statsData.nine}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -709,7 +723,7 @@ const AdminDashboard = ({
                     Pending Verification
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    5
+                    {statsData.two}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -717,7 +731,7 @@ const AdminDashboard = ({
                     Completed (Last 7 Days)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    32
+                   {statsData.nine}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -725,7 +739,7 @@ const AdminDashboard = ({
                     Total GMV (Last 30 Days)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    ₦325,750
+                    ₦{statsData.ten}
                   </span>
                 </div>
               </div>

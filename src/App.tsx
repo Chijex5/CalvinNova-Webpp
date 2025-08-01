@@ -195,7 +195,6 @@ export function App() {
           <ChatProvider>
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
-                <PhoneNumberModal isOpen={showPhoneNumberModal} onClose={() => setShowPhoneNumberModal(false)} onSuccess={() => setShowPhoneNumberModal(false)} userRole={user?.role || 'buyer'} />
                 <SupportChat />
                 <Routes>
                   <Route path="/test" element={<CameraCanvasApp />} />
