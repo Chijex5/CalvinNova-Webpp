@@ -9,11 +9,13 @@
     "rewrites": [
       {
         "source": "/sitemap.xml",
-        "destination": "https://api.calvinnova.com/sitemap.xml"
+        "destination": "https://api.calvinnova.com/sitemap.xml",
+        "type": 301
       },
       {
         "source": "/robots.txt", 
-        "destination": "https://api.calvinnova.com/robots.txt"
+        "destination": "https://api.calvinnova.com/robots.txt",
+        "type": 301
       },
       {
         "source": "**",
