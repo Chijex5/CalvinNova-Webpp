@@ -1,9 +1,9 @@
-import React, { useEffect, useState, Component } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ListingSkeleton from '../components/loaders/DashboardLoader';
 import { getGreeting } from '../functions/getGreetings';
-import { Chat } from './Chat';
+
 import { toast } from 'sonner';
 import { FadeIn } from '../utils/animations';
 import ProductCard from '../components/ProductCard';
@@ -14,36 +14,8 @@ import { client } from '../lib/stream-chat';
 import { useChatStore } from '../store/chatStore';
 import { productService } from '../services/productService';
 import { useProductStore, Product } from '../store/productStore';
-import { MessageSquareIcon, ShoppingBagIcon, PlusCircleIcon, TrendingUpIcon, BellIcon, CalendarIcon, UserIcon, CheckCircleIcon, RefreshCwIcon, DollarSignIcon, PackageIcon, BarChart2Icon, ShoppingCartIcon, HeartIcon, TagIcon, AlertTriangleIcon, BookmarkIcon, ListIcon, ClipboardListIcon, LineChartIcon, LayersIcon, UsersIcon, HelpCircleIcon, StarIcon, PieChartIcon, ActivityIcon } from 'lucide-react';
-interface UserAvatarProps {
-  user?: User;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-}
-const UserAvatar: React.FC<UserAvatarProps> = ({
-  user,
-  size = 'md',
-  className = ''
-}) => {
-  const [imageError, setImageError] = useState<boolean>(false);
-  const sizeClasses = {
-    sm: 'w-8 h-8 text-xs',
-    md: 'w-10 h-10 text-sm',
-    lg: 'w-12 h-12 text-base'
-  };
-  const fallbackColors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
-  const getColorFromId = (id: string): string => {
-    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return fallbackColors[hash % fallbackColors.length];
-  };
-  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-  if (!user?.avatarUrl || imageError) {
-    return <div className={`${sizeClasses[size]} ${getColorFromId(user?.userId || '')} rounded-full flex items-center justify-center text-white dark:text-gray-900 font-medium ${className}`}>
-        {initials}
-      </div>;
-  }
-  return <img src={user.avatarUrl} alt={user.name || 'User'} className={`${sizeClasses[size]} rounded-full object-cover ${className}`} onError={() => setImageError(true)} />;
-};
+import { MessageSquareIcon, ShoppingBagIcon, PlusCircleIcon, BellIcon, CheckCircleIcon, DollarSignIcon, ShoppingCartIcon, TagIcon, AlertTriangleIcon, BookmarkIcon, ListIcon, ClipboardListIcon, LineChartIcon, UsersIcon, HelpCircleIcon, StarIcon } from 'lucide-react';
+
 interface StatsData {
   one: string;
   two: string;
@@ -51,6 +23,10 @@ interface StatsData {
   four: string;
 }
 
+interface BothStatsData {
+  buying: StatsData;
+  selling: StatsData;
+}
 interface AdminStatsData {
   one: string;
   two: string;
@@ -127,7 +103,7 @@ const BuyerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {statsData.three}
+                  {statsData?.three || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Orders
@@ -142,7 +118,7 @@ const BuyerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  ₦{statsData.four}
+                  ₦{statsData?.four || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Spent
@@ -157,7 +133,7 @@ const BuyerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                  {statsData.four}
+                  {statsData?.four}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Completed Purchases
@@ -265,6 +241,7 @@ const SellerDashboard = ({
   user,
   statsData,
   activeListings,
+  totalUnreadMessages,
   loading,
   navigate,
   formatPrice
@@ -274,6 +251,7 @@ const SellerDashboard = ({
   activeListings: Product[];
   loading: boolean;
   navigate: (path: string) => void;
+  totalUnreadMessages: number;
   formatPrice: (price: number) => string;
 }) => {
   return <>
@@ -287,7 +265,7 @@ const SellerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {statsData.one}
+                  {totalUnreadMessages}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   New Messages
@@ -302,7 +280,7 @@ const SellerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {statsData.two}
+                  {statsData?.two || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Listings
@@ -317,7 +295,7 @@ const SellerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  ₦{statsData.three}
+                  ₦{statsData?.three}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Earnings
@@ -332,7 +310,7 @@ const SellerDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                  {statsData.four}
+                  {statsData?.four}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Completed Sales
@@ -434,7 +412,7 @@ const SellerDashboard = ({
           {activeListings.length > 0 && <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/70 border-t border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing {activeListings.length} of {statsData.two} listings
+                  Showing {activeListings.length} of {statsData?.two} listings
                 </p>
                 <Button variant="primary" size="sm" icon={<PlusCircleIcon size={16} />} onClick={() => navigate('/sell')}>
                   New Listing
@@ -508,7 +486,7 @@ const BothRoleDashboard = ({
   formatPrice
 }: {
   user: User;
-  statsData: StatsData;
+  statsData: BothStatsData;
   activeListings: Product[];
   nearbyListings: Product[];
   loading: boolean;
@@ -533,7 +511,7 @@ const BothRoleDashboard = ({
         </div>
       </FadeIn>
       {/* Conditional Dashboard Content */}
-      {activeTab === 'seller' ? <SellerDashboard user={user} statsData={statsData} activeListings={activeListings} loading={loading} navigate={navigate} formatPrice={formatPrice} /> : <BuyerDashboard user={user} statsData={statsData} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} />}
+      {activeTab === 'seller' ? <SellerDashboard user={user} totalUnreadMessages={totalUnreadMessages} statsData={statsData?.selling} activeListings={activeListings} loading={loading} navigate={navigate} formatPrice={formatPrice} /> : <BuyerDashboard user={user} statsData={statsData?.buying} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} />}
     </>;
 };
 // Component for admin dashboard
@@ -557,7 +535,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {statsData.one}
+                  {statsData?.one}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Verified Users
@@ -572,7 +550,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {statsData.three}
+                  {statsData?.three}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Active Products
@@ -587,7 +565,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  {statsData.four}
+                  {statsData?.four}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Completed Orders
@@ -602,7 +580,7 @@ const AdminDashboard = ({
               </div>
               <div>
                 <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                  ₦{statsData.five}
+                  ₦{statsData?.five}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Platform Revenue
@@ -668,7 +646,7 @@ const AdminDashboard = ({
                     New Registrations (This Week)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {statsData.six}
+                    {statsData?.six}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -676,7 +654,7 @@ const AdminDashboard = ({
                     Active Users (Last 24h)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {statsData.seven}
+                    {statsData?.seven}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -684,7 +662,7 @@ const AdminDashboard = ({
                     Verified Sellers
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {statsData.eleven}
+                    {statsData?.eleven}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -692,7 +670,7 @@ const AdminDashboard = ({
                     Flagged Accounts
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {statsData.eight}
+                    {statsData?.eight}
                   </span>
                 </div>
               </div>
@@ -715,7 +693,7 @@ const AdminDashboard = ({
                     New Orders (Last 7 Days)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {statsData.nine}
+                    {statsData?.nine}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -723,7 +701,7 @@ const AdminDashboard = ({
                     Pending Verification
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {statsData.two}
+                    {statsData?.two}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -731,7 +709,7 @@ const AdminDashboard = ({
                     Completed (Last 7 Days)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                   {statsData.nine}
+                   {statsData?.nine}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -739,7 +717,7 @@ const AdminDashboard = ({
                     Total GMV (Last 30 Days)
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    ₦{statsData.ten}
+                    ₦{statsData?.ten}
                   </span>
                 </div>
               </div>
@@ -854,7 +832,7 @@ const Dashboard = () => {
     error
   } = useProductStore();
   const [statLoading, setStatLoading] = useState<boolean>(false);
-  const [statsData, setStatsData] = useState<StatsData>({
+  const [statsData, setStatsData] = useState<StatsData | SellerStatsData | AdminStatsData | BothStatsData>({
     one: '0',
     two: '0',
     three: '0',
@@ -871,11 +849,9 @@ const Dashboard = () => {
         setStatLoading(true);
         const response = await api.get(`api/user/stats/${type}`);
         if (response.data.success) {
-          if (type === 'both') {
-            setStatsData(response.data.stats.overview);
-          } else {
-            setStatsData(response.data.stats);
-          }
+
+          setStatsData(response.data.stats);
+          
         }
       } catch (err) {
         console.log(err);
@@ -885,17 +861,6 @@ const Dashboard = () => {
     };
     loadStats(user?.role || '');
   }, [user?.role]);
-  const getLastMessage = (chat: Chat): string => {
-    const messages = chat.state.messages || [];
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage) return 'No messages yet';
-    if (lastMessage.type === 'system') {
-      return '🔒 System message';
-    }
-    const isCurrentUser = lastMessage.user?.id === user?.userId;
-    const prefix = isCurrentUser ? 'You: ' : '';
-    return `${prefix}${lastMessage.text || 'Media message'}`;
-  };
   
   function useTotalUnreadCount(client: any | null) {
     const [totalUnread, setTotalUnread] = useState(0);
@@ -1017,10 +982,10 @@ const Dashboard = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm h-48"></div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm h-64"></div>
           </div> : <>
-            {user.role === 'buyer' && <BuyerDashboard user={user} statsData={statsData} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} />}
-            {user.role === 'seller' && <SellerDashboard user={user} statsData={statsData} activeListings={activeListings} loading={loading} navigate={navigate} formatPrice={formatPrice} />}
-            {user.role === 'both' && <BothRoleDashboard user={user} statsData={statsData} activeListings={activeListings} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} formatPrice={formatPrice} />}
-            {user.role === 'admin' && <AdminDashboard user={user} statsData={statsData} navigate={navigate} />}
+            {user.role === 'buyer' && <BuyerDashboard user={user} statsData={statsData as StatsData} nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} />}
+            {user.role === 'seller' && <SellerDashboard user={user} statsData={statsData as SellerStatsData} activeListings={activeListings} totalUnreadMessages={totalUnreadMessages} loading={loading} navigate={navigate} formatPrice={formatPrice} />}
+            {user.role === 'both' && <BothRoleDashboard user={user} statsData={statsData as BothStatsData} activeListings={activeListings}  nearbyListings={nearbyListings} loading={loading} userActivity={userActivity} totalUnreadMessages={totalUnreadMessages} navigate={navigate} formatPrice={formatPrice} />}
+            {user.role === 'admin' && <AdminDashboard user={user} statsData={statsData as AdminStatsData} navigate={navigate} />}
           </>}
       </div>
     </div>;

@@ -30,6 +30,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   link?: string; // optional now
 }
+
 const ModernLoader: React.FC = () => {
   return <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex items-center justify-center overflow-hidden">
       {/* Brand-aligned background elements */}
