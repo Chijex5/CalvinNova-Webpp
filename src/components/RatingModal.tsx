@@ -2,10 +2,12 @@
 import { Star, X, ThumbsUp, MessageSquare, Clock, Smile } from 'lucide-react';
 interface RatingModalProps {
   onClose: () => void;
+  sellerName: string;
   onSubmit: (rating: number, feedback: string, categories: string[]) => void;
 }
 const RatingModal: React.FC<RatingModalProps> = ({
   onClose,
+  sellerName,
   onSubmit
 }) => {
   const [rating, setRating] = useState<number>(0);
@@ -18,7 +20,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
     label: 'Response Time'
   }, {
     icon: <ThumbsUp className="w-4 h-4" />,
-    label: 'Solution Quality'
+    label: 'Product Quality'
   }, {
     icon: <MessageSquare className="w-4 h-4" />,
     label: 'Communication'
@@ -59,10 +61,10 @@ const RatingModal: React.FC<RatingModalProps> = ({
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">
-              Rate Your Experience With sellername
+              {`Rate Your Experience With ${sellerName}`}
             </h3>
             <p className="text-sm text-gray-500">
-              How was your experience with sellername?
+              {`How was your experience with ${sellerName}?`}
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">

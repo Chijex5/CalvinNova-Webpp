@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import Button  from '../components/Button';
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { NotFoundException } from '@zxing/library';
+import RatingModal from '../components/RatingModal';
 import api from '../utils/apiService';
 import { Camera, CheckCircle, AlertCircle, ArrowLeft, ArrowRight, Shield, Star, Sparkles, CreditCard, Clock, Trophy, Heart, Zap, User, Package, X, StopCircle, Lightbulb, AlertTriangle, Upload, QrCode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { tr } from 'date-fns/locale';
+
 export interface TransactionData {
   transactionId: string;
   verificationCode: string;
@@ -959,13 +962,16 @@ const BuyerTransactionProcessing = ({
 // Enhanced Success Page Component
 const TransactionSuccess = ({
   onBack,
-  userType
+  userType,
+  transactionData
 }: {
   onBack: () => void;
   userType: 'seller' | 'buyer';
+  transactionData: TransactionData;
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [animationStage, setAnimationStage] = useState(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   useEffect(() => {
     // Stage 0: Initial load
     const timer1 = setTimeout(() => setAnimationStage(1), 300);
@@ -991,6 +997,26 @@ const TransactionSuccess = ({
       clearTimeout(timer4);
     };
   }, []);
+
+  const handleRatingSubmit = async (rating: number, comment: string, categories: string[]) => {
+    try {
+      const response = await api.post('/api/user/rate', {
+        transactionId: transactionData.transactionId,
+        sellerId: transactionData.sellerId,
+        rating,
+        comment,
+        theRights:categories,
+      });
+      const data = response.data
+      if (data.success) {
+        setShowRatingModal(false);
+        toast.success('Thank you for your feedback!');
+      }
+    } catch (error) {
+      toast.error('Failed to submit feedback. Please try again.');
+    }
+  };
+
   const confettiPieces = Array.from({
     length: 50
   }, (_, i) => ({
@@ -1000,6 +1026,7 @@ const TransactionSuccess = ({
     animationDelay: Math.random() * 2,
     size: Math.random() * 6 + 4
   }));
+
   return <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 relative overflow-hidden">
       
       {/* Confetti Animation */}
@@ -1126,10 +1153,14 @@ const TransactionSuccess = ({
 
             {/* Action Button */}
             <div className={`transition-all duration-600 delay-1300 ${animationStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              <button onClick={onBack} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+              <Button onClick={onBack} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center space-x-2" fullWidth={false} type="button"  >
                 <Heart className="w-5 h-5" />
                 <span>Continue Shopping</span>
-              </button>
+              </Button>
+
+              <Button type="button" variant="outline" className="w-full mt-4 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 rounded-lg py-3 px-5 flex items-center justify-center space-x-2" icon={<Star className="w-5 h-5" />} onClick={()=> setShowRatingModal(true)}>
+                <span>Rate your experience</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -1147,6 +1178,7 @@ const TransactionSuccess = ({
             </div>
           </div>}
       </div>
+      {showRatingModal && <RatingModal onClose={() => setShowRatingModal(false)} sellerName={transactionData.sellerName}  onSubmit={(rating, feedback, categories) => {handleRatingSubmit(rating, feedback, categories)}} />}
     </div>;
 };
 
@@ -1222,7 +1254,7 @@ const QRTransactionSystem = () => {
             </div>
           </div>;
       case 'success':
-        return <TransactionSuccess onBack={() => setCurrentView('main')} userType={transactionData?.isSeller ? 'seller' : 'buyer'} />;
+        return transactionData ? <TransactionSuccess onBack={() => setCurrentView('main')} userType={transactionData.isSeller ? 'seller' : 'buyer'} transactionData={transactionData} /> : null;
       case 'buyerProcessing':
         return <BuyerTransactionProcessing sellerName={transactionData?.sellerName || 'Seller'} transactionId={transactionData?.transactionId || 'N/A'} onComplete={() => setCurrentView('success')} />;
       case 'main':
