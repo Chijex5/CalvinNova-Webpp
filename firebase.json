@@ -6,17 +6,19 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
+    "redirects": [
       {
         "source": "/sitemap.xml",
         "destination": "https://api.calvinnova.com/sitemap.xml",
         "type": 301
       },
       {
-        "source": "/robots.txt", 
+        "source": "/robots.txt",
         "destination": "https://api.calvinnova.com/robots.txt",
         "type": 301
-      },
+      }
+    ],
+    "rewrites": [
       {
         "source": "**",
         "destination": "/index.html"
