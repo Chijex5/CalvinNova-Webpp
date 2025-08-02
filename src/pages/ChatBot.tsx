@@ -56,15 +56,9 @@ const SupportChat: React.FC<SupportChatProps> = ({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const botTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
-    currentChat,
-    startMessaging,
-    sendMessage,
     isSendingMessage
   } = useChatStore();
-  const {
-    user
-  } = useUserStore();
-
+  const user = useUserStore(state => state.user);
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -493,6 +487,12 @@ const SupportChat: React.FC<SupportChatProps> = ({
   if (isLoading || !isReady) {
     return null;
   }
+
+  if (!user || user.role === 'agent') {
+    return null
+  }
+
+
   if (!isOpen) {
     return <div className={`fixed ${isMobile ? 'bottom-20 right-6' : 'bottom-24 right-8'} z-50`}>
         <div className="relative group">
