@@ -5,7 +5,8 @@ export interface CheckoutData {
   sellerId: string;
   transactionId: string;
   title: string;
-  sellerAmount?: number; // Optional for seller's amount
+  sellerAmount?: number;
+  sellerPhone?: string;
   sellerName: string;
   buyerName: string;
   buyerEmail: string;

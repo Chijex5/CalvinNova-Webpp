@@ -17,6 +17,7 @@ export interface Product {
   school: string;
   createdAt: string;
   slug: string;
+  sellerPhone: string;
 }
 interface ProductStore {
   // State

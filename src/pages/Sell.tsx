@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import api, { imageApi } from '../utils/apiService';
+import productService from '../services/productService';
 import { toast } from 'sonner';
 import Spinner from '../components/Spinner';
 import { ChevronLeft, ChevronRight, Upload, X, Check, Camera, MapPin, DollarSign, Tag, FileText, Star, Info, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -252,6 +253,7 @@ const ModernItemListingForm = () => {
       const response = await api.post('/api/seller/create-item', formData);
       if (response.data.success) {
         localStorage.removeItem('itemListingDraft');
+        productService.refreshProducts();
         toast.success('Item listed successfully!');
         // Reset form
         setFormData({
