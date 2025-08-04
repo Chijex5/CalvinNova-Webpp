@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Channel } from 'stream-chat';
 import { RiCustomerService2Line } from "react-icons/ri";
-import { MessageCircle, X, Send, Bot, Clock, CheckCircle, Zap, ArrowLeft, MoreVertical, Paperclip, Mic, Image, Camera, Shield, UserCheck } from 'lucide-react';
+import { X, Send, Bot, Clock, CheckCircle, Zap, ArrowLeft, MoreVertical, Paperclip, Mic, Image, Camera, Shield, UserCheck } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { useAuth } from '../context/AuthContext';
 import { client } from '../lib/stream-chat';
-
 // Bot configuration
 const CHATBOT_ID = "novaplus-support-bot";
 const SUPPORT_AGENT_ID = "support-agent-id";

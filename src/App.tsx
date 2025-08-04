@@ -8,7 +8,7 @@ import NotificationsPage from './pages/Notifications';
 import PhoneNumberModal from './components/AddPhoneNumber';
 import TransactionPages from './pages/TransactionPage';
 import SupportChat from './pages/ChatBot';
-import CameraCanvasApp from './pages/Test';
+import TransactionSuccess from './pages/Test';
 import EmailVerification from './pages/VerificationPage';
 import Dashboard from './pages/Dashboard';
 import MarketplaceUI from './pages/Marketplace';
@@ -198,7 +198,7 @@ export function App() {
               <Layout>
                 <SupportChat />
                 <Routes>
-                  <Route path="/test" element={<CameraCanvasApp />} />
+                  <Route path="/test" element={<TransactionSuccess onBack={() => console.log('back')} userType='buyer' />} />
                   <Route path="/" element={<ProtectedRoute>
                         {' '}
                         <Dashboard />{' '}
