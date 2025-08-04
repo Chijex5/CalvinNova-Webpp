@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
+import SEOHead from '../components/SEOHead';
 import ProductDetailSkeleton from '../components/loaders/ProductDetsilSkeleton';
 import { MessageSquareIcon, HeartIcon, ShareIcon, FlagIcon, ShoppingBagIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon, CalendarIcon, EyeIcon } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';
+import { getDominantColor } from '../functions/getDominantColour';
 import { productService } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 import { useChatStore } from '../store/chatStore';
+
 const ProductDetails = () => {
   const {
     slug
@@ -22,6 +25,8 @@ const ProductDetails = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [currentColor, setCurrentColor] = useState<{dominant: string, sub:string, isDark:boolean}>({dominant: '#000000', sub: '#000000', isDark: false});
 
   // Store hooks
   const {
@@ -35,12 +40,40 @@ const ProductDetails = () => {
     error: chatError,
     setError: setChatError
   } = useChatStore();
+  
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
     }).format(price);
   };
+
+  // Find similar products based on category
+  const findSimilarProducts = useCallback((currentProduct: Product, allProducts: Product[]) => {
+    if (!currentProduct || !allProducts.length) return [];
+    
+    const similar = allProducts
+      .filter(p => 
+        p.id !== currentProduct.id && // Exclude current product
+        p.category === currentProduct.category && // Same category
+        p.sellerId !== currentProduct.sellerId // Different seller for variety
+      )
+      .sort((a, b) => {
+        // Sort by relevance: price similarity, then recency
+        const priceDiffA = Math.abs(a.price - currentProduct.price);
+        const priceDiffB = Math.abs(b.price - currentProduct.price);
+        
+        if (priceDiffA !== priceDiffB) {
+          return priceDiffA - priceDiffB;
+        }
+        
+        // If price difference is similar, sort by most recent
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      })
+      .slice(0, 6); // Show max 6 similar products
+      
+    return similar;
+  }, []);
 
   // Load product data
   useEffect(() => {
@@ -59,6 +92,12 @@ const ProductDetails = () => {
           setLocalError('Product not found');
         } else if (foundProduct) {
           setProduct(foundProduct);
+          const dominantColour = await getDominantColor(foundProduct.images[0]);
+          setCurrentColor(dominantColour);
+          console.log('dominant Colour', dominantColour)
+          // Find similar products
+          const similar = findSimilarProducts(foundProduct, products);
+          setSimilarProducts(similar);
         }
       } catch (error) {
         console.error('Failed to load product:', error);
@@ -68,7 +107,7 @@ const ProductDetails = () => {
     if (slug) {
       loadProduct();
     }
-  }, [slug, products, productsLoading, user?.userId]);
+  }, [slug, products, productsLoading, user?.userId, findSimilarProducts]);
 
   // Image navigation handlers
   const nextImage = useCallback(() => {
@@ -210,7 +249,75 @@ const ProductDetails = () => {
         </div>
       </div>;
   }
+
+  // Similar Product Card Component
+  const SimilarProductCard = ({ product: similarProduct }) => {
+    const [imageError, setImageError] = useState(false);
+    
+    return (
+      <Link 
+        to={`/product/${similarProduct.slug}`}
+        className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 dark:border-gray-700"
+      >
+        <div className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-700">
+          <img
+            src={imageError ? '/placeholder-image.jpg' : similarProduct.images[0]}
+            alt={similarProduct.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => setImageError(true)}
+            loading="lazy"
+          />
+          <div className="absolute top-3 right-3">
+            <span className="px-2 py-1 bg-black/50 text-white text-xs rounded-full backdrop-blur-sm">
+              {similarProduct.condition}
+            </span>
+          </div>
+          {similarProduct.sellerId !== product?.sellerId && (
+            <div className="absolute top-3 left-3">
+              <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
+                Different Seller
+              </span>
+            </div>
+          )}
+        </div>
+        
+        <div className="p-4">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {similarProduct.title}
+          </h3>
+          
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {formatPrice(similarProduct.price)}
+            </p>
+            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <EyeIcon size={12} className="mr-1" />
+              {similarProduct.views || 0}
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600 dark:text-gray-400 truncate">
+              {similarProduct.sellerName}
+            </span>
+            {similarProduct.school && (
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                <MapPinIcon size={10} className="mr-1" />
+                {similarProduct.school}
+              </span>
+            )}
+          </div>
+          
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Listed {new Date(similarProduct.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+      </Link>
+    );
+  };
+
   return <div className="container mx-auto px-4 py-6 dark:bg-gray-900">
+    <SEOHead product={product} />
       {/* Breadcrumb navigation */}
       <nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
         <Link to="/marketplace" className="hover:text-blue-600 dark:hover:text-blue-400">
@@ -228,9 +335,17 @@ const ProductDetails = () => {
         {/* Product Images */}
         <div className="relative">
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden aspect-square">
-            <img src={product.images[currentImageIndex]} alt={product.title} className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" onError={e => {
-            e.target.src = '/placeholder-image.jpg'; // Fallback image
-          }} />
+            <img 
+              src={product.images[currentImageIndex]} 
+              alt={`${product.title} - ${product.condition} condition for sale by ${product.sellerName} - Image ${currentImageIndex + 1} of ${product.images.length}`}
+              className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
+              loading={currentImageIndex === 0 ? "eager" : "lazy"} // First image loads immediately
+              width="600"
+              height="600"
+              onError={(e) => {
+                e.target.src = '/placeholder-image.jpg';
+              }} 
+            />
           </div>
           
           {product.images.length > 1 && <>
@@ -250,7 +365,7 @@ const ProductDetails = () => {
           {/* Thumbnail navigation */}
           {product.images.length > 1 && <div className="flex mt-4 space-x-2 overflow-x-auto pb-2">
               {product.images.map((image, index) => <button key={index} onClick={() => setCurrentImageIndex(index)} className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${index === currentImageIndex ? 'border-blue-600 dark:border-blue-400 ring-2 ring-blue-600/20 dark:ring-blue-400/20' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'}`}>
-                  <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" />
+                  <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover"  loading='lazy' width="64" height="64" />
                 </button>)}
             </div>}
         </div>
@@ -283,13 +398,13 @@ const ProductDetails = () => {
 
           {/* Metadata */}
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30  text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">
               {product.category}
             </span>
             <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-sm font-medium">
               {product.condition}
             </span>
-            {product.school && <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm flex items-center gap-1">
+            {product.school && <span className={`px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm flex items-center gap-1`}>
                 <MapPinIcon size={14} />
                 {product.school}
               </span>}
@@ -365,11 +480,62 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Related Products Section */}
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Similar Products</h2>
-        {/* You can add a RelatedProducts component here */}
-      </div>
+      {/* Similar Products Section */}
+      {similarProducts.length > 0 && (
+        <div className="mt-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Similar {product.category} Products
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                More products in this category that might interest you
+              </p>
+            </div>
+            <Link 
+              to={`/marketplace?category=${product.category}`}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center group"
+            >
+              View All {product.category}
+              <ChevronRightIcon size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {similarProducts.map((similarProduct) => (
+              <SimilarProductCard key={similarProduct.id} product={similarProduct} />
+            ))}
+          </div>
+          
+          {similarProducts.length >= 6 && (
+            <div className="text-center mt-8">
+              <Link to={`/marketplace?category=${product.category}`}>
+                <Button variant="secondary" className="px-8">
+                  See More {product.category} Products
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* No Similar Products Message */}
+      {similarProducts.length === 0 && products.length > 1 && (
+        <div className="mt-16 text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            No Similar Products Found
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            We couldn't find other {product.category.toLowerCase()} products at the moment.
+          </p>
+          <Link to="/marketplace">
+            <Button variant="primary">
+              Browse All Products
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>;
 };
+
 export default ProductDetails;

@@ -2,16 +2,287 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- Favicons -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CalvinNova</title>
+    <meta name="msvalidate.01" content="417F1421536163F9E5DA1A1037A76FC3" />
+    <!-- Primary SEO Meta Tags -->
+    <title>CalvinNova App - Student Marketplace Platform</title>
+    <meta name="title" content="CalvinNova App - Student Marketplace Platform">
+    <meta name="description" content="Access your CalvinNova student marketplace account. Buy and sell textbooks, electronics, furniture, and study materials with fellow students.">
+    <meta name="keywords" content="CalvinNova app, student marketplace app, student marketplace Nigeria, UNN student deals, UNEC campus marketplace, buy and sell textbooks Nsukka, UNN electronics for sale, student furniture for sale Nsukka, UNEC secondhand books, campus buy and sell Nigeria, textbook exchange University of Nigeria, Nigerian campus deals UNN, student goods marketplace UNEC, campus classifieds Nigeria, studying resources Nigeria marketplace, Nsukka student classifieds, Enugu student marketplace, Affordable textbooks Nsukka, UNN campus vendors, textbook trading platform, university marketplace, student commerce">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="author" content="CalvinNova">
+    <link rel="canonical" href="https://app.calvinnova.com">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="CalvinNova App">
+    <meta property="og:url" content="https://app.calvinnova.com">
+    <meta property="og:title" content="CalvinNova App - Student Marketplace Platform">
+    <meta property="og:description" content="Access your CalvinNova student marketplace account. Buy and sell with fellow students.">
+    <meta property="og:image" content="https://app.calvinnova.com/og-image.png" />
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_NG">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@CalvinNova">
+    <meta name="twitter:creator" content="@CalvinNova">
+    <meta name="twitter:title" content="CalvinNova App - Student Marketplace Platform">
+    <meta name="twitter:description" content="Access your CalvinNova student marketplace account. Buy and sell with fellow students.">
+    <meta name="twitter:image" content="https://app.calvinnova.com/assets/og-preview.png">
+    <meta name="twitter:image:alt" content="Preview of CalvinNova Student Marketplace" />
+
+    <!-- Clarity tracking code for https://calvinnova.com/ -->
+    <script>
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "sohw4dkbgd");
+    </script>
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "CalvinNova App",
+      "url": "https://app.calvinnova.com",
+      "description": "Student marketplace application for buying and selling textbooks, electronics, and study materials.",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "NGN"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "CalvinNova",
+        "url": "https://calvinnova.com"
+      }
+    }
+    </script>
+    
+    <!-- Geo and regional meta -->
+    <meta name="geo.region" content="NG">
+    <meta name="geo.placename" content="Nigeria">
+    <meta name="geo.position" content="9.0820;8.6753">
+    <meta name="ICBM" content="9.0820, 8.6753">
+    
+    <!-- Mobile optimization -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CalvinNova">
+    <meta name="theme-color" content="#3B82F6">
+    <meta name="msapplication-TileColor" content="#3B82F6">
+    
+    <!-- Performance optimizations -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/index.tsx" as="script">
+    <link rel="modulepreload" href="/src/index.tsx">
+    
+    <!-- Critical CSS for above-the-fold content -->
+    <style>
+      /* Critical CSS */
+      * {
+        box-sizing: border-box;
+      }
+      
+      body { 
+        margin: 0; 
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      #root { 
+        min-height: 100vh; 
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-size: 18px;
+        color: #666;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #111827;
+          color: #f9fafb;
+        }
+        
+        .loading {
+          color: #d1d5db;
+        }
+        
+        .loading-spinner {
+          border-color: #374151;
+          border-top-color: #60a5fa;
+        }
+      }
+      
+      /* Accessibility improvements */
+      @media (prefers-reduced-motion: reduce) {
+        .loading-spinner {
+          animation: none;
+        }
+      }
+      
+      /* Print styles */
+      @media print {
+        body {
+          background: white;
+          color: black;
+        }
+      }
+    </style>
+    
+    <!-- Alternate versions for different languages/regions -->
+    <link rel="alternate" hreflang="en-ng" href="https://app.calvinnova.com">
+    <link rel="alternate" hreflang="en" href="https://app.calvinnova.com">
+    
+    <!-- Security headers via meta -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    
+    <!-- Resource hints for better performance -->
+    <link rel="prefetch" href="/marketplace">
+    <link rel="prefetch" href="/login">
+    <link rel="prefetch" href="/register">
+    
+    <!-- Link to marketing site -->
+    <link rel="home" href="https://calvinnova.com">
   </head>
+
   <body>
-    <div id="root"></div>
+    <!-- SEO-friendly fallback content for crawlers and no-JS users -->
+    <noscript>
+      <div style="padding: 2rem; max-width: 1200px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
+        <header style="text-align: center; margin-bottom: 3rem;">
+          <h1 style="color: #3b82f6; font-size: 2.5rem; margin-bottom: 1rem;">CalvinNova App</h1>
+          <p style="font-size: 1.2rem; color: #666; margin-bottom: 2rem;">Student Marketplace Platform</p>
+        </header>
+        
+        <main>
+          <section style="margin-bottom: 3rem;">
+            <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">Access Your Account</h2>
+            <p>Welcome to the CalvinNova student marketplace application. Here you can buy and sell textbooks, electronics, furniture, study materials, and other essential items with fellow students.</p>
+            <p>To use the full features of CalvinNova, please enable JavaScript in your browser or visit our <a href="https://calvinnova.com" style="color: #3b82f6; text-decoration: none;">main website</a> for more information.</p>
+          </section>
+          
+          <div style="background-color: #fef3c7; padding: 2rem; border-radius: 8px; text-align: center;">
+            <h3 style="margin-top: 0; color: #92400e;">JavaScript Required</h3>
+            <p style="margin-bottom: 1rem; color: #b45309;">This application requires JavaScript to function properly. Please enable JavaScript in your browser to access your CalvinNova marketplace account.</p>
+            <p style="margin-bottom: 0; font-size: 0.9rem; color: #b45309;">Need help? Visit <a href="https://calvinnova.com/support" style="color: #b45309;">our support page</a> or contact our team.</p>
+          </div>
+        </main>
+        
+        <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #e5e7eb; text-align: center; color: #666; font-size: 0.9rem;">
+          <p>&copy; 2024 CalvinNova. All rights reserved.</p>
+          <p><a href="https://calvinnova.com" style="color: #3b82f6; text-decoration: none;">Visit our main website</a></p>
+        </footer>
+      </div>
+    </noscript>
+    
+    <!-- Main React application container -->
+    <div id="root">
+      <div class="loading">
+        <div class="loading-spinner" role="status" aria-label="Loading"></div>
+        <span>Loading CalvinNova...</span>
+      </div>
+    </div>
+    
+    <!-- Main application script -->
     <script type="module" src="/src/index.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator && 'production' === 'production') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+    
+    <!-- Performance monitoring -->
+    <script>
+      window.addEventListener('load', function() {
+        // Web Vitals monitoring
+        if (window.performance && window.performance.navigation) {
+          const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+          console.log('Page load time:', loadTime + 'ms');
+          
+          // Send to analytics if available
+          if (window.gtag) {
+            window.gtag('event', 'timing_complete', {
+              name: 'page_load',
+              value: loadTime
+            });
+          }
+        }
+      });
+      
+      // Error tracking
+      window.addEventListener('error', function(e) {
+        console.error('Global error:', e.error);
+        if (window.gtag) {
+          window.gtag('event', 'exception', {
+            description: e.error?.message || 'Unknown error',
+            fatal: false
+          });
+        }
+      });
+    </script>
+    
+    <!-- Placeholder for analytics scripts -->
+    <!-- Add Google Analytics, Facebook Pixel, or other tracking scripts here -->
   </body>
 </html>

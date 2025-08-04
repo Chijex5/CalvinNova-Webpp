@@ -30,6 +30,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   link?: string; // optional now
 }
+
 const ModernLoader: React.FC = () => {
   return <div className="fixed inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex items-center justify-center overflow-hidden">
       {/* Brand-aligned background elements */}
@@ -195,7 +196,6 @@ export function App() {
           <ChatProvider>
             <div className="font-sans antialiased text-gray-900 bg-gray-50">
               <Layout>
-                <PhoneNumberModal isOpen={showPhoneNumberModal} onClose={() => setShowPhoneNumberModal(false)} onSuccess={() => setShowPhoneNumberModal(false)} userRole={user?.role || 'buyer'} />
                 <SupportChat />
                 <Routes>
                   <Route path="/test" element={<TransactionSuccess onBack={() => console.log('back')} userType='buyer' />} />

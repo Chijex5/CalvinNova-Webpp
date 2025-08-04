@@ -3,6 +3,7 @@ import ModernItemEditForm from '../components/EditProduct';
 import { Link } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { useProductStore } from '../store/productStore';
+import MarketplaceSEOHead from '../components/MarketPlaceSEOHead';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -955,6 +956,12 @@ const MarketplaceUI = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
+      <MarketplaceSEOHead
+        products={filteredProducts}
+        searchTerm={searchTerm}
+        filters={filters}
+        totalCount={filteredProducts.length}
+      />
       <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
