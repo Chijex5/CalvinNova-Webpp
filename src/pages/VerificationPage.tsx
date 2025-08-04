@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/apiService';
-import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUserStore } from '../store/userStore';
@@ -99,6 +98,7 @@ const EmailVerification = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [verificationComplete, setVerificationComplete] = useState(false);
   const [nameMatchWarning, setNameMatchWarning] = useState(false);
+  const secret = import.meta.env.VITE_PAYSTACK_LIVE_SECRET_KEY;
 
   // Verify email token on component mount
   useEffect(() => {
@@ -151,12 +151,15 @@ const EmailVerification = () => {
   const loadBanks = async () => {
     setLoadingBanks(true);
     try {
-      const response = await api.get('/api/banks');
-      console.log('Banks response:', response);
-      const data = await response.data;
-      if (data.success) {
-        console.log('Banks loaded successfully:', data.banks.data);
-        setBanks(data.banks.data);
+      const response = await fetch('https://api.paystack.co/bank?country=nigeria&perPage=100', {
+        headers: {
+          'Authorization': `Bearer ${secret}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.status) {
+        setBanks(data.data);
       }
     } catch (error) {
       console.error('Error loading banks:', error);
@@ -206,13 +209,15 @@ const EmailVerification = () => {
     if (!accountNumber || !selectedBank) return;
     setVerifyingAccount(true);
     try {
-      const response = await api.post('/api/verify', {
-        accountNumber,
-        bankCode: selectedBank.code,
-      })
-      const data = await response.data;
-      if (data.success) {
-        console.log('Account verification successful:', data);
+      const response = await fetch(`https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${selectedBank.code}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${secret}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.status) {
         const retrievedAccountName = data.data.account_name;
         setAccountName(retrievedAccountName);
 
