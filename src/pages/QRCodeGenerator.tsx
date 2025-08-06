@@ -676,7 +676,7 @@ const ScanQRCode = ({
                   Cancel
                 </button>
                 <button onClick={confirmReceipt} disabled={transactionProcessing} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                  {transactionProcessing ? 'Confirming.....' : 'Confirm Receipt'}
+                  {transactionProcessing ? 'Confirming ...' : 'Confirm Receipt'}
                 </button>
               </div>
             </div>
