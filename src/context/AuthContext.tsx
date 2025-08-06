@@ -46,6 +46,7 @@ interface AuthContextType {
   clearError: () => void;
   setError: (error: string | null) => void;
   resetPassword: (email: string) => Promise<Response>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<Response>;
   signup: (data: SignupData) => Promise<Response>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -347,6 +348,33 @@ export const AuthProvider: React.FC<{
       setLoading(false);
     }
   };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<Response> => {
+    try {
+      const response = await api.post('/api/user/change-password', {
+        currentPassword,
+        newPassword
+      });
+      if (response && response.data.success) {
+        return {
+          success: true,
+          message: 'Password changed successfully'
+        };
+      }
+      return {
+        success: false,
+        message: 'Failed to change password'
+      };
+    } catch (error: any) {
+      setError(error.response?.data.message || 'Failed to change password');
+      return {
+        success: false,
+        message: error.response?.data.message || 'Failed to change password'
+      };
+    } finally {
+      setIsMiddleOfAuthFlow(false);
+    }
+  };
   const verifcation = async (token: string): Promise<{
     status: boolean;
     user?: User;
@@ -416,6 +444,7 @@ export const AuthProvider: React.FC<{
     isAdmin,
     login,
     setIsCheckingAuth,
+    changePassword,
     updateUser,
     setError,
     error,

@@ -30,6 +30,7 @@ export interface User {
   isAdmin?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  lastPasswordChange: string;
   role: 'buyer' | 'seller' | 'both' | 'admin' | 'agent';
 }
 interface UserStore {
@@ -47,6 +48,7 @@ interface UserStore {
   setLoading: (loading: boolean) => void;
   setIsAuthenticated: (authenticated: boolean) => void;
   clearUser: () => void;
+  updateUserRole: (newRole: 'buyer' | 'seller' | 'both' | 'admin') => void;
   updateUser: (updates: Partial<User>) => void;
 
   // Computed values
@@ -139,6 +141,16 @@ export const useUserStore = create<UserStore>()(persist((set, get) => ({
   clearUser: () => set({
     user: null
   }),
+  updateUserRole: async (newRole) => {
+    const currentUser = get().user;
+    if (!currentUser) return;
+    set({
+      user: {
+        ...currentUser,
+        role: newRole
+      }
+    });
+  },
   updateUser: updates => {
     const currentUser = get().user;
     if (currentUser) {
