@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import NotificationsPage from './pages/Notifications';
 import PhoneNumberModal from './components/AddPhoneNumber';
+import PayoutApprovals from './pages/admin/PayoutPage';
 import TransactionPages from './pages/TransactionPage';
 import SupportChat from './pages/ChatBot';
 import TransactionSuccess from './pages/Test';
@@ -251,6 +252,12 @@ export function App() {
                           <AdminUsersPage />
                         </AdminRoute>
                       </ProtectedRoute>} />
+                  <Route path="/admin/payouts" element={<ProtectedRoute>
+                        <AdminRoute>
+                          <PayoutApprovals />
+                        </AdminRoute>
+                      </ProtectedRoute>} />
+                      
                   <Route path="/admin/reports" element={<ProtectedRoute>
                         <AdminRoute>
                           <AdminReportsPage />

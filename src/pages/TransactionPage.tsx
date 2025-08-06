@@ -97,7 +97,7 @@ const getStatusIcon = (status: Transaction['status']) => {
       return <Clock size={16} />;
   }
 };
-const getStatusText = (status: Transaction['status'], isSeller: boolean, sellerPaidout: boolean) => {
+const getStatusText = (status: Transaction['status'], isSeller: boolean, sellerPaidout: boolean): string => {
   if (status === 'collected') {
     if (isSeller && !sellerPaidout) return 'Awaiting Payout';
     if (isSeller && sellerPaidout) return 'Paid Out';
@@ -115,7 +115,8 @@ const getStatusText = (status: Transaction['status'], isSeller: boolean, sellerP
   if (status === 'refunded') {
     return 'Refunded';
   }
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  // This should never be reached, but handle it gracefully
+  return String(status).charAt(0).toUpperCase() + String(status).slice(1);
 };
 // Transaction List Component
 const TransactionList = () => {

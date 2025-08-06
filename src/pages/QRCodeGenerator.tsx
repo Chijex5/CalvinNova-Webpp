@@ -170,6 +170,7 @@ const ScanQRCode = ({
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [scanAttempts, setScanAttempts] = useState(0);
   const [lastScanTime, setLastScanTime] = useState(Date.now());
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isProcessingConfirmation, setIsProcessingConfirmation] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -390,7 +391,7 @@ const ScanQRCode = ({
     try {
       setTransactionProcessing(true);
       setIsProcessingConfirmation(true);
-      setShowConfirmModal(false);
+      setIsConfirming(true);
       const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`);
       if (response && response.data.success) {
         await stopCamera();
@@ -403,6 +404,8 @@ const ScanQRCode = ({
     } finally {
       setTransactionProcessing(false);
       setIsProcessingConfirmation(false);
+      setIsConfirming(false);
+      setShowConfirmModal(false);
     }
   };
   const resetScanner = () => {

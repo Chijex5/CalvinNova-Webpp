@@ -186,9 +186,6 @@ const BuyPage = () => {
     }
   }, [product, user, navigate, purchaseCompleted]);
 
-  const platformFee = product ? Math.round(product.price * 0.025) : 0; // 2.5% platform fee
-  const totalAmount = product ? product.price + platformFee : 0;
-
   const generateTransactionReference = () => {
     return `calvinnova_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   };
@@ -222,12 +219,12 @@ const BuyPage = () => {
         sellerId: product?.sellerId || '',
         sellerName: product?.sellerName || `User ${product!.sellerId.slice(0, 8)}`,
         buyerName: user?.name || '',
-        sellerAmount: product?.price, // The amount that goes to seller (excluding platform fee)
+        sellerAmount: product?.sellerAmount || 0, // The amount that goes to seller (excluding platform fee)
         title: product?.title || '',
         transactionId: reference, // Use the real Paystack reference
         buyerEmail: user?.email || '',
         buyerId: user?.userId || '',
-        amount: totalAmount,
+        amount: product?.price || 0,
         sellerPhone: product?.sellerPhone || ''
       });
 
@@ -279,7 +276,7 @@ const BuyPage = () => {
       const handler = window.PaystackPop.setup({
         key: publicKey,
         email: user.email,
-        amount: totalAmount * 100, // Paystack expects amount in kobo (multiply by 100)
+        amount: product.price * 100, // Paystack expects amount in kobo (multiply by 100)
         currency: 'NGN',
         ref: reference,
         firstname: user.name.split(' ')[0] || user.name,
@@ -510,14 +507,10 @@ const BuyPage = () => {
                   <span>Product Price</span>
                   <span>{formatPrice(product!.price)}</span>
                 </div>
-                <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                  <span>Platform Fee (2.5%)</span>
-                  <span>{formatPrice(platformFee)}</span>
-                </div>
                 <div className="border-t dark:border-gray-600 pt-3">
                   <div className="flex justify-between font-semibold text-lg">
                     <span className="dark:text-white">Total Amount</span>
-                    <span className="text-indigo-600 dark:text-indigo-400">{formatPrice(totalAmount)}</span>
+                    <span className="text-indigo-600 dark:text-indigo-400">{formatPrice(product?.price || 0)}</span>
                   </div>
                 </div>
               </div>
@@ -570,7 +563,7 @@ const BuyPage = () => {
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  <span>Pay Now - {formatPrice(totalAmount)}</span>
+                  <span>Pay Now - {formatPrice(product?.price || 0)}</span>
                 </>
               )}
             </button>
