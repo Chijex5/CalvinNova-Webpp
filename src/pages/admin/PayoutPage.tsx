@@ -5,6 +5,8 @@ import {
   ChevronDown, 
   CheckCircle, 
   XCircle, 
+  Copy,
+  CheckIcon,
   Eye, 
   RefreshCw, 
   Clock, 
@@ -71,6 +73,7 @@ const PayoutApprovals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
   const [selectedPayouts, setSelectedPayouts] = useState<Set<number>>(new Set());
+  const [isCopied, setIsCopied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,6 +111,22 @@ const PayoutApprovals: React.FC = () => {
   useEffect(() => {
     fetchPayouts();
   }, [statusFilter, currentPage]);
+
+  const handleCopy = async (id: string) => {
+    if (!id) return;
+    try {
+      await navigator.clipboard.writeText(id);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 1500); // Reset after 1.5s
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const truncateId = (id: string) => {
+    const truncated = id.length > 30 ? id.slice(0, 30) + '...' : id;
+    return truncated;
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -389,7 +408,7 @@ const PayoutApprovals: React.FC = () => {
                             #{payout.id}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {payout.transaction_id}
+                            {truncateId(payout.transaction_id)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -603,12 +622,25 @@ const PayoutApprovals: React.FC = () => {
                           #{detailsPayout.id}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2 w-full">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Transaction ID:</span>
-                        <span className="text-sm font-mono text-gray-900 dark:text-white">
-                          {detailsPayout.transaction_id}
-                        </span>
-                      </div>
+
+                        <div className="flex items-center gap-2 max-w-[70%] sm:max-w-[80%] overflow-hidden">
+                            <span className="text-sm font-mono text-gray-900 dark:text-white truncate">
+                            {truncateId(detailsPayout.transaction_id)}
+                            </span>
+                            <button
+                            onClick={() => handleCopy(detailsPayout.transaction_id)}
+                            className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            >
+                            {isCopied ? (
+                                <Check className="w-4 h-4 text-green-500" />
+                            ) : (
+                                <Copy className="w-4 h-4 text-gray-500" />
+                            )}
+                            </button>
+                        </div>
+                        </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Amount:</span>
                         <span className="text-lg font-bold text-green-600 dark:text-green-400">
