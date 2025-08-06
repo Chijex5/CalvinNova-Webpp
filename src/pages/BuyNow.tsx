@@ -14,22 +14,17 @@ interface ProductData extends Product {
   sellerCampus?: string;
   sellerRating?: number;
 }
-
-const live_secret_key = import.meta.env.VITE_PAYSTACK_LIVE_SECRET_KEY
 const live_public_key = import.meta.env.VITE_PAYSTACK_LIVE_PUBLIC_KEY
-const test_secret_key = import.meta.env.VITE_PAYSTACK_TEST_SECRET_KEY
 const test_public_key = import.meta.env.VITE_PAYSTACK_TEST_PUBLIC_KEY
 
 const getPaystackKeys = () => {
   if (import.meta.env.MODE === 'production') {
     return {
-      publicKey: live_public_key,
-      secretKey: live_secret_key
+      publicKey: live_public_key
     };
   } else {
     return {
-      publicKey: test_public_key,
-      secretKey: test_secret_key
+      publicKey: test_public_key
     };
   }
 }

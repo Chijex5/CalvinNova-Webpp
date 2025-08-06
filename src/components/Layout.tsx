@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import Navigation from './Navigation';
+
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 interface LayoutProps {
@@ -15,13 +16,15 @@ const Layout: React.FC<LayoutProps> = ({
   } = useAuth();
   const isAdminPage = location.pathname.includes('/admin');
   const isHomePage = location.pathname === '/';
+  const shouldHideHeader = location.pathname.startsWith('/verification');
+
 
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   return <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      {<Navigation />}
+      {!shouldHideHeader && <Navigation />}
       <main className="flex-grow mt-50">{children}</main>
       {/* Only show footer on home page when not authenticated */}
       {!isAdminPage && !isAuthenticated && isHomePage && <footer className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-gray-800 dark:to-gray-900 text-white py-8">

@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import NotificationsPage from './pages/Notifications';
 import PhoneNumberModal from './components/AddPhoneNumber';
+import SellerDashboard from './pages/SellerProducts';
 import ResetPasswordForm from './pages/ResetPassword';
 import PayoutApprovals from './pages/admin/PayoutPage';
 import TransactionPages from './pages/TransactionPage';
@@ -247,6 +248,11 @@ export function App() {
                   <Route path="/sell" element={<ProtectedRoute>
                         <SellerRoute link="/sell">
                           <Sell />
+                        </SellerRoute>
+                      </ProtectedRoute>} />
+                  <Route path="/my-products" element={<ProtectedRoute>
+                        <SellerRoute link="/my-products">
+                          <SellerDashboard />
                         </SellerRoute>
                       </ProtectedRoute>} />
                   <Route path="/admin/users" element={<ProtectedRoute>
