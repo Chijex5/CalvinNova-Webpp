@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import SEOHead from '../components/SEOHead';
 import ProductDetailSkeleton from '../components/loaders/ProductDetsilSkeleton';
-import { MessageSquareIcon, HeartIcon, ShareIcon, FlagIcon, ShoppingBagIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon, CalendarIcon, EyeIcon } from 'lucide-react';
+import { MessageSquareIcon, HeartIcon, ShareIcon, Trash2, Loader, FlagIcon, ShoppingBagIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon, CalendarIcon, EyeIcon } from 'lucide-react';
 import { useProductStore, Product } from '../store/productStore';
 import { getDominantColor } from '../functions/getDominantColour';
 import { productService } from '../services/productService';
@@ -23,6 +23,8 @@ const ProductDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<Product | null>(null)
   const [product, setProduct] = useState<Product | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
@@ -48,6 +50,18 @@ const ProductDetails = () => {
     }).format(price);
   };
 
+  const handleDeleteConfirm = async () => {
+      if (!deleteConfirmProduct) return
+      setDeleteLoading(true)
+      try {
+        await productService.deleteProduct(deleteConfirmProduct.id)
+        setDeleteConfirmProduct(null) // Close modal on success
+      } catch (error) {
+        console.error('Error deleting product:', error)
+      } finally {
+        setDeleteLoading(false)
+      }
+    }
   // Find similar products based on category
   const findSimilarProducts = useCallback((currentProduct: Product, allProducts: Product[]) => {
     if (!currentProduct || !allProducts.length) return [];
@@ -121,7 +135,11 @@ const ProductDetails = () => {
 
   // Keyboard navigation for images
   useEffect(() => {
-    const handleKeyPress = e => {
+    interface KeyboardEvent {
+      key: string;
+    }
+
+    const handleKeyPress = (e: KeyboardEvent): void => {
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
     };
@@ -251,7 +269,7 @@ const ProductDetails = () => {
   }
 
   // Similar Product Card Component
-  const SimilarProductCard = ({ product: similarProduct }) => {
+  const SimilarProductCard = ({ product: similarProduct }: { product: Product }) => {
     const [imageError, setImageError] = useState(false);
     
     return (
@@ -535,7 +553,57 @@ const ProductDetails = () => {
           </Link>
         </div>
       )}
-    </div>;
+      {deleteConfirmProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+            onClick={() => setDeleteConfirmProduct(null)}
+          />
+          {/* Modal */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4">
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+              Delete Item
+            </h3>
+            {/* Message */}
+            <p className="text-sm text-gray-600 dark:text-gray-300 text-center mb-6">
+              Are you sure you want to delete{' '}
+              <span className="font-medium text-gray-900 dark:text-white">
+                "{deleteConfirmProduct.title}"
+              </span>
+              ? This action cannot be undone.
+            </p>
+            {/* Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setDeleteConfirmProduct(null)}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl font-medium transition-colors duration-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-600 hover:bg-red-700 dark:hover:bg-red-700 text-white rounded-xl font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center"
+              >
+                {deleteLoading ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Yes, Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
 };
 
 export default ProductDetails;

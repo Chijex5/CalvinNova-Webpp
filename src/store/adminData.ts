@@ -13,6 +13,8 @@ export interface AllUsers {
   createdAt: string;
   updatedAt: string;
   isFlagged?: boolean;
+  isBanned?: boolean;
+  
   status?: 'active' | 'inactive' | 'banned' | 'suspended';
 }
 export interface AdminDataStore {

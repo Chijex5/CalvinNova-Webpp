@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Search, Filter, RefreshCw, ChevronDown, ChevronUp, User, MessageSquare, Ban, Shield, Flag, Calendar, Activity, AlertCircle, CheckCircle, X, Send, Eye, Package, Loader2 } from 'lucide-react';
 import { useAdminDataStore, AllUsers } from '../../store/adminData';
 import adminService from '../../services/adminService';
 import { client } from '../../lib/stream-chat';
+import api from '../../utils/apiService';
 
 // Enhanced skeleton loader component for chat length
 const ChatLengthSkeleton = () => <div className="flex items-center space-x-2">
@@ -63,6 +65,7 @@ const AdminUsersPage = () => {
   const [selectedUser, setSelectedUser] = useState<AllUsers | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<{id: string, action:string} | null>(null);
   const [warningMessage, setWarningMessage] = useState('');
   const [filters, setFilters] = useState({
     status: 'All',
@@ -78,6 +81,19 @@ const AdminUsersPage = () => {
     console.log('Fetching all users...');
     await adminService.getAllUsers();
   };
+
+  const getUserRole = (role: string)  =>{
+    switch (role) {
+      case 'both':
+        return 'Buyer & Seller';
+      case 'buyer':
+        return 'Buyer';
+      case 'seller':
+        return 'Seller';
+      default:
+        return role.toUpperCase();
+    }
+  }
   const handleRefresh = () => {
     console.log('Refreshing users data...');
     // Clear all cached data and expanded states when refreshing
@@ -193,7 +209,7 @@ const AdminUsersPage = () => {
       }));
     }
   };
-  const handleUserAction = (action: string, user: AllUsers) => {
+  const handleUserAction = async(action: string, user: AllUsers) => {
     console.log(`Performing action: ${action} on user: ${user.id}`);
     switch (action) {
       case 'view':
@@ -208,10 +224,24 @@ const AdminUsersPage = () => {
         }
         break;
       case 'ban':
-        console.log('Banning user:', user.id);
-        updateUser(user.id, {
-          status: 'banned'
-        });
+        try{
+          setActionLoading({id: user.id, action});
+          const response = await api.post(`/api/report/action/${user.id}`, {
+            action
+          });
+
+          if (response.data.success){
+            updateUser(user.id, {
+              status: 'banned'
+            });
+            toast.success(`User ${user.name} has been banned successfully.`);
+          }
+        } catch (err : any){
+          console.error('Error banning user:', err);
+          toast.error(err.response?.data?.message || 'Failed to ban user');
+        } finally {
+          setActionLoading(null);
+        }
         break;
       case 'message':
         setSelectedUser(user);
@@ -224,10 +254,24 @@ const AdminUsersPage = () => {
         });
         break;
       case 'unban':
-        console.log('Unbanning user:', user.id);
-        updateUser(user.id, {
-          status: 'active'
-        });
+        try{
+          setActionLoading({id: user.id, action});
+          const response = await api.post(`/api/report/action/${user.id}`, {
+            action
+          });
+
+          if (response.data.success){
+            updateUser(user.id, {
+              status: 'active'
+            });
+            toast.success(`User ${user.name} has been unbanned successfully.`);
+          }
+        } catch (err : any){
+          console.error('Error banning user:', err);
+          toast.error(err.response?.data?.message || 'Failed to ban user');
+        } finally {
+          setActionLoading(null);
+        }
         break;
     }
   };
@@ -454,12 +498,12 @@ const AdminUsersPage = () => {
                   <span>View</span>
                 </button>
 
-                {user.status !== 'banned' ? <button onClick={() => handleUserAction('ban', user)} className="flex items-center space-x-1 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                {user.status !== 'banned' ? <button onClick={() => handleUserAction('ban', user)} disabled={actionLoading?.id === user.id && actionLoading?.action === 'ban'} className="flex items-center space-x-1 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 transition-colors">
                     <Ban className="w-4 h-4" />
-                    <span>Ban</span>
-                  </button> : <button onClick={() => handleUserAction('unban', user)} className="flex items-center space-x-1 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                    <span>{actionLoading?.id === user.id && actionLoading?.action === 'ban' ? 'Banning ...' : 'Ban' }</span>
+                  </button> : <button onClick={() => handleUserAction('unban', user)} disabled={actionLoading?.id === user.id && actionLoading?.action === 'unban'} className="flex items-center space-x-1 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/30 disabled:opacity-50 transition-colors">
                     <CheckCircle className="w-4 h-4" />
-                    <span>Unban</span>
+                    <span>{actionLoading?.id === user.id && actionLoading?.action === 'unban' ? 'Unbanning ...' : 'Unban'}</span>
                   </button>}
 
                 <button onClick={() => handleUserAction('message', user)} className="flex items-center space-x-1 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded-lg text-sm font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
@@ -518,7 +562,7 @@ const AdminUsersPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Role:</span>
-                    <span className="font-medium capitalize text-gray-900 dark:text-white">{selectedUser.role}</span>
+                    <span className="font-medium capitalize text-gray-900 dark:text-white">{getUserRole(selectedUser.role)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Joined:</span>
