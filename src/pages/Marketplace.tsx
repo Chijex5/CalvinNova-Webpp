@@ -731,7 +731,7 @@ const FilterSheet = ({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             Price Range
           </label>
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             <input
               type="number"
               placeholder="Min"
@@ -1013,7 +1013,7 @@ const MarketplaceUI = () => {
             )}
           </div>
           {/* Sort and Filter Controls */}
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             <div className="relative">
               <select
                 value={sortBy}
@@ -1130,7 +1130,7 @@ const MarketplaceUI = () => {
                 <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
                   Price Range
                 </label>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col xl:flex-row gap-2 w-full">
                   <input
                     type="number"
                     placeholder="Min"
@@ -1141,7 +1141,7 @@ const MarketplaceUI = () => {
                         minPrice: e.target.value,
                       })
                     }
-                    className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm"
+                    className="min-w-0 flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm"
                   />
                   <span className="text-gray-400 dark:text-gray-500">to</span>
                   <input
@@ -1154,7 +1154,7 @@ const MarketplaceUI = () => {
                         maxPrice: e.target.value,
                       })
                     }
-                    className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm"
+                    className="min-w-0 flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm"
                   />
                 </div>
               </div>

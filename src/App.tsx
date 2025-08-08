@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import NotificationsPage from './pages/Notifications';
 import PhoneNumberModal from './components/AddPhoneNumber';
 import SellerDashboard from './pages/SellerProducts';
+import DisputeSettlement from './pages/admin/Disputes';
 import ResetPasswordForm from './pages/ResetPassword';
 import PayoutApprovals from './pages/admin/PayoutPage';
 import TransactionPages from './pages/TransactionPage';
@@ -266,6 +267,11 @@ export function App() {
                         </AdminRoute>
                       </ProtectedRoute>} />
 
+                  <Route path="/admin/dispute" element={<ProtectedRoute>
+                    <AdminRoute>
+                      <DisputeSettlement />
+                    </AdminRoute>
+                    </ProtectedRoute>} />
                   <Route path="/admin/reports" element={<ProtectedRoute>
                         <AdminRoute>
                           <AdminReportsPage />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
-import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, BadgeDollarSignIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, BarChart3Icon } from 'lucide-react';
+import { HomeIcon, ShoppingBagIcon, MessageSquareIcon, Gavel, BadgeDollarSignIcon, UserIcon, PlusCircleIcon, MenuIcon, X as XIcon, BellIcon, BarChart3Icon } from 'lucide-react';
 import { MdReportGmailerrorred } from "react-icons/md";
 import { useAuth } from '../context/AuthContext';
 import logo from './logo.svg';
@@ -79,6 +79,11 @@ const Navigation = () => {
       name: 'Payouts',
       path: '/admin/payouts',
       icon: <BadgeDollarSignIcon size={20} />,
+      roles: ['admin']
+    }, {
+      name: 'Disputes',
+      path: '/admin/dispute',
+      icon: <Gavel size={20} />,
       roles: ['admin']
     }];
 
