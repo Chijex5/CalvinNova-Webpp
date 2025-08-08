@@ -1013,7 +1013,7 @@ const MarketplaceUI = () => {
             )}
           </div>
           {/* Sort and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
+          <div className="flex space-x-2">
             <div className="relative">
               <select
                 value={sortBy}
