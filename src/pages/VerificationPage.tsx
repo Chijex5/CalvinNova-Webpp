@@ -385,12 +385,30 @@ const EmailVerification = () => {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-blue-600" />
             </div>
+            {/* Step title with friendlier wording */}
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Bank Account Verification
+              Setup Your Payout Account
             </h1>
-            <p className="text-gray-600">
-              As a seller, we need to verify your bank account details
+
+            {/* Short trust-building explanation */}
+            <p className="text-gray-600 mb-4">
+              We’ll use this account only to send you your earnings when your items sell. 
+              Your details are <span className="font-semibold">encrypted</span> and kept secure at all times.
             </p>
+
+
+            {/* Optional visual reassurance */}
+            <div className="flex items-center mb-6 bg-green-50 border border-green-200 rounded-lg p-3">
+              <svg xmlns="http://www.w3.org/2000/svg" 
+                  className="h-5 w-5 text-green-600 mr-2" 
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                      d="M12 11c0 .345.074.68.206.98l3.07 6.41c.086.18.139.38.139.59v.02a2 2 0 002 2h1.5a2 2 0 002-2v-1a2 2 0 00-2-2H17m0 0V6a2 2 0 00-2-2H7a2 2 0 00-2 2v8a2 2 0 002 2h8z" />
+              </svg>
+              <span className="text-sm text-green-700">
+                Secure & Encrypted — we protect your information using bank-level security.
+              </span>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -431,7 +449,7 @@ const EmailVerification = () => {
               <input type="text" placeholder="Enter your 10-digit account number" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} maxLength={10} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
 
-            <Button variant="primary" fullWidth onClick={verifyAccountDetails} disabled={!accountNumber || !selectedBank}>
+            <Button variant="primary" fullWidth onClick={verifyAccountDetails} disabled={!accountNumber || accountNumber.length !== 10 || !selectedBank}>
               Verify Account Details
             </Button>
           </div>

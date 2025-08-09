@@ -12,8 +12,8 @@ interface Image {
 interface ItemFormData {
   title: string;
   description: string;
-  price: number;
-  sellerAmount?: number; // Optional for seller's price
+  price: number | string;
+  sellerAmount?: number | string; // Optional for seller's price
   category: string;
   condition: string;
   school: string;
@@ -35,7 +35,7 @@ const ModernItemListingForm = () => {
   const [formData, setFormData] = useState<ItemFormData>({
     title: '',
     description: '',
-    price: 0,
+    price: '',
     category: '',
     condition: 'new',
     sellerAmount: 0,
@@ -283,14 +283,25 @@ const ModernItemListingForm = () => {
 
   // Update sellerAmount when price changes
   const handlePriceChange = (value: string) => {
+    if (value === '') {
+      setFormData(prev => ({
+        ...prev,
+        price: '',
+        sellerAmount: ''
+      }));
+      return;
+    }
+
     const numPrice = Number(value);
     const payout = calculatePayout(numPrice);
+
     setFormData(prev => ({
       ...prev,
       price: numPrice,
-      sellerAmount: payout // Set both at once
+      sellerAmount: payout
     }));
   };
+
   const ToggleButton = ({
     options,
     selected,
@@ -510,7 +521,7 @@ const ModernItemListingForm = () => {
                     </div>
                     <div className="flex justify-between font-semibold text-green-700 dark:text-green-400 border-t dark:border-gray-600 pt-2">
                       <span>You'll receive:</span>
-                      <span>₦{calculatePayout(formData.price).toLocaleString()}</span>
+                      <span>₦{calculatePayout(Number(formData.price)).toLocaleString()}</span>
                     </div>
                   </div>
                 </InfoBox>}
@@ -563,7 +574,7 @@ const ModernItemListingForm = () => {
                 <div className="flex justify-between items-center">
                   <div className="text-lg font-semibold text-gray-900 dark:text-white">₦{formData.price.toLocaleString()}</div>
                   <div className="text-sm text-green-600 dark:text-green-400">
-                    You'll earn: ₦{calculatePayout(formData.price).toLocaleString()}
+                    You'll earn: ₦{calculatePayout(Number(formData.price)).toLocaleString()}
                   </div>
                 </div>
               </div>
