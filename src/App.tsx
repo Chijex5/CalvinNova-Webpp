@@ -27,6 +27,7 @@ import Signup from './pages/Signup';
 import QRTransactionSystem from './pages/QRCodeGenerator';
 import NotFound from './pages/NotFound';
 import ErrorPage from './pages/ErrorPage';
+import CoursePage from './pages/CoursePage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
 import { ChatProvider } from './context/ChatContext';
@@ -239,6 +240,9 @@ export function App() {
                       </ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute>
                         <Profile />
+                      </ProtectedRoute>} />
+                  <Route path="/course/:coursecode" element={<ProtectedRoute>
+                        <CoursePage />
                       </ProtectedRoute>} />
                   <Route path="/account/transactions" element={<ProtectedRoute>
                         <TransactionPages />
