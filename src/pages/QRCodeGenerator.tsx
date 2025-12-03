@@ -440,17 +440,10 @@ const ScanQRCode = ({
       const backendMessage = error?.response?.data?.message || error?.message || '';
       const errorCode = error?.response?.data?.code || error?.response?.status;
       
-      // Check for specific error cases using error codes (preferred) or message matching (fallback)
-      if (errorCode === 403 || errorCode === 'UNAUTHORIZED_USER' || 
-          (typeof backendMessage === 'string' && 
-           (backendMessage.toLowerCase().includes('not the buyer') || 
-            backendMessage.toLowerCase().includes('not authorized') ||
-            backendMessage.toLowerCase().includes('unauthorized')))) {
+      // Check for specific error cases using helper functions
+      if (isUnauthorizedError(errorCode, backendMessage)) {
         errorMessage = 'You are not authorized to confirm this transaction. Only the buyer can scan and confirm.';
-      } else if (errorCode === 409 || errorCode === 'DUPLICATE_CONFIRMATION' ||
-                 (typeof backendMessage === 'string' && 
-                  (backendMessage.toLowerCase().includes('already confirmed') || 
-                   backendMessage.toLowerCase().includes('already completed')))) {
+      } else if (isDuplicateConfirmationError(errorCode, backendMessage)) {
         errorMessage = 'This transaction has already been confirmed. You cannot confirm it again.';
       } else if (backendMessage && typeof backendMessage === 'string') {
         // Use backend message if available and it's a string
@@ -468,6 +461,24 @@ const ScanQRCode = ({
   const handleCancelConfirmation = () => {
     setShowConfirmModal(false);
     setError(null);
+  };
+
+  // Helper functions for error type checking
+  const isUnauthorizedError = (errorCode: any, message: string): boolean => {
+    return errorCode === 403 || 
+           errorCode === 'UNAUTHORIZED_USER' || 
+           (typeof message === 'string' && 
+            (message.toLowerCase().includes('not the buyer') || 
+             message.toLowerCase().includes('not authorized') ||
+             message.toLowerCase().includes('unauthorized')));
+  };
+
+  const isDuplicateConfirmationError = (errorCode: any, message: string): boolean => {
+    return errorCode === 409 || 
+           errorCode === 'DUPLICATE_CONFIRMATION' ||
+           (typeof message === 'string' && 
+            (message.toLowerCase().includes('already confirmed') || 
+             message.toLowerCase().includes('already completed')));
   };
 
   const resetScanner = () => {
@@ -718,7 +729,7 @@ const ScanQRCode = ({
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Verify Item Before Confirming</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Verify Product Before Confirming Receipt</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
                   Please ensure the product you are receiving from <span className="font-medium text-gray-900 dark:text-white">{transactionData.sellerName}</span> is what was agreed upon and that it is in good condition.
                 </p>
