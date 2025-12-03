@@ -20,6 +20,64 @@ export interface TransactionData {
   createdAt: string;
   isSeller: boolean;
 }
+
+// Error pattern constants for maintainability
+const UNAUTHORIZED_PATTERNS = ['not the buyer', 'not authorized', 'unauthorized'] as const;
+const DUPLICATE_PATTERNS = ['already confirmed', 'already completed'] as const;
+
+// Helper functions for error type checking (moved outside component for better performance)
+const isUnauthorizedError = (errorCode: string | number | undefined | null, message: string): boolean => {
+  // Primary: Check error codes
+  if (errorCode === 403 || errorCode === 'UNAUTHORIZED_USER') {
+    return true;
+  }
+  
+  // Fallback: Check message patterns (for backends without error codes)
+  if (typeof message === 'string' && message.length > 0) {
+    const lowerMessage = message.toLowerCase();
+    return UNAUTHORIZED_PATTERNS.some(pattern => lowerMessage.includes(pattern));
+  }
+  
+  return false;
+};
+
+const isDuplicateConfirmationError = (errorCode: string | number | undefined | null, message: string): boolean => {
+  // Primary: Check error codes
+  if (errorCode === 409 || errorCode === 'DUPLICATE_CONFIRMATION') {
+    return true;
+  }
+  
+  // Fallback: Check message patterns (for backends without error codes)
+  if (typeof message === 'string' && message.length > 0) {
+    const lowerMessage = message.toLowerCase();
+    return DUPLICATE_PATTERNS.some(pattern => lowerMessage.includes(pattern));
+  }
+  
+  return false;
+};
+
+// Sanitize error message to prevent XSS and limit length
+// Note: This uses aggressive character removal rather than HTML entity encoding
+// because we're displaying plain text error messages (not HTML content).
+// This approach is sufficient for simple error messages and avoids the need
+// for additional dependencies like DOMPurify.
+const sanitizeErrorMessage = (message: string): string => {
+  if (!message || typeof message !== 'string') {
+    return 'An error occurred. Please try again.';
+  }
+  // Remove any potentially dangerous characters that could be used for injection
+  let sanitized = message
+    .replace(/</g, '')
+    .replace(/>/g, '')
+    .replace(/&/g, '')
+    .replace(/"/g, '')
+    .replace(/'/g, '')
+    .replace(/`/g, '')
+    .trim();
+  
+  // Limit length for safety and UX
+  return sanitized.length > 200 ? sanitized.substring(0, 200) + '...' : sanitized;
+};
 const GenerateQRCode = ({
   transactionData,
   onBack,
@@ -32,6 +90,7 @@ const GenerateQRCode = ({
   const [qrData, setQrData] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showInstructionModal, setShowInstructionModal] = useState(true);
   useEffect(() => {
     const timer = setTimeout(() => {
       setQrData(JSON.stringify({
@@ -127,6 +186,34 @@ const GenerateQRCode = ({
         </div>
 
       </div>
+
+      {/* Seller Instruction Modal */}
+      {showInstructionModal && <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Show QR Code to Buyer</h3>
+              <button onClick={() => setShowInstructionModal(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <QrCode className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">
+                Please show the buyer your QR code so they can scan and confirm receipt of the item.
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  💡 Once the buyer scans and confirms, you'll receive a confirmation to complete the transaction.
+                </p>
+              </div>
+            </div>
+            <button onClick={() => setShowInstructionModal(false)} className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+              I understand, Show QR Code
+            </button>
+          </div>
+        </div>}
 
       {/* Seller Confirmation Modal */}
       {showConfirmModal && <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
@@ -395,19 +482,45 @@ const ScanQRCode = ({
       const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`);
       if (response && response.data.success) {
         await stopCamera();
+        setShowConfirmModal(false);
+        setError(null);
+        setTransactionProcessing(false);
+        setIsProcessingConfirmation(false);
+        setIsConfirming(false);
         onComplete();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error confirming receipt:', error);
-      setError('Failed to confirm receipt. Please try again.');
-      setIsProcessingConfirmation(false);
-    } finally {
+      // Handle specific error messages from backend
+      let errorMessage = 'Failed to confirm receipt. Please try again.';
+      
+      // Safely extract error message and code from various possible error structures
+      const backendMessage = error?.response?.data?.message ?? error?.message ?? null;
+      const errorCode = error?.response?.data?.code ?? error?.response?.status ?? null;
+      
+      // Primary strategy: Check error codes first (most reliable)
+      if (isUnauthorizedError(errorCode, backendMessage || '')) {
+        errorMessage = 'You are not authorized to confirm this transaction. Only the buyer can scan and confirm.';
+      } else if (isDuplicateConfirmationError(errorCode, backendMessage || '')) {
+        errorMessage = 'This transaction has already been confirmed. You cannot confirm it again.';
+      } else if (backendMessage && typeof backendMessage === 'string' && backendMessage.trim().length > 0) {
+        // Fallback: Use sanitized backend message if available
+        errorMessage = sanitizeErrorMessage(backendMessage);
+      }
+      
+      setError(errorMessage);
+      // Don't close modal on error so user can see the error message
+      // Reset processing states so user can retry
       setTransactionProcessing(false);
       setIsProcessingConfirmation(false);
       setIsConfirming(false);
-      setShowConfirmModal(false);
     }
   };
+  const handleCancelConfirmation = () => {
+    setShowConfirmModal(false);
+    setError(null);
+  };
+
   const resetScanner = () => {
     setError(null);
     setScanResult(null);
@@ -656,27 +769,48 @@ const ScanQRCode = ({
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Confirm Item Receipt</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Verify Product Before Confirming Receipt</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                  Please confirm you have received the item from <span className="font-medium text-gray-900 dark:text-white">{transactionData.sellerName}</span> and verify it's correct and undamaged.
+                  Please ensure the product you are receiving from <span className="font-medium text-gray-900 dark:text-white">{transactionData.sellerName}</span> is what was agreed upon and that it is in good condition.
                 </p>
               </div>
               
               <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200/50 dark:border-amber-800/50 p-4 mb-6">
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-amber-800 dark:text-amber-200">
-                    Once confirmed, payment will be released to {getSellerFirstName(transactionData.sellerName)} immediately.
-                  </p>
+                  <div className="text-left">
+                    <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
+                      Important: Check Before Confirming
+                    </p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      Once you confirm, payment will be released to {getSellerFirstName(transactionData.sellerName)} immediately. Make sure the item matches the description and is undamaged.
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Error Message Display in Modal */}
+              {error && <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200/50 dark:border-red-800/50 p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-sm text-red-800 dark:text-red-200 font-medium mb-1">
+                      Error
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      {error}
+                    </p>
+                  </div>
+                </div>
+              </div>}
               
               <div className="flex space-x-3">
-                <button onClick={() => setShowConfirmModal(false)} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                <button onClick={handleCancelConfirmation} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                   Cancel
                 </button>
+                {/* Button text "I Want to Proceed" is specified in the problem statement requirements */}
                 <button onClick={confirmReceipt} disabled={transactionProcessing} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                  {transactionProcessing ? 'Confirming ...' : 'Confirm Receipt'}
+                  {transactionProcessing ? 'Processing...' : 'I Want to Proceed'}
                 </button>
               </div>
             </div>
