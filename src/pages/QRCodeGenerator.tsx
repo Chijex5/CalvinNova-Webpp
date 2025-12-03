@@ -436,16 +436,25 @@ const ScanQRCode = ({
       // Handle specific error messages from backend
       let errorMessage = 'Failed to confirm receipt. Please try again.';
       
-      if (error?.response?.data?.message) {
-        const backendMessage = error.response.data.message;
-        // Check for specific error cases
-        if (backendMessage.includes('not the buyer') || backendMessage.includes('unauthorized')) {
-          errorMessage = 'You are not authorized to confirm this transaction. Only the buyer can scan and confirm.';
-        } else if (backendMessage.includes('already confirmed') || backendMessage.includes('already completed')) {
-          errorMessage = 'This transaction has already been confirmed. You cannot confirm it again.';
-        } else {
-          errorMessage = backendMessage;
-        }
+      // Safely extract error message from various possible error structures
+      const backendMessage = error?.response?.data?.message || error?.message || '';
+      const errorCode = error?.response?.data?.code || error?.response?.status;
+      
+      // Check for specific error cases using error codes (preferred) or message matching (fallback)
+      if (errorCode === 403 || errorCode === 'UNAUTHORIZED_USER' || 
+          (typeof backendMessage === 'string' && 
+           (backendMessage.toLowerCase().includes('not the buyer') || 
+            backendMessage.toLowerCase().includes('not authorized') ||
+            backendMessage.toLowerCase().includes('unauthorized')))) {
+        errorMessage = 'You are not authorized to confirm this transaction. Only the buyer can scan and confirm.';
+      } else if (errorCode === 409 || errorCode === 'DUPLICATE_CONFIRMATION' ||
+                 (typeof backendMessage === 'string' && 
+                  (backendMessage.toLowerCase().includes('already confirmed') || 
+                   backendMessage.toLowerCase().includes('already completed')))) {
+        errorMessage = 'This transaction has already been confirmed. You cannot confirm it again.';
+      } else if (backendMessage && typeof backendMessage === 'string') {
+        // Use backend message if available and it's a string
+        errorMessage = backendMessage;
       }
       
       setError(errorMessage);

@@ -93,7 +93,8 @@ catch (error: any) {
   }
   
   setError(errorMessage);
-  setShowConfirmModal(false);
+  // Don't close modal on error - keep it open so user can see error message
+  // User can retry or cancel
 }
 ```
 

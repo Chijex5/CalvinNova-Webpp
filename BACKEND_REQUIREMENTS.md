@@ -22,11 +22,14 @@ This endpoint is called when a buyer scans the seller's QR code and confirms rec
 ```json
 {
   "success": false,
+  "code": "UNAUTHORIZED_USER",
   "message": "You are not authorized to confirm this transaction. Only the buyer can scan and confirm."
 }
 ```
 
 **HTTP Status Code:** `403 Forbidden`
+
+**Note**: The `code` field is optional but recommended for robust error handling. The frontend will match on both the error code and message content.
 
 ### 2. Verify Transaction Not Already Confirmed
 
@@ -39,11 +42,14 @@ This endpoint is called when a buyer scans the seller's QR code and confirms rec
 ```json
 {
   "success": false,
+  "code": "DUPLICATE_CONFIRMATION",
   "message": "This transaction has already been confirmed. You cannot confirm it again."
 }
 ```
 
 **HTTP Status Code:** `409 Conflict`
+
+**Note**: The `code` field is optional but recommended for robust error handling. The frontend will match on both the error code and message content.
 
 ### 3. Verify Transaction Data
 
@@ -91,12 +97,42 @@ When all validations pass and the transaction is successfully completed:
 
 4. **Notifications**: Consider sending notifications to both buyer and seller when the transaction is completed.
 
+## Error Code Standards (Recommended)
+
+For robust error handling, it's recommended to include a `code` field in error responses:
+
+### Recommended Error Codes:
+- `UNAUTHORIZED_USER` - User is not the buyer
+- `DUPLICATE_CONFIRMATION` - Transaction already confirmed
+- `TRANSACTION_NOT_FOUND` - Transaction doesn't exist
+- `INVALID_VERIFICATION_CODE` - QR code verification failed
+
+### Example Error Response Format:
+```json
+{
+  "success": false,
+  "code": "UNAUTHORIZED_USER",
+  "message": "Human-readable error message"
+}
+```
+
 ## Frontend Integration
 
-The frontend handles these errors specifically:
-- Checks for error messages containing "not the buyer" or "unauthorized"
-- Checks for error messages containing "already confirmed" or "already completed"
-- Displays user-friendly error messages based on the backend response
+The frontend handles errors using multiple strategies for robustness:
+
+### Primary Strategy (Preferred):
+- Checks for error `code` field (e.g., `UNAUTHORIZED_USER`, `DUPLICATE_CONFIRMATION`)
+- Checks HTTP status codes (403, 409, etc.)
+
+### Fallback Strategy:
+- Checks error messages for specific keywords (case-insensitive):
+  - Unauthorized: "not the buyer", "not authorized", "unauthorized"
+  - Duplicate: "already confirmed", "already completed"
+
+### Error Display:
+- Displays user-friendly error messages based on error type
+- Errors shown within modal (modal stays open)
+- User can retry or cancel after seeing error
 
 ## Testing Scenarios
 
