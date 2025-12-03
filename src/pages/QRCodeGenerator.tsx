@@ -426,6 +426,9 @@ const ScanQRCode = ({
         await stopCamera();
         setShowConfirmModal(false);
         setError(null);
+        setTransactionProcessing(false);
+        setIsProcessingConfirmation(false);
+        setIsConfirming(false);
         onComplete();
       }
     } catch (error: any) {
@@ -451,13 +454,6 @@ const ScanQRCode = ({
       setTransactionProcessing(false);
       setIsProcessingConfirmation(false);
       setIsConfirming(false);
-    } finally {
-      // Only reset processing states if no error occurred (success case already handled above)
-      if (!error) {
-        setTransactionProcessing(false);
-        setIsProcessingConfirmation(false);
-        setIsConfirming(false);
-      }
     }
   };
   const handleCancelConfirmation = () => {
