@@ -21,31 +21,51 @@ export interface TransactionData {
   isSeller: boolean;
 }
 
+// Error pattern constants for maintainability
+const UNAUTHORIZED_PATTERNS = ['not the buyer', 'not authorized', 'unauthorized'] as const;
+const DUPLICATE_PATTERNS = ['already confirmed', 'already completed'] as const;
+
 // Helper functions for error type checking (moved outside component for better performance)
-const isUnauthorizedError = (errorCode: any, message: string): boolean => {
-  return errorCode === 403 || 
-         errorCode === 'UNAUTHORIZED_USER' || 
-         (typeof message === 'string' && message.length > 0 &&
-          (message.toLowerCase().includes('not the buyer') || 
-           message.toLowerCase().includes('not authorized') ||
-           message.toLowerCase().includes('unauthorized')));
+const isUnauthorizedError = (errorCode: string | number | undefined | null, message: string): boolean => {
+  // Primary: Check error codes
+  if (errorCode === 403 || errorCode === 'UNAUTHORIZED_USER') {
+    return true;
+  }
+  
+  // Fallback: Check message patterns (for backends without error codes)
+  if (typeof message === 'string' && message.length > 0) {
+    const lowerMessage = message.toLowerCase();
+    return UNAUTHORIZED_PATTERNS.some(pattern => lowerMessage.includes(pattern));
+  }
+  
+  return false;
 };
 
-const isDuplicateConfirmationError = (errorCode: any, message: string): boolean => {
-  return errorCode === 409 || 
-         errorCode === 'DUPLICATE_CONFIRMATION' ||
-         (typeof message === 'string' && message.length > 0 &&
-          (message.toLowerCase().includes('already confirmed') || 
-           message.toLowerCase().includes('already completed')));
+const isDuplicateConfirmationError = (errorCode: string | number | undefined | null, message: string): boolean => {
+  // Primary: Check error codes
+  if (errorCode === 409 || errorCode === 'DUPLICATE_CONFIRMATION') {
+    return true;
+  }
+  
+  // Fallback: Check message patterns (for backends without error codes)
+  if (typeof message === 'string' && message.length > 0) {
+    const lowerMessage = message.toLowerCase();
+    return DUPLICATE_PATTERNS.some(pattern => lowerMessage.includes(pattern));
+  }
+  
+  return false;
 };
 
 // Sanitize error message to prevent XSS and limit length
+// Note: This uses aggressive character removal rather than HTML entity encoding
+// because we're displaying plain text error messages (not HTML content).
+// This approach is sufficient for simple error messages and avoids the need
+// for additional dependencies like DOMPurify.
 const sanitizeErrorMessage = (message: string): string => {
   if (!message || typeof message !== 'string') {
     return 'An error occurred. Please try again.';
   }
-  // Remove any potentially dangerous characters and HTML entities
-  // Replace < and > to prevent any tag injection
+  // Remove any potentially dangerous characters that could be used for injection
   let sanitized = message
     .replace(/</g, '')
     .replace(/>/g, '')
@@ -55,7 +75,7 @@ const sanitizeErrorMessage = (message: string): string => {
     .replace(/`/g, '')
     .trim();
   
-  // Limit length for safety
+  // Limit length for safety and UX
   return sanitized.length > 200 ? sanitized.substring(0, 200) + '...' : sanitized;
 };
 const GenerateQRCode = ({
@@ -788,6 +808,7 @@ const ScanQRCode = ({
                 <button onClick={handleCancelConfirmation} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                   Cancel
                 </button>
+                {/* Button text "I Want to Proceed" is specified in the problem statement requirements */}
                 <button onClick={confirmReceipt} disabled={transactionProcessing} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                   {transactionProcessing ? 'Processing...' : 'I Want to Proceed'}
                 </button>
