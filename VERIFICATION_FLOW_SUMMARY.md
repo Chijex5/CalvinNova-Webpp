@@ -178,12 +178,12 @@ The new instruction modal follows the same design patterns as existing modals:
 
 ## Dependencies Used
 
-### Existing:
-- `qrcode.react` (v4.2.0) - QR code generation
-- `@zxing/browser` (v0.1.5) - QR code scanning
-- `axios` (v1.10.0) - API calls
-- `lucide-react` (v0.441.0) - Icons
-- `sonner` (v2.0.6) - Toast notifications
+### Existing (from package.json):
+- `qrcode.react` - QR code generation
+- `@zxing/browser` - QR code scanning
+- `axios` - API calls
+- `lucide-react` - Icons
+- `sonner` - Toast notifications
 
 ### No New Dependencies Added ✅
 

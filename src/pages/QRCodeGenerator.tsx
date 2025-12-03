@@ -424,6 +424,7 @@ const ScanQRCode = ({
       const response = await api.post(`/api/transactions/complete/${transactionData.transactionId}`);
       if (response && response.data.success) {
         await stopCamera();
+        setShowConfirmModal(false);
         onComplete();
       }
     } catch (error: any) {
@@ -444,7 +445,7 @@ const ScanQRCode = ({
       }
       
       setError(errorMessage);
-      setShowConfirmModal(false);
+      // Don't close modal on error so user can see the error message
       setIsProcessingConfirmation(false);
     } finally {
       setTransactionProcessing(false);
@@ -702,7 +703,7 @@ const ScanQRCode = ({
                 </div>
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Verify Item Before Confirming</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                  Please ensure the product <span className="font-medium text-gray-900 dark:text-white">{transactionData.sellerName}</span> is giving you is what was agreed upon and that it is in good condition.
+                  Please ensure the product you are receiving from <span className="font-medium text-gray-900 dark:text-white">{transactionData.sellerName}</span> is what was agreed upon and that it is in good condition.
                 </p>
               </div>
               
@@ -719,9 +720,24 @@ const ScanQRCode = ({
                   </div>
                 </div>
               </div>
+
+              {/* Error Message Display in Modal */}
+              {error && <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200/50 dark:border-red-800/50 p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-sm text-red-800 dark:text-red-200 font-medium mb-1">
+                      Error
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      {error}
+                    </p>
+                  </div>
+                </div>
+              </div>}
               
               <div className="flex space-x-3">
-                <button onClick={() => setShowConfirmModal(false)} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                <button onClick={() => { setShowConfirmModal(false); setError(null); }} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                   Cancel
                 </button>
                 <button onClick={confirmReceipt} disabled={transactionProcessing} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
