@@ -20,6 +20,34 @@ export interface TransactionData {
   createdAt: string;
   isSeller: boolean;
 }
+
+// Helper functions for error type checking (moved outside component for better performance)
+const isUnauthorizedError = (errorCode: any, message: string): boolean => {
+  return errorCode === 403 || 
+         errorCode === 'UNAUTHORIZED_USER' || 
+         (typeof message === 'string' && message.length > 0 &&
+          (message.toLowerCase().includes('not the buyer') || 
+           message.toLowerCase().includes('not authorized') ||
+           message.toLowerCase().includes('unauthorized')));
+};
+
+const isDuplicateConfirmationError = (errorCode: any, message: string): boolean => {
+  return errorCode === 409 || 
+         errorCode === 'DUPLICATE_CONFIRMATION' ||
+         (typeof message === 'string' && message.length > 0 &&
+          (message.toLowerCase().includes('already confirmed') || 
+           message.toLowerCase().includes('already completed')));
+};
+
+// Sanitize error message to prevent XSS and limit length
+const sanitizeErrorMessage = (message: string): string => {
+  if (!message || typeof message !== 'string') {
+    return 'An error occurred. Please try again.';
+  }
+  // Remove any HTML tags and limit length
+  const sanitized = message.replace(/<[^>]*>/g, '').trim();
+  return sanitized.length > 200 ? sanitized.substring(0, 200) + '...' : sanitized;
+};
 const GenerateQRCode = ({
   transactionData,
   onBack,
@@ -436,18 +464,18 @@ const ScanQRCode = ({
       // Handle specific error messages from backend
       let errorMessage = 'Failed to confirm receipt. Please try again.';
       
-      // Safely extract error message from various possible error structures
-      const backendMessage = error?.response?.data?.message || error?.message || '';
-      const errorCode = error?.response?.data?.code || error?.response?.status;
+      // Safely extract error message and code from various possible error structures
+      const backendMessage = error?.response?.data?.message ?? error?.message ?? null;
+      const errorCode = error?.response?.data?.code ?? error?.response?.status ?? null;
       
-      // Check for specific error cases using helper functions
-      if (isUnauthorizedError(errorCode, backendMessage)) {
+      // Primary strategy: Check error codes first (most reliable)
+      if (isUnauthorizedError(errorCode, backendMessage || '')) {
         errorMessage = 'You are not authorized to confirm this transaction. Only the buyer can scan and confirm.';
-      } else if (isDuplicateConfirmationError(errorCode, backendMessage)) {
+      } else if (isDuplicateConfirmationError(errorCode, backendMessage || '')) {
         errorMessage = 'This transaction has already been confirmed. You cannot confirm it again.';
-      } else if (backendMessage && typeof backendMessage === 'string') {
-        // Use backend message if available and it's a string
-        errorMessage = backendMessage;
+      } else if (backendMessage && typeof backendMessage === 'string' && backendMessage.trim().length > 0) {
+        // Fallback: Use sanitized backend message if available
+        errorMessage = sanitizeErrorMessage(backendMessage);
       }
       
       setError(errorMessage);
@@ -461,24 +489,6 @@ const ScanQRCode = ({
   const handleCancelConfirmation = () => {
     setShowConfirmModal(false);
     setError(null);
-  };
-
-  // Helper functions for error type checking
-  const isUnauthorizedError = (errorCode: any, message: string): boolean => {
-    return errorCode === 403 || 
-           errorCode === 'UNAUTHORIZED_USER' || 
-           (typeof message === 'string' && 
-            (message.toLowerCase().includes('not the buyer') || 
-             message.toLowerCase().includes('not authorized') ||
-             message.toLowerCase().includes('unauthorized')));
-  };
-
-  const isDuplicateConfirmationError = (errorCode: any, message: string): boolean => {
-    return errorCode === 409 || 
-           errorCode === 'DUPLICATE_CONFIRMATION' ||
-           (typeof message === 'string' && 
-            (message.toLowerCase().includes('already confirmed') || 
-             message.toLowerCase().includes('already completed')));
   };
 
   const resetScanner = () => {
