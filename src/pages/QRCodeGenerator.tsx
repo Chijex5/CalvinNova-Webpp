@@ -425,6 +425,7 @@ const ScanQRCode = ({
       if (response && response.data.success) {
         await stopCamera();
         setShowConfirmModal(false);
+        setError(null);
         onComplete();
       }
     } catch (error: any) {
@@ -446,13 +447,24 @@ const ScanQRCode = ({
       
       setError(errorMessage);
       // Don't close modal on error so user can see the error message
-      setIsProcessingConfirmation(false);
-    } finally {
+      // Reset processing states so user can retry
       setTransactionProcessing(false);
       setIsProcessingConfirmation(false);
       setIsConfirming(false);
+    } finally {
+      // Only reset processing states if no error occurred (success case already handled above)
+      if (!error) {
+        setTransactionProcessing(false);
+        setIsProcessingConfirmation(false);
+        setIsConfirming(false);
+      }
     }
   };
+  const handleCancelConfirmation = () => {
+    setShowConfirmModal(false);
+    setError(null);
+  };
+
   const resetScanner = () => {
     setError(null);
     setScanResult(null);
@@ -737,7 +749,7 @@ const ScanQRCode = ({
               </div>}
               
               <div className="flex space-x-3">
-                <button onClick={() => { setShowConfirmModal(false); setError(null); }} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                <button onClick={handleCancelConfirmation} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                   Cancel
                 </button>
                 <button onClick={confirmReceipt} disabled={transactionProcessing} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
