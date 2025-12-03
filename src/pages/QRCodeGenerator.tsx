@@ -44,8 +44,18 @@ const sanitizeErrorMessage = (message: string): string => {
   if (!message || typeof message !== 'string') {
     return 'An error occurred. Please try again.';
   }
-  // Remove any HTML tags and limit length
-  const sanitized = message.replace(/<[^>]*>/g, '').trim();
+  // Remove any potentially dangerous characters and HTML entities
+  // Replace < and > to prevent any tag injection
+  let sanitized = message
+    .replace(/</g, '')
+    .replace(/>/g, '')
+    .replace(/&/g, '')
+    .replace(/"/g, '')
+    .replace(/'/g, '')
+    .replace(/`/g, '')
+    .trim();
+  
+  // Limit length for safety
   return sanitized.length > 200 ? sanitized.substring(0, 200) + '...' : sanitized;
 };
 const GenerateQRCode = ({
